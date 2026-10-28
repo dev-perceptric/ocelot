@@ -5,6 +5,16 @@ import { createServerClient } from "@supabase/ssr";
 const PRIVATE = ["/app", "/employer", "/admin"];
 
 export async function proxy(request: NextRequest) {
+  // One address for search engines: www.joinocelot.com goes to joinocelot.com.
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").split(",")[0].trim();
+  if (host.startsWith("www.")) {
+    const to = request.nextUrl.clone();
+    to.host = host.slice(4);
+    to.protocol = "https:";
+    to.port = "";
+    return NextResponse.redirect(to, 308);
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let response = NextResponse.next({ request });
