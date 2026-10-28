@@ -2,12 +2,13 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createPlainClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseReady } from "@/lib/env";
 
 // Acts as the signed-in person (or a visitor). Row level security decides what they see.
 export async function createClient() {
   const store = await cookies();
-  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  return createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {
@@ -25,7 +26,7 @@ export async function createClient() {
 export function createAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
-  return createPlainClient(SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  return createPlainClient<Database>(SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
 export async function currentUser() {
