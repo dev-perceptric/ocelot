@@ -200,4 +200,18 @@ select pg_temp.act('00000000-0000-0000-0000-00000000000a');
 update profiles set full_name = 'Hacked' where id = '00000000-0000-0000-0000-00000000000d';
 reset role;
 select pg_temp.expect((select full_name from profiles where id = '00000000-0000-0000-0000-00000000000d') = 'Dee Nguyen', 'nobody else can edit a profile');
+-- ---------- Milestone 1, part D: the queue ----------
+reset role;
+insert into jobs_queue (kind, payload) values ('email', '{"to":"a@b.c"}'), ('email', '{"to":"bad"}'), ('email', '{"to":"x@y.z"}');
+select pg_temp.expect((select count(*) from claim_queue(10)) = 3, 'the worker takes due tasks');
+select pg_temp.expect((select count(*) from claim_queue(10)) = 0, 'a taken task is not taken twice');
+select finish_queue(id) from jobs_queue where payload->>'to' = 'a@b.c';
+select finish_queue(id, 'resend 500') from jobs_queue where payload->>'to' = 'x@y.z';
+select finish_queue(id, 'resend 422 invalid address', true) from jobs_queue where payload->>'to' = 'bad';
+select pg_temp.expect((select done_at is not null and error is null from jobs_queue where payload->>'to' = 'a@b.c'), 'a sent task is done');
+select pg_temp.expect((select done_at is null and run_at > now() from jobs_queue where payload->>'to' = 'x@y.z'), 'a failed task waits, then tries again');
+select pg_temp.expect((select done_at is not null and error like 'resend 422%' from jobs_queue where payload->>'to' = 'bad'), 'a task that can never work stops');
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+select pg_temp.fails($$select finish_queue(1)$$, 'people cannot finish queue tasks');
+reset role;
 \echo 'All boundary tests passed.'
