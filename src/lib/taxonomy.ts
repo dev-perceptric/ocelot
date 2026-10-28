@@ -39,3 +39,33 @@ export type Currency = (typeof CURRENCIES)[number];
 
 export const roleName = (slug: string) => ROLES.find((r) => r.slug === slug)?.name ?? slug;
 export const categoryName = (slug: string) => CATEGORIES.find((c) => c.slug === slug)?.name ?? slug;
+
+// Languages people can list on their profile (ISO 639-1 codes). The database only checks the code's shape.
+export const LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "vi", name: "Vietnamese" },
+  { code: "th", name: "Thai" },
+  { code: "ms", name: "Malay" },
+  { code: "id", name: "Indonesian" },
+  { code: "tl", name: "Filipino" },
+  { code: "km", name: "Khmer" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+  { code: "hi", name: "Hindi" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "es", name: "Spanish" },
+];
+
+export const PERIODS = [
+  { value: "hour", label: "per hour" },
+  { value: "month", label: "per month" },
+  { value: "year", label: "per year" },
+] as const;
+
+export const WORKPLACES = [
+  { value: "on_site", label: "On-site" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "remote", label: "Remote" },
+] as const;

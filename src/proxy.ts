@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 // Keeps the login fresh on every page, and sends signed-out people from private areas to /login.
-const PRIVATE = ["/app", "/employer", "/admin"];
+const PRIVATE = ["/app", "/employer", "/admin", "/welcome"];
 
 export async function proxy(request: NextRequest) {
   // One address for search engines: www.joinocelot.com goes to joinocelot.com.

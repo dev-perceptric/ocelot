@@ -194,3 +194,21 @@ Stripe does not accept businesses based in Vietnam (check). Sign up with the com
 | **Total** | **about $7, then $32** | **about $56–61** |
 
 Full totals with Stripe fees and monitoring are in `docs/plan.md`.
+
+## Login email templates (Milestone 1, part B)
+
+The login email carries a 6-digit code as well as the link, so people can open it on a different device. Paste each file into Supabase → Authentication → Emails → Templates, then **Save**:
+
+| Supabase template | Subject | File |
+|---|---|---|
+| Confirm signup | `Your Ocelot code` | `supabase/templates/confirm_signup.html` |
+| Magic Link | `Your Ocelot code` | `supabase/templates/magic_link.html` |
+| Change Email Address | `Confirm your new email` | `supabase/templates/email_change.html` |
+
+## Google sign-in (Milestone 1, part B)
+
+1. console.cloud.google.com → create a project `Ocelot` → APIs & Services → OAuth consent screen: External, app name `Ocelot`, support email, logo optional, authorized domain `joinocelot.com`. Publish it.
+2. Credentials → Create credentials → OAuth client ID → Web application. Authorized redirect URI: `https://tqvtkdftgzlteayzbqvj.supabase.co/auth/v1/callback`.
+3. Supabase → Authentication → Sign In / Providers → Google: turn on, paste the client ID and secret, **Save**.
+
+The "Continue with Google" button appears on its own within 5 minutes of turning Google on.
