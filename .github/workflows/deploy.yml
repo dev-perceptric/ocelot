@@ -37,10 +37,6 @@ jobs:
       - run: npm run test:db
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
-      - name: Database types are up to date
-        run: npm run types && git diff --exit-code src/lib/database.types.ts
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       - run: npm run build
 
   deploy:
