@@ -91,7 +91,7 @@ Each milestone ends with tests on its access rules.
 
 | # | Milestone | What ships | Done when |
 |---|---|---|---|
-| 0 | Setup | Supabase project, Fly app, domain, Resend, Stripe test mode, repo skeleton, CI deploy | `joinocelot.com` serves the app from Fly |
+| 0 | Setup | Supabase project, Fly apps, domain, Resend, repo skeleton, all tables with access rules and tests, CI deploy, worker | `joinocelot.com` serves the app from Fly. Code done; accounts per `docs/setup.md` |
 | 1 | Foundation | Next.js app, brand tokens, components (Button, Input, Select, Dialog, Tag), auth, profiles, orgs, members, RLS | A user can sign up, make a company and invite a teammate. Tests prove one org can't read another |
 | 2 | Marketplace | Job form, preview, review queue, job and company pages, search and filters, report button | An employer publishes a reviewed job and it shows in search |
 | 3 | My search | Tracker board and list, add external job by URL, notes, tasks, interviews, résumé upload | A candidate tracks Ocelot jobs and outside jobs together |
@@ -107,7 +107,7 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Supabase Pro org (Micro compute included in $10 credit) | $25 | $25 |
+| Supabase (dev-omniscient org: Free while testing, Pro before real users; Micro compute covered by the $10 credit) | $25 | $25 |
 | Supabase compute upgrade (Small at Growth) | $0 | $5 (check) |
 | Fly.io web app, shared-cpu-1x 512 MB, always on, Singapore | $4 (check) | $8, two machines (check) |
 | Fly.io worker, shared-cpu-1x 256 MB | $2 (check) | $2 (check) |

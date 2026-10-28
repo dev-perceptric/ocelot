@@ -1,0 +1,12 @@
+# The background worker on Fly.io: expires old jobs and sends queued emails. No ports, no public address.
+app = "ocelot-worker"
+primary_region = "sin"
+kill_signal = "SIGTERM"
+kill_timeout = 60
+
+[build]
+  dockerfile = "Dockerfile.worker"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

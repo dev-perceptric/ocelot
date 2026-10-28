@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/* Ocelot tokens (docs/brand.md). Use these names in classes, never a raw hex. */
+@theme {
+  --color-brand: #ffe100;
+  --color-brand-hover: #e6ca00;
+  --color-ink: #1a1a1a;
+  --color-surface: #ffffff;
+  --color-canvas: #f2f3f4;
+  --color-muted: #595959;
+  --color-border: #d3d5d7;
+  --color-input-border: #8c8c8c;
+
+  --color-success: #166534;
+  --color-success-bg: #dcfce7;
+  --color-info: #1e40af;
+  --color-info-bg: #dbeafe;
+  --color-progress: #6b21a8;
+  --color-progress-bg: #f3e8ff;
+  --color-warning: #92400e;
+  --color-warning-bg: #fef3c7;
+  --color-danger: #991b1b;
+  --color-danger-bg: #fee2e2;
+
+  --font-ui: var(--font-lato), Arial, sans-serif;
+  --font-editorial: var(--font-lora), Georgia, serif;
+
+  --radius-control: 4px;
+  --radius-card: 8px;
+  --spacing-control: 48px;
+
+  --text-display: 64px;
+  --text-display--line-height: 70px;
+  --text-display-sm: 40px;
+  --text-display-sm--line-height: 44px;
+  --text-section: 40px;
+  --text-section--line-height: 48px;
+  --text-section-sm: 30px;
+  --text-section-sm--line-height: 36px;
+  --text-lede: 20px;
+  --text-lede--line-height: 32px;
+  --text-title: 28px;
+  --text-title--line-height: 34px;
+  --text-card: 20px;
+  --text-card--line-height: 26px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-meta: 14px;
+  --text-meta--line-height: 20px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
+
+  --animate-duration-fast: 160ms;
+}
+
+html {
+  color: var(--color-ink);
+  background: var(--color-surface);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+/* Focus: 2px ink ring with a 2px white gap. */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+/* The short yellow highlight behind a phrase. */
+.highlight {
+  background: var(--color-brand);
+  padding: 0 0.12em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}

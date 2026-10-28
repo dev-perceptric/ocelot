@@ -4,7 +4,11 @@ A job marketplace with a built-in job search workspace (joinocelot.com). Compani
 
 Start with `docs/plan.md` (what to build and in what order), `docs/setup.md` (Supabase, Fly and the other accounts) and `docs/brand.md` (look and copy).
 
-Stack: Next.js and TypeScript on Fly.io, Supabase (Postgres, Auth, Storage) in Singapore, Stripe Checkout, Resend for email.
+Stack: Next.js 16 and TypeScript on Fly.io (`ocelot-web`, `ocelot-worker`, region `sin`), Supabase (Postgres, Auth, Storage) in Singapore under the dev-omniscient org, Stripe Checkout, Resend for email.
+
+Commands: `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test` (unit), `npm run test:db` (access boundary tests on a local Postgres, `DATABASE_URL`), `npm run build`. CI runs all of them, then deploys `main` to Fly and pushes new files in `supabase/migrations`.
+
+Where things are: tables and access rules in `supabase/migrations/`, boundary tests in `tests/db/boundaries.sql`, Supabase clients in `src/lib/supabase/`, job fields and Google JobPosting data in `src/lib/jobs.ts`, shared parts in `src/components/ui.tsx`, brand tokens in `src/app/globals.css`, background work in `scripts/worker.mjs` (reads `jobs_queue`).
 
 ## Rule: every build includes its running cost
 - Every build plan, feature or milestone states what it adds to the monthly bill: servers plus every paid service. Give monthly totals at two stages: Beta (50 employers, 1,000 candidates) and Growth (500 employers, 20,000 candidates).
@@ -13,7 +17,8 @@ Stack: Next.js and TypeScript on Fly.io, Supabase (Postgres, Auth, Storage) in S
 ## Rule: privacy first
 - Every table has row-level security on. Employers see only applications sent to their company. Tracker items, tracker notes and tasks belong to the candidate alone and no employer query can reach them.
 - Résumés live in a private bucket and are opened with short signed links.
-- Never ship a change to access rules, applications, payments or job publishing without a test that proves the boundary.
+- Never ship a change to access rules, applications, payments or job publishing without a test in `tests/db/boundaries.sql` that proves the boundary.
+- The service role client (`createAdmin`) skips row level security. Use it only after the server has checked who is asking.
 
 ## Rule: honest states
 - An application record exists only when a candidate submitted through Ocelot. Clicking an external Apply link never marks a job as Applied; ask the candidate.

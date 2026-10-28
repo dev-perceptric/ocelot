@@ -1,119 +1,196 @@
 # Setup from scratch
 
-The old QualiaLabs Supabase and Fly accounts are gone, so everything starts new. Do the steps in order. Each one takes about 5–15 minutes.
+Everything lives under the **dev-omniscient** accounts. Do the steps in order. Region for everything: **Singapore** (Supabase `ap-southeast-1`, Fly `sin`).
 
-Region for everything: **Singapore** (closest to Vietnam). Supabase calls it `ap-southeast-1`, Fly calls it `sin`.
+Keep a scratch note open while you go. You'll copy 8 values into it:
 
-## 1. Supabase (database, login, file storage)
+| Value | Where it comes from | Where it goes |
+|---|---|---|
+| Project ref | Supabase step 1 | GitHub variable `SUPABASE_PROJECT_REF` |
+| Project URL | Supabase step 1 | GitHub variable `NEXT_PUBLIC_SUPABASE_URL`, Fly secret `SUPABASE_URL` (worker) |
+| Publishable (anon) key | Supabase step 1 | GitHub variable `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Secret (service role) key | Supabase step 1 | Fly secret `SUPABASE_SERVICE_ROLE_KEY` |
+| Database password | Supabase step 1 | GitHub secret `SUPABASE_DB_PASSWORD` |
+| Supabase access token | Supabase step 4 | GitHub secret `SUPABASE_ACCESS_TOKEN` |
+| Fly deploy token | Fly step 4 | GitHub secret `FLY_API_TOKEN` |
+| Resend API key | Resend step 3 | Fly secret `RESEND_API_KEY`, Supabase SMTP |
 
-1. Go to https://supabase.com/dashboard and sign in with the account you want to own Ocelot (GitHub sign-in is easiest).
-2. Make a new organization: top-left menu → **New organization**.
-   - Name: `QualiaLabs` (or `Ocelot`).
-   - Type: Company.
-   - Plan: **Free** to start. Switch to **Pro ($25/month)** before real users arrive. Free projects pause after a week with no traffic and have no daily backups.
-3. In that organization, click **New project**.
-   - Name: `ocelot`.
-   - Database password: click **Generate**, then save it in your password manager. You need it for migrations.
+Never paste the service role key, passwords or tokens into chat or the code.
+
+## 0. GitHub: make `main`
+
+The repo's only branch is `claude/bold-dirac-xp6421`. Deploys run from `main`.
+
+1. Open https://github.com/dev-perceptric/ocelot, click the branch menu (top left of the code view), type `main` → **Create branch main from claude/bold-dirac-xp6421**.
+2. **Settings → General → Default branch** → switch to `main`.
+
+## 1. Supabase project
+
+1. Open the **dev-omniscient's Org** dashboard → **New project**.
+   - Name: `ocelot`
+   - Database password: **Generate**, then save it (this is `SUPABASE_DB_PASSWORD`).
    - Region: **Southeast Asia (Singapore)**.
-4. Wait about 2 minutes for it to start.
-5. Copy these from **Project Settings → API** (or **Connect** at the top):
-   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - Publishable (anon) key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - Secret (service role) key → `SUPABASE_SERVICE_ROLE_KEY` (server only, never in the browser)
-   - Project ref (the id in the URL, like `abcd1234...`) → `SUPABASE_PROJECT_REF`
-6. **Authentication → Sign In / Providers**: keep Email on. Turn on Google later if you want "Continue with Google".
-7. **Authentication → URL Configuration**:
+   - Compute: the default (Nano on Free).
+2. Wait about 2 minutes.
+3. Click **Connect** (top bar) or **Project Settings → API Keys / Data API** and copy:
+   - Project URL (`https://<ref>.supabase.co`). The `<ref>` part is the project ref.
+   - Publishable key (also called anon key).
+   - Secret key (also called service_role key).
+
+Free plan notes: it allows 2 active projects, and you have 1, so `ocelot` fits. A free project pauses after 7 days with no activity. The worker talks to it every minute, which should keep it awake (check). Move to Pro ($25/month) before real users arrive, for daily backups and no pausing.
+
+## 2. Supabase login settings
+
+1. **Authentication → Sign In / Providers → Email**: on. Turn **Confirm email** on.
+2. **Authentication → URL Configuration**:
    - Site URL: `https://joinocelot.com`
-   - Redirect URLs: `https://joinocelot.com/auth/callback`, `http://localhost:3000/auth/callback`
-8. **Authentication → Emails → SMTP Settings**: turn on custom SMTP with Resend (step 3 below). Supabase's built-in email only sends a few messages an hour.
-9. **Storage**: make a bucket named `resumes`, set to **Private**. (The first migration can also do this.)
+   - Redirect URLs, add all three:
+     - `https://joinocelot.com/auth/callback`
+     - `https://ocelot-web.fly.dev/auth/callback`
+     - `http://localhost:3000/auth/callback`
+3. **Authentication → Emails → Templates → Magic Link**: change the subject to `Your Ocelot login link`. Keep the `{{ .ConfirmationURL }}` link in the body.
+4. SMTP comes in step 5 (Resend). Until then Supabase sends only a few emails an hour, which is fine for testing.
 
-To let Claude manage the database in later sessions: claude.ai → Settings → Connectors → Supabase → reconnect, and give it access to the new organization. Right now the connector only sees the Arrowsterr organization.
+## 3. The database tables
 
-## 2. Fly.io (runs the website and the worker)
+Pick one way.
 
-1. Go to https://fly.io/app/sign-up and make an account. Add a card under **Billing** (Fly needs one even for small apps).
-2. Make an organization: **Dashboard → Organizations → Create** → name it `qualialabs` (or use your personal org).
-3. Install the command line tool on your computer:
-   - Mac: `brew install flyctl`
-   - Windows: `pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"`
-   - Linux: `curl -L https://fly.io/install.sh | sh`
-4. Sign in: `fly auth login`
-5. Make the two apps (names must be unique on Fly):
-   ```
-   fly apps create ocelot-web --org qualialabs
-   fly apps create ocelot-worker --org qualialabs
-   ```
-6. Make a deploy token for GitHub:
-   ```
-   fly tokens create org --org qualialabs
-   ```
-   Copy the whole output (it starts with `FlyV1`).
-7. In GitHub: **dev-perceptric/ocelot → Settings → Secrets and variables → Actions → New repository secret**:
-   - Name: `FLY_API_TOKEN`, value: the token from step 6.
-   After this, every push to `main` deploys (the workflow comes with Milestone 0).
-8. Give the app its secrets (run once, and again when a key changes):
-   ```
-   fly secrets set --app ocelot-web \
-     NEXT_PUBLIC_SUPABASE_URL=... \
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=... \
-     SUPABASE_SERVICE_ROLE_KEY=... \
-     RESEND_API_KEY=... \
-     STRIPE_SECRET_KEY=... \
-     STRIPE_WEBHOOK_SECRET=...
-   ```
-   Do the same for `ocelot-worker` (it needs the Supabase URL, service role key and Resend key).
+**A. Paste (fastest, first time).** **SQL Editor → New query**. Paste all of `supabase/migrations/001_foundation.sql`, run it. Then the same for `002_storage.sql`. Then record them so the auto-deploy doesn't run them twice:
 
-## 3. Domain: joinocelot.com
+```sql
+create schema if not exists supabase_migrations;
+create table if not exists supabase_migrations.schema_migrations (version text primary key, statements text[], name text);
+insert into supabase_migrations.schema_migrations (version, name) values ('001', 'foundation'), ('002', 'storage')
+on conflict do nothing;
+```
 
-1. After the first deploy, add the domain on Fly:
+**B. Automatic.** Finish step 4 and GitHub step 7. Every push to `main` then applies new migration files on its own.
+
+Check: **Table Editor** shows `jobs`, `orgs`, `tracker_items` and the rest, each with a lock icon (row level security on). **Storage** shows the private `resumes` bucket and the public `logos` bucket.
+
+Make yourself an admin after you log in once (step 9):
+
+```sql
+insert into platform_admins (user_id) select id from auth.users where email = 'vincent@perceptric.com';
+```
+
+## 4. Supabase access token (for automatic migrations)
+
+https://supabase.com/dashboard/account/tokens → **Generate new token** → name `ocelot-github` → copy (`SUPABASE_ACCESS_TOKEN`).
+
+## 5. Resend (email)
+
+1. Sign up at https://resend.com (use the dev-omniscient email).
+2. **Domains → Add domain** → `joinocelot.com`, region **Tokyo** (closest offered; check).
+3. Add the DNS records Resend lists at your domain company (MX and TXT for `send`, the DKIM TXT, and a DMARC TXT `_dmarc` → `v=DMARC1; p=none;`). Wait for **Verified**.
+4. **API Keys → Create API key** → full access → copy (`RESEND_API_KEY`).
+5. Back in Supabase: **Authentication → Emails → SMTP Settings** → enable custom SMTP:
+   - Sender email `hello@joinocelot.com`, sender name `Ocelot`
+   - Host `smtp.resend.com`, port `465`, username `resend`, password = the Resend API key.
+
+## 6. Fly.io
+
+1. Sign in at https://fly.io with the dev-omniscient account. **Billing** → add a card.
+2. Install the command line tool on your Mac: `brew install flyctl`, then `fly auth login`.
+3. Make the two apps (in your personal org, or add `--org <name>`):
    ```
+   fly apps create ocelot-web
+   fly apps create ocelot-worker
+   ```
+   If a name is taken, pick another and change `app = ...` in `fly.toml` or `fly.worker.toml`, and the names in `.github/workflows/deploy.yml`.
+4. Deploy token: `fly tokens create org` → copy the whole line starting with `FlyV1` (`FLY_API_TOKEN`).
+5. Secrets for the app (the server side reads these when it runs):
+   ```
+   fly secrets set --app ocelot-web --stage \
+     SUPABASE_SERVICE_ROLE_KEY='<secret key>' \
+     RESEND_API_KEY='<resend key>'
+   ```
+6. Secrets for the worker:
+   ```
+   fly secrets set --app ocelot-worker --stage \
+     SUPABASE_URL='https://<ref>.supabase.co' \
+     SUPABASE_SERVICE_ROLE_KEY='<secret key>' \
+     RESEND_API_KEY='<resend key>' \
+     EMAIL_FROM='Ocelot <hello@joinocelot.com>'
+   ```
+   `--stage` saves them for the first deploy without trying to restart a machine that doesn't exist yet.
+
+## 7. GitHub secrets and variables
+
+https://github.com/dev-perceptric/ocelot → **Settings → Secrets and variables → Actions**.
+
+**Secrets** tab → **New repository secret**, three times:
+- `FLY_API_TOKEN`
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
+
+**Variables** tab → **New repository variable**, four times:
+- `NEXT_PUBLIC_SUPABASE_URL` = `https://<ref>.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the publishable key
+- `NEXT_PUBLIC_SITE_URL` = `https://joinocelot.com` (use `https://ocelot-web.fly.dev` until the domain is connected)
+- `SUPABASE_PROJECT_REF` = the project ref
+
+The URL and publishable key are safe to be public; they are built into the pages. The service role key stays in Fly only.
+
+## 8. First deploy
+
+**Actions** tab → **Check and deploy** → **Run workflow** on `main` (or push anything to `main`). It runs lint, type checks, the tests and the database access tests, then deploys both apps and pushes migrations. About 5 minutes.
+
+Check: https://ocelot-web.fly.dev shows the yellow Ocelot home page, and https://ocelot-web.fly.dev/api/health shows `{"ok":true}`. Worker logs: `fly logs --app ocelot-worker` shows `ocelot worker started`.
+
+## 9. Domain: joinocelot.com
+
+1. Add the domain on Fly:
+   ```
+   fly ips allocate-v4 --shared --app ocelot-web
+   fly ips allocate-v6 --app ocelot-web
    fly certs add joinocelot.com --app ocelot-web
    fly certs add www.joinocelot.com --app ocelot-web
    ```
-   Fly prints the DNS records to add.
-2. At your domain registrar, add:
-   - `A` record for `@` → the IPv4 address Fly shows (`fly ips list --app ocelot-web`; run `fly ips allocate-v4 --shared --app ocelot-web` if there is none).
-   - `AAAA` record for `@` → the IPv6 address Fly shows.
-   - `CNAME` for `www` → `ocelot-web.fly.dev`.
-3. Check with `fly certs show joinocelot.com --app ocelot-web` until it says Issued.
+2. At your domain company, add:
+   - `A` record, name `@`, value = the IPv4 from `fly ips list --app ocelot-web`
+   - `AAAA` record, name `@`, value = the IPv6 from the same list
+   - `CNAME` record, name `www`, value `ocelot-web.fly.dev`
+3. Wait until `fly certs show joinocelot.com --app ocelot-web` says the certificate is issued.
+4. Change the GitHub variable `NEXT_PUBLIC_SITE_URL` to `https://joinocelot.com` and run the workflow again.
 
-## 4. Resend (email)
+## 10. Try the loop
 
-1. Sign up at https://resend.com.
-2. **Domains → Add domain** → `joinocelot.com`, region Tokyo or Singapore if offered.
-3. Add the DNS records it lists (SPF, DKIM, and a DMARC record) at your registrar. Wait for **Verified**.
-4. **API Keys → Create** → copy to `RESEND_API_KEY`.
-5. Back in Supabase SMTP settings: host `smtp.resend.com`, port `465`, user `resend`, password = the API key, sender `hello@joinocelot.com`, name `Ocelot`.
+1. Open https://joinocelot.com/login, enter your email, open the link. You land on **My search**.
+2. Run the admin SQL from step 3.
+3. Open **For employers** → create a company.
 
-## 5. Stripe (payments, needed at Milestone 5)
+Posting jobs comes in Milestone 2.
 
-1. Stripe does not accept businesses based in Vietnam. Pick the company that will bill employers (for example a Singapore or US company) and sign up at https://dashboard.stripe.com/register with that entity. (check)
-2. Stay in **Test mode** until launch.
-3. **Developers → API keys** → copy the secret key to `STRIPE_SECRET_KEY`.
-4. **Developers → Webhooks → Add endpoint** → `https://joinocelot.com/api/stripe/webhook`, event `checkout.session.completed`. Copy the signing secret to `STRIPE_WEBHOOK_SECRET`.
+## Local development (optional)
 
-## 6. Optional now, useful soon
+```
+cp .env.example .env.local   # fill in the Supabase URL and keys
+npm install
+npm run dev                  # http://localhost:3000
+npm test                     # unit tests
+npm run test:db              # access tests, needs a local Postgres (DATABASE_URL)
+```
 
-- **Sentry** (errors): free plan, make a Next.js project, copy the DSN to `SENTRY_DSN`.
-- **PostHog** (product analytics): free plan, copy the project key to `NEXT_PUBLIC_POSTHOG_KEY`.
-- **Google Search Console**: verify joinocelot.com with a DNS TXT record and submit `/sitemap.xml` once jobs are live.
+## Later: Stripe (Milestone 5)
 
-## What to send back
+Stripe does not accept businesses based in Vietnam (check). Sign up with the company that will bill employers (for example one in Singapore or the US). Stay in test mode. Webhook endpoint: `https://joinocelot.com/api/stripe/webhook`, event `checkout.session.completed`. Then `fly secrets set --app ocelot-web STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=...`.
 
-When steps 1 and 2 are done, send these so the build can start:
-- Supabase project URL and project ref. (Keys go into Fly secrets and GitHub, never into chat or the repo.)
-- Confirmation that `FLY_API_TOKEN` is saved in the GitHub repo.
-- Confirmation that the Supabase connector can see the new organization.
+## Optional now, useful soon
+
+- **Sentry** (errors): free plan, Next.js project, then `fly secrets set --app ocelot-web SENTRY_DSN=...`.
+- **Google Search Console**: verify joinocelot.com with a DNS TXT record and submit `https://joinocelot.com/sitemap.xml` once jobs are live.
+- **Claude in later sessions**: claude.ai → Settings → Connectors → Supabase → reconnect and allow the dev-omniscient org, so Claude can run migrations and read logs.
 
 ## Monthly cost of this setup
 
-| Item | Beta | Growth |
+| Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Supabase Pro | $25 | $25–30 (check) |
-| Fly web + worker | about $6 (check) | about $10 (check) |
-| Resend | $0 | $20 |
+| Supabase (Free to start, Pro before launch) | $0, then $25 | $25–30 (check) |
+| Fly web, shared-cpu-1x 512 MB, always on | about $4 (check) | about $8, two machines (check) |
+| Fly worker, shared-cpu-1x 256 MB | about $2 (check) | about $2 (check) |
+| Resend | $0 (free up to 3,000 emails) | $20 |
 | Domain | $1 | $1 |
-| **Total before Stripe fees and optional tools** | **about $32** | **about $56–61** |
+| **Total** | **about $7, then $32** | **about $56–61** |
 
-Full totals, with Stripe fees and monitoring, are in `docs/plan.md`.
+Full totals with Stripe fees and monitoring are in `docs/plan.md`.
