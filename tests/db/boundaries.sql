@@ -136,4 +136,53 @@ select pg_temp.act(null);
 select pg_temp.expect((select count(*) from jobs) = 0, 'an expired job is no longer public');
 reset role;
 
+-- ---------- Milestone 1, part G: lists, profiles, deleted candidates ----------
+
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+select pg_temp.fails(
+  format($$insert into jobs (org_id, slug, title, created_by, office_places) values (%L, 'g1', 'G1', auth.uid(), '{atlantis}')$$, :'acme'),
+  'a job cannot use a city that is not on the list');
+select pg_temp.fails(
+  format($$insert into jobs (org_id, slug, title, created_by, eligible_countries) values (%L, 'g2', 'G2', auth.uid(), '{XX}')$$, :'acme'),
+  'a job cannot use a country that is not on the list');
+select pg_temp.fails(
+  format($$insert into jobs (org_id, slug, title, created_by, salary_currency) values (%L, 'g3', 'G3', auth.uid(), 'EUR')$$, :'acme'),
+  'a job cannot use a currency that is not on the list');
+insert into jobs (org_id, slug, title, created_by, role, category, office_places, eligible_countries)
+  values (:'acme', 'acme-seo-lead', 'SEO Lead', auth.uid(), 'seo', 'sales', '{ho-chi-minh-city}', '{VN,SG}');
+select pg_temp.expect((select category from jobs where slug = 'acme-seo-lead') = 'marketing', 'a role sets its own category');
+
+-- Changing a company's address keeps the old one; nobody else can take it.
+update orgs set slug = 'acme-vn' where id = :'acme';
+select pg_temp.expect(exists (select 1 from org_slug_history where slug = 'acme'), 'the old company address is kept');
+select pg_temp.fails($$update orgs set office_places = '{atlantis}'$$, 'a company cannot use a city that is not on the list');
+select pg_temp.fails($$update orgs set trusted = true$$, 'a member cannot mark their company trusted');
+select pg_temp.act('00000000-0000-0000-0000-00000000000b');
+select pg_temp.fails($$update orgs set slug = 'acme'$$, 'another company cannot take an old address');
+
+-- Profiles: people edit what they share, never their email.
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+update profiles set city = 'hanoi', work_countries = '{VN,SG}', open_to = '{remote}', languages = '{en,vi}' where id = auth.uid();
+select pg_temp.expect((select country_code from profiles where id = auth.uid()) = 'VN', 'a city fills in its country');
+select pg_temp.fails($$update profiles set email = 'x@y.z' where id = auth.uid()$$, 'a person cannot change the email on their profile');
+select pg_temp.fails($$update profiles set work_countries = '{XX}' where id = auth.uid()$$, 'a profile cannot use a country that is not on the list');
+select pg_temp.fails($$update profiles set open_to = '{anywhere}' where id = auth.uid()$$, 'open to only takes on-site, hybrid or remote');
+insert into notification_prefs (user_id, weekly_digest) values (auth.uid(), true);
+
+select pg_temp.act('00000000-0000-0000-0000-00000000000c');
+select pg_temp.expect((select count(*) from notification_prefs) = 0, 'Cam cannot see Dee''s email choices');
+select pg_temp.fails($$update applications set candidate_id = null$$, 'a candidate cannot detach their own application');
+
+-- Cam deletes the account. Acme keeps the application without Cam's details; Cam's tracker is gone.
+reset role;
+insert into email_log (to_email, kind) values ('cam@mail.test', 'invite');
+delete from auth.users where id = '00000000-0000-0000-0000-00000000000c';
+select pg_temp.expect((select count(*) from tracker_items) = 0, 'a deleted candidate''s tracker is gone');
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+select pg_temp.expect((select count(*) from applications) = 1, 'the company keeps the application');
+select pg_temp.expect((select candidate_id is null and snapshot = '{"deleted": true}' and candidate_deleted_at is not null from applications),
+  'the kept application has no candidate details');
+select pg_temp.expect((select count(*) from email_log) = 0, 'people cannot read the email log');
+reset role;
+
 \echo 'All boundary tests passed.'

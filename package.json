@@ -11,7 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --test tests/*.test.ts",
     "test:db": "bash scripts/test-db.sh",
-    "worker": "node scripts/worker.mjs"
+    "worker": "node scripts/worker.mjs",
+    "types": "bash scripts/gen-types.sh"
   },
   "engines": {
     "node": ">=22"

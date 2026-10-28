@@ -1,4 +1,7 @@
-// Job fields, labels and the Google JobPosting data. No imports, so tests can load it directly.
+// Job fields, labels and the Google JobPosting data. Imports only plain list files, so tests can load it directly.
+
+import { cityCountry, countryName, placeName } from "./places.ts";
+import { CATEGORIES } from "./taxonomy.ts";
 
 export type Job = {
   id: string;
@@ -10,7 +13,8 @@ export type Job = {
   seniority: string | null;
   employment_type: string | null;
   workplace: "on_site" | "hybrid" | "remote" | null;
-  office_locations: string[];
+  office_places: string[]; // city slugs
+  role: string | null;
   eligible_countries: string[];
   time_zones: string[];
   salary_min: number | null;
@@ -32,7 +36,9 @@ export type Org = {
   website: string | null;
   logo_url: string | null;
   about: string | null;
-  locations: string[];
+  office_places: string[];
+  size: string | null;
+  industry: string | null;
   email_verified_domain: string | null;
   business_verified_at: string | null;
 };
@@ -44,15 +50,8 @@ export const EMPLOYMENT: Record<string, string> = {
 export const SENIORITY: Record<string, string> = {
   intern: "Intern", entry: "Entry level", mid: "Mid level", senior: "Senior", lead: "Lead", director: "Director", executive: "Executive",
 };
-export const CATEGORY: Record<string, string> = {
-  marketing: "Marketing", sales: "Sales", customer_success: "Customer success", other: "Other",
-};
-
-const COUNTRY_NAMES: Record<string, string> = {
-  VN: "Vietnam", SG: "Singapore", TH: "Thailand", MY: "Malaysia", ID: "Indonesia", PH: "Philippines",
-  KH: "Cambodia", LA: "Laos", MM: "Myanmar", BN: "Brunei", US: "United States", GB: "United Kingdom", AU: "Australia",
-};
-export const countryName = (code: string) => COUNTRY_NAMES[code] ?? code;
+export const CATEGORY: Record<string, string> = Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.name]));
+export { countryName };
 
 const PERIOD: Record<string, string> = { hour: "hour", month: "month", year: "year" };
 
@@ -67,13 +66,13 @@ export function formatSalary(job: Pick<Job, "salary_min" | "salary_max" | "salar
 }
 
 // "Remote (Vietnam, Singapore)" or "Hybrid, Ho Chi Minh City".
-export function formatWhere(job: Pick<Job, "workplace" | "office_locations" | "eligible_countries">): string {
+export function formatWhere(job: Pick<Job, "workplace" | "office_places" | "eligible_countries">): string {
   const kind = job.workplace ? WORKPLACE[job.workplace] : "";
   if (job.workplace === "remote") {
     const where = job.eligible_countries.map(countryName).join(", ");
     return where ? `${kind} (${where})` : kind;
   }
-  return [kind, job.office_locations.join(" / ")].filter(Boolean).join(", ");
+  return [kind, job.office_places.map(placeName).join(" / ")].filter(Boolean).join(", ");
 }
 
 export function slugify(text: string): string {
@@ -117,10 +116,10 @@ export function jobPostingJsonLd(job: Job, org: Org, siteUrl: string): Record<st
   if (job.workplace === "remote") {
     data.jobLocationType = "TELECOMMUTE";
     data.applicantLocationRequirements = job.eligible_countries.map((c) => ({ "@type": "Country", name: countryName(c) }));
-  } else if (job.office_locations.length) {
-    data.jobLocation = job.office_locations.map((l) => ({
+  } else if (job.office_places.length) {
+    data.jobLocation = job.office_places.map((slug) => ({
       "@type": "Place",
-      address: { "@type": "PostalAddress", addressLocality: l },
+      address: { "@type": "PostalAddress", addressLocality: placeName(slug), addressCountry: cityCountry(slug) ?? undefined },
     }));
   }
   if (job.salary_currency && (job.salary_min != null || job.salary_max != null)) {

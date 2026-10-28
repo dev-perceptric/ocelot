@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Lato, Lora } from "next/font/google";
+import { DialogHost } from "@/components/Dialog";
+import { ToastHost } from "@/components/Toast";
 import { SITE_URL } from "@/lib/env";
 import "./globals.css";
 
@@ -17,7 +19,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${lato.variable} ${lora.variable}`}>
-      <body className="min-h-screen bg-surface text-ink">{children}</body>
+      <body className="min-h-screen bg-surface text-ink">
+        {children}
+        <DialogHost />
+        <ToastHost />
+      </body>
     </html>
   );
 }

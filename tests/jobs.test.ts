@@ -5,14 +5,14 @@ import { formatSalary, formatWhere, jobPostingJsonLd, postedAgo, slugify, type J
 const job: Job = {
   id: "j1", org_id: "o1", slug: "marketing-manager", title: "Marketing Manager", description: "<p>Lead campaigns.</p>",
   category: "marketing", seniority: "mid", employment_type: "full_time", workplace: "remote",
-  office_locations: [], eligible_countries: ["VN", "SG"], time_zones: [],
+  office_places: [], role: "content", eligible_countries: ["VN", "SG"], time_zones: [],
   salary_min: 2000, salary_max: 3000, salary_currency: "USD", salary_period: "month",
   apply_method: "ocelot", apply_url: null, status: "published", featured_until: null,
   published_at: "2026-10-20T00:00:00Z", expires_at: "2026-11-19T00:00:00Z",
 };
 const org: Org = {
   id: "o1", name: "Example Co", slug: "example-co", website: "https://example.com", logo_url: null, about: null,
-  locations: [], email_verified_domain: null, business_verified_at: null,
+  office_places: [], size: null, industry: null, email_verified_domain: null, business_verified_at: null,
 };
 
 test("salary reads like the brand example", () => {
@@ -24,7 +24,7 @@ test("salary reads like the brand example", () => {
 
 test("remote jobs name who can be hired", () => {
   assert.equal(formatWhere(job), "Remote (Vietnam, Singapore)");
-  assert.equal(formatWhere({ ...job, workplace: "hybrid", office_locations: ["Ho Chi Minh City"] }), "Hybrid, Ho Chi Minh City");
+  assert.equal(formatWhere({ ...job, workplace: "hybrid", office_places: ["ho-chi-minh-city"] }), "Hybrid, Ho Chi Minh City");
 });
 
 test("slugs drop Vietnamese marks", () => {
