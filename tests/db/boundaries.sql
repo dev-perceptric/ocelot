@@ -185,4 +185,19 @@ select pg_temp.expect((select candidate_id is null and snapshot = '{"deleted": t
 select pg_temp.expect((select count(*) from email_log) = 0, 'people cannot read the email log');
 reset role;
 
+-- ---------- Milestone 1, part B ----------
+update auth.users set email = 'dee@new.test' where id = '00000000-0000-0000-0000-00000000000d';
+select pg_temp.expect((select email from profiles where id = '00000000-0000-0000-0000-00000000000d') = 'dee@new.test',
+  'a confirmed email change reaches the profile');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+update profiles set intent = 'candidate', full_name = 'Dee Nguyen' where id = auth.uid();
+select pg_temp.expect((select intent from profiles where id = auth.uid()) = 'candidate', 'a person can set why they are here');
+select pg_temp.fails($$update profiles set intent = 'recruiter' where id = auth.uid()$$, 'intent is only candidate or employer');
+insert into notification_prefs (user_id, weekly_digest) values (auth.uid(), false)
+  on conflict (user_id) do update set weekly_digest = excluded.weekly_digest;
+select pg_temp.expect((select weekly_digest from notification_prefs where user_id = auth.uid()) = false, 'a person can change their email choices');
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+update profiles set full_name = 'Hacked' where id = '00000000-0000-0000-0000-00000000000d';
+reset role;
+select pg_temp.expect((select full_name from profiles where id = '00000000-0000-0000-0000-00000000000d') = 'Dee Nguyen', 'nobody else can edit a profile');
 \echo 'All boundary tests passed.'

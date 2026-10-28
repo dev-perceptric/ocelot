@@ -8,7 +8,8 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseReady } from "@/lib/env";
 // Acts as the signed-in person (or a visitor). Row level security decides what they see.
 export async function createClient() {
   const store = await cookies();
-  return createServerClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  // Without settings (a fresh checkout), a stand-in address keeps pages working as a signed-out visitor.
+  return createServerClient<Database>(SUPABASE_URL || "http://127.0.0.1:54321", SUPABASE_ANON_KEY || "not-set", {
     cookies: {
       getAll: () => store.getAll(),
       setAll: (list) => {

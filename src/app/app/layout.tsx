@@ -13,6 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       email={user.email ?? ""}
       nav={[
         { href: "/app", label: "My search" },
+        { href: "/app/profile", label: "Profile" },
+        { href: "/app/settings", label: "Settings" },
         { href: "/jobs", label: "Find jobs" },
         { href: "/employer", label: "For employers" },
       ]}
