@@ -570,7 +570,7 @@ isOneToOne: false
 { Args: Record<PropertyKey, never>; Returns: number
                            },
 "finish_queue":
-{ Args: { "p_error"?: string,"p_id": number }; Returns: undefined
+{ Args: { "p_error"?: string,"p_final"?: boolean,"p_id": number }; Returns: undefined
                            },
 "gen_random_uuid":
 { Args: Record<PropertyKey, never>; Returns: string

@@ -15,7 +15,7 @@ const walk = (dir: string) => {
 };
 walk(join(root, "src"));
 
-const ALLOWED_HEX = ["src/app/globals.css", "src/lib/database.types.ts"];
+const ALLOWED_HEX = ["src/app/globals.css", "src/lib/database.types.ts", "src/lib/email/colors.ts"];
 
 function find(pattern: RegExp, skip: string[] = []) {
   const hits: string[] = [];

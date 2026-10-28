@@ -11,6 +11,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       email={user.email ?? ""}
       nav={[
         { href: "/admin", label: "Overview" },
+        { href: "/admin/emails", label: "Emails" },
         { href: "/admin/ui", label: "Parts" },
       ]}
     >
