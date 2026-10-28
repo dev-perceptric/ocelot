@@ -1,0 +1,28 @@
+# Ocelot
+
+A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Launch niche: English-speaking marketing, sales and customer success roles in Vietnam and Southeast Asia.
+
+Start with `docs/plan.md` (what to build and in what order), `docs/setup.md` (Supabase, Fly and the other accounts) and `docs/brand.md` (look and copy).
+
+Stack: Next.js and TypeScript on Fly.io, Supabase (Postgres, Auth, Storage) in Singapore, Stripe Checkout, Resend for email.
+
+## Rule: every build includes its running cost
+- Every build plan, feature or milestone states what it adds to the monthly bill: servers plus every paid service. Give monthly totals at two stages: Beta (50 employers, 1,000 candidates) and Growth (500 employers, 20,000 candidates).
+- Mark any price that couldn't be confirmed on the vendor's own page as "check".
+
+## Rule: privacy first
+- Every table has row-level security on. Employers see only applications sent to their company. Tracker items, tracker notes and tasks belong to the candidate alone and no employer query can reach them.
+- Résumés live in a private bucket and are opened with short signed links.
+- Never ship a change to access rules, applications, payments or job publishing without a test that proves the boundary.
+
+## Rule: honest states
+- An application record exists only when a candidate submitted through Ocelot. Clicking an external Apply link never marks a job as Applied; ask the candidate.
+- The employer's hiring stage and the candidate's tracker stage are separate fields and never overwrite each other.
+- A job goes live only when review and payment (when needed) are both done.
+
+## Rule: no browser pop-ups or browser dropdowns
+- Never use `<select>`, `window.prompt`, `window.confirm` or `window.alert`. Use the app's own `Select` and dialog helpers.
+
+## Rule: one brand style
+- Follow `docs/brand.md` for the app, the website and emails. Colors and sizes come from the tokens in `src/app/globals.css`, never a raw hex.
+- Yellow is for the one primary action, a selected state or a short highlighted phrase. Status always has a text label.
