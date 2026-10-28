@@ -1,5 +1,5 @@
 import { Tag } from "@/components/ui";
-import { currentUser } from "@/lib/supabase/server";
+import { myOrgs } from "@/lib/org";
 import { CreateCompany } from "./CreateCompany";
 
 export const dynamic = "force-dynamic";
@@ -15,10 +15,7 @@ const STATUS: Record<string, { label: string; tone: "neutral" | "warning" | "suc
 };
 
 export default async function EmployerHome() {
-  const { supabase, user } = await currentUser();
-  const { data: memberships } = await supabase
-    .from("org_members").select("role, org:orgs(id, name, slug)").eq("user_id", user!.id);
-  const org = (memberships?.[0]?.org ?? null) as unknown as { id: string; name: string; slug: string } | null;
+  const { supabase, current: org } = await myOrgs();
 
   if (!org) {
     return (

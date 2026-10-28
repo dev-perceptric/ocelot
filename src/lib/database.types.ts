@@ -271,6 +271,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"org_invites": {
+                  Row: {
+                    "accepted_at": string | null,"accepted_by": string | null,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"org_id": string,"revoked_at": string | null,"role": string,"token_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"org_id": string,"revoked_at"?: string | null,"role"?: string,"token_hash": string
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"org_id"?: string,"revoked_at"?: string | null,"role"?: string,"token_hash"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "org_invites_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"org_members": {
                   Row: {
                     "created_at": string,"org_id": string,"role": string,"user_id": string
@@ -539,7 +559,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "check_places":
+            "accept_invite":
+{ Args: { "p_token": string }; Returns: string
+                           },
+"check_places":
 { Args: { "p_cities": (string)[],"p_countries": (string)[] }; Returns: undefined
                            },
 "claim_queue":
@@ -560,6 +583,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"create_invite":
+{ Args: { "p_email": string,"p_org": string,"p_role"?: string }; Returns: string
+                           },
 "create_org":
 { Args: { "p_name": string,"p_slug": string }; Returns: string
                            },
@@ -578,14 +604,39 @@ isOneToOne: false
 "gen_salt":
 { Args: { "": string }; Returns: string
                            },
+"invite_preview":
+{ Args: { "p_token": string }; Returns: {
+              "company": string,"company_slug": string,"email": string,"inviter": string,"role": string,"status": string
+            }[]
+                           },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_free_email_domain":
+{ Args: { "p_domain": string }; Returns: boolean
                            },
 "is_org_member":
 { Args: { "p_org": string,"p_roles"?: (string)[] }; Returns: boolean
                            },
+"my_email":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "pgp_armor_headers":
 { Args: { "": string }; Returns: Record<string, unknown>[]
+                           },
+"refresh_email_verified":
+{ Args: { "p_org": string }; Returns: undefined
+                           },
+"revoke_invite":
+{ Args: { "p_id": string }; Returns: undefined
+                           },
+"team_members":
+{ Args: { "p_org": string }; Returns: {
+              "email": string,"full_name": string,"joined_at": string,"role": string,"user_id": string
+            }[]
+                           },
+"website_domain":
+{ Args: { "p_url": string }; Returns: string
                            },
 "withdraw_application":
 { Args: { "p_id": string }; Returns: undefined

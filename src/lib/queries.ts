@@ -33,11 +33,16 @@ export async function getJob(slug: string): Promise<(Job & { org: Org }) | null>
   return data as (Job & { org: Org }) | null;
 }
 
-export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | null> {
+export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | { movedTo: string } | null> {
   if (!supabaseReady) return null;
   const supabase = await createClient();
   const { data: org } = await supabase.from("orgs").select("*").eq("slug", slug).maybeSingle();
-  if (!org) return null;
+  if (!org) {
+    // An old address: send people (and search engines) to the company's current one.
+    const { data: old } = await supabase.from("org_slug_history").select("org:orgs(slug)").eq("slug", slug).maybeSingle();
+    const now = (old?.org as unknown as { slug: string } | null)?.slug;
+    return now ? { movedTo: now } : null;
+  }
   const { data: jobs } = await supabase.from("jobs").select("*").eq("org_id", org.id).eq("status", "published")
     .order("published_at", { ascending: false });
   return { org: org as Org, jobs: (jobs ?? []) as Job[] };

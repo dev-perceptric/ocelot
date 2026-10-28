@@ -214,4 +214,91 @@ select pg_temp.expect((select done_at is not null and error like 'resend 422%' f
 select pg_temp.act('00000000-0000-0000-0000-00000000000a');
 select pg_temp.fails($$select finish_queue(1)$$, 'people cannot finish queue tasks');
 reset role;
+-- ---------- Milestone 1, part C: teams and invites ----------
+reset role;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000f1', 'fay@acme.test'),
+  ('00000000-0000-0000-0000-0000000000f2', 'gus@mail.test');
+
+-- Email verified follows the website and members' email domains; free email never counts.
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+update orgs set website = 'https://www.acme.test/about' where id = :'acme';
+select pg_temp.expect((select email_verified_domain from orgs where id = :'acme') = 'acme.test', 'a member on the company domain makes it Email verified');
+update orgs set website = 'gmail.com' where id = :'acme';
+select pg_temp.expect((select email_verified_domain is null from orgs where id = :'acme'), 'a free email domain never counts');
+update orgs set website = 'acme.test' where id = :'acme';
+select pg_temp.fails(format($$update orgs set email_verified_domain = 'evil.test' where id = %L$$, :'acme'), 'nobody sets Email verified by hand');
+
+-- Ana invites Fay as an admin.
+select create_invite(:'acme', 'Fay@Acme.test', 'admin') as fay_token \gset
+select pg_temp.expect((select status = 'open' and company = 'Acme' and email = 'fay@acme.test' from invite_preview(:'fay_token')), 'the invite link shows the company');
+select pg_temp.fails(format($$select create_invite(%L, 'x@y.z', 'owner')$$, :'acme'), 'nobody is invited as an owner');
+
+select pg_temp.act('00000000-0000-0000-0000-00000000000b');
+select pg_temp.fails(format($$select create_invite(%L, 'x@y.z')$$, :'acme'), 'another company cannot invite to Acme');
+select pg_temp.expect((select count(*) from org_invites) = 0, 'another company cannot see Acme''s invites');
+select pg_temp.fails($$insert into org_invites (org_id, email, token_hash) select id, 'x@y.z', 'h' from orgs$$, 'invites are only made through create_invite');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000f2');
+select pg_temp.fails(format($$select accept_invite(%L)$$, :'fay_token'), 'an invite cannot be accepted by someone else');
+select pg_temp.act('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.expect(accept_invite(:'fay_token') = :'acme', 'Fay accepts her invite');
+select pg_temp.expect((select role from org_members where org_id = :'acme' and user_id = auth.uid()) = 'admin', 'Fay joins with the invited role');
+select pg_temp.fails(format($$select accept_invite(%L)$$, :'fay_token'), 'an invite link works once');
+
+-- Admins can't touch owners or make themselves owner.
+update org_members set role = 'member' where org_id = :'acme' and user_id = '00000000-0000-0000-0000-00000000000a';
+delete from org_members where org_id = :'acme' and user_id = '00000000-0000-0000-0000-00000000000a';
+select pg_temp.expect((select role from org_members where org_id = :'acme' and user_id = '00000000-0000-0000-0000-00000000000a') = 'owner', 'an admin cannot demote or remove an owner');
+select pg_temp.fails(format($$update org_members set role = 'owner' where org_id = %L and user_id = auth.uid()$$, :'acme'), 'an admin cannot make themself an owner');
+
+-- Fay invites Gus as a member; Gus can't invite anyone.
+select create_invite(:'acme', 'gus@mail.test') as gus_token \gset
+
+select create_invite(:'acme', 'gus@mail.test') as gus_token \gset
+select pg_temp.expect((select count(*) from org_invites where email = 'gus@mail.test' and revoked_at is null) = 1, 'a new invite to the same email replaces the old one');
+select pg_temp.act('00000000-0000-0000-0000-0000000000f2');
+select accept_invite(:'gus_token');
+select pg_temp.fails(format($$select create_invite(%L, 'z@z.z')$$, :'acme'), 'a member cannot invite people');
+select pg_temp.expect((select count(*) from org_invites) = 0, 'a member cannot see invites');
+delete from org_members where org_id = :'acme' and user_id = '00000000-0000-0000-0000-0000000000f1';
+select pg_temp.expect((select count(*) from org_members where org_id = :'acme') = 3, 'a member cannot remove anyone');
+
+update org_members set role = 'admin' where org_id = :'acme' and user_id = auth.uid();
+select pg_temp.expect((select role from org_members where org_id = :'acme' and user_id = auth.uid()) = 'member', 'a member cannot promote themself');
+
+-- The last owner stays until someone else is owner.
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+select pg_temp.fails(format($$delete from org_members where org_id = %L and user_id = auth.uid()$$, :'acme'), 'the last owner cannot leave');
+select pg_temp.fails(format($$update org_members set role = 'admin' where org_id = %L and user_id = auth.uid()$$, :'acme'), 'the last owner cannot step down');
+update org_members set role = 'owner' where org_id = :'acme' and user_id = '00000000-0000-0000-0000-0000000000f1';
+update org_members set role = 'admin' where org_id = :'acme' and user_id = auth.uid();
+select pg_temp.expect((select role from org_members where org_id = :'acme' and user_id = auth.uid()) = 'admin', 'an owner steps down once someone else is owner');
+
+select pg_temp.expect((select count(*) from team_members(:'acme')) = 3, 'members see their teammates');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.expect((select count(*) from team_members(:'acme')) = 0, 'outsiders cannot list a team');
+
+-- A member can leave on their own.
+select pg_temp.act('00000000-0000-0000-0000-0000000000f2');
+delete from org_members where org_id = :'acme' and user_id = auth.uid();
+select pg_temp.expect((select count(*) from org_members where org_id = :'acme') = 0, 'Gus left and sees no members');
+
+-- Expired and cancelled links stop working; there's a cap on open invites.
+select pg_temp.act('00000000-0000-0000-0000-0000000000f1');
+select create_invite(:'acme', 'dee@new.test') as dee_token \gset
+reset role;
+update org_invites set expires_at = now() - interval '1 minute' where email = 'dee@new.test';
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.fails(format($$select accept_invite(%L)$$, :'dee_token'), 'an expired invite stops working');
+select pg_temp.act('00000000-0000-0000-0000-0000000000f1');
+do $$ begin for i in 1..20 loop perform create_invite((select id from orgs where slug = 'acme-vn'), 'p' || i || '@cap.test'); end loop; end $$;
+select pg_temp.fails(format($$select create_invite(%L, 'p21@cap.test')$$, :'acme'), 'a company has at most 20 open invites');
+select revoke_invite(id) from org_invites where email = 'p1@cap.test';
+select pg_temp.expect((select revoked_at is not null from org_invites where email = 'p1@cap.test'), 'an admin can cancel an invite');
+
+-- Deleting a whole company is allowed even though it has owners.
+reset role;
+delete from orgs where slug = 'beta';
+select pg_temp.expect(not exists (select 1 from org_members m where not exists (select 1 from orgs o where o.id = m.org_id)), 'deleting a company removes its members');
 \echo 'All boundary tests passed.'

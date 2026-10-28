@@ -148,7 +148,7 @@ Each in `tests/db/boundaries.sql`, run in CI:
 | 2 | G. Data decisions migration, types generation (done) | 1 day |
 | 3 | B. Sign in and profile (done) | 2–3 days |
 | 4 | D. Email pipeline (done) | 1–2 days |
-| 5 | C. Companies and teams | 3–4 days |
+| 5 | C. Companies and teams (done) | 3–4 days |
 | 6 | E. Admin | 2 days |
 | 7 | F. Privacy, backups, monitoring | 2 days |
 | | **Total** | **13–17 working days** |
