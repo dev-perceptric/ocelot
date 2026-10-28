@@ -212,3 +212,16 @@ The login email carries a 6-digit code as well as the link, so people can open i
 3. Supabase → Authentication → Sign In / Providers → Google: turn on, paste the client ID and secret, **Save**.
 
 The "Continue with Google" button appears on its own within 5 minutes of turning Google on.
+
+## End-to-end tests (local, optional)
+
+Needs Docker. Runs the real sign-in, company, invite and team flows against a local Supabase.
+
+```
+npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+# copy PUBLISHABLE_KEY and SECRET_KEY from the output
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable> NEXT_PUBLIC_SITE_URL=http://localhost:3100 npm run build
+cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
+(cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> node server.js) &
+node tests/e2e/team.cjs
+```

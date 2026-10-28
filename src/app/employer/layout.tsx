@@ -1,20 +1,27 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Workspace } from "@/components/Workspace";
-import { currentUser } from "@/lib/supabase/server";
+import { myOrgs } from "@/lib/org";
+import { OrgSwitcher } from "./OrgSwitcher";
 
 export const metadata: Metadata = { title: "For employers", robots: { index: false } };
 
 export default async function EmployerLayout({ children }: { children: React.ReactNode }) {
-  const { user } = await currentUser();
+  const { user, orgs, current } = await myOrgs();
   if (!user) redirect("/login?next=/employer");
+  const nav = current
+    ? [
+        { href: "/employer", label: "Overview" },
+        { href: "/employer/company", label: "Company" },
+        { href: "/employer/team", label: "Team" },
+        { href: "/app", label: "My search" },
+      ]
+    : [{ href: "/employer", label: "Overview" }, { href: "/app", label: "My search" }];
   return (
     <Workspace
       email={user.email ?? ""}
-      nav={[
-        { href: "/employer", label: "Overview" },
-        { href: "/app", label: "My search" },
-      ]}
+      nav={nav}
+      top={orgs.length > 1 && current ? <OrgSwitcher orgs={orgs} current={current.id} /> : null}
     >
       {children}
     </Workspace>

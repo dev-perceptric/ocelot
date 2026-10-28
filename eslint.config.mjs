@@ -15,5 +15,7 @@ export default defineConfig([
       ],
     },
   },
+  // The end-to-end script is plain Node (CommonJS) run outside the app.
+  { files: ["tests/e2e/**"], rules: { "@typescript-eslint/no-require-imports": "off" } },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", ".claude/**", "src/lib/database.types.ts"]),
 ]);

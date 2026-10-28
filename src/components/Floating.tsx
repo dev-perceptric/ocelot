@@ -56,6 +56,8 @@ export function Floating({ anchor, open, onClose, children, matchWidth = false, 
   }, [open, anchor, matchWidth, align, onClose]);
 
   if (!open || typeof document === "undefined") return null;
+  // Inside a modal dialog, only the dialog can be clicked, so the layer has to live inside it.
+  const host = anchor.current?.closest("dialog") ?? document.body;
   return createPortal(
     <div
       ref={box}
@@ -68,6 +70,6 @@ export function Floating({ anchor, open, onClose, children, matchWidth = false, 
     >
       {children}
     </div>,
-    document.body,
+    host,
   );
 }

@@ -2,15 +2,17 @@ import Link from "next/link";
 import { Wordmark } from "@/components/ui";
 
 // The signed-in shell: a 240px sidebar on desktop, a top bar on phones.
-export function Workspace({ nav, email, children }: {
+export function Workspace({ nav, email, top, children }: {
   nav: { href: string; label: string }[];
   email: string;
+  top?: React.ReactNode; // above the nav, e.g. the company switcher
   children: React.ReactNode;
 }) {
   return (
     <div className="min-h-screen bg-canvas md:grid md:grid-cols-[240px_1fr]">
       <aside className="flex flex-col gap-6 border-b border-border bg-surface p-5 md:min-h-screen md:border-b-0 md:border-r">
         <Link href="/"><Wordmark className="text-[18px]" /></Link>
+        {top}
         <nav className="flex gap-1 overflow-x-auto md:flex-col">
           {nav.map((n) => (
             <Link key={n.href} href={n.href} className="whitespace-nowrap px-3 py-2 text-body font-bold hover:bg-canvas rounded-[var(--radius-control)]">
