@@ -969,4 +969,10 @@ from (values ('sm-1'), ('sm-2')) v(slug) join orgs o on o.slug = 'region-co';
 select pg_temp.act(null);
 select pg_temp.expect((select count(*) from sitemap_jobs() where slug in ('sm-1', 'sm-2')) = 1, 'and leaves the other copy out');
 reset role;
+update orgs set suspended_at = now() where slug = 'region-co';
+select pg_temp.act(null);
+select pg_temp.expect(not exists (select 1 from sitemap_jobs() where slug like 'sm-%') and (select jobs from seo_counts() where area = 'all' and place = 'all') = (select count(*) from search_jobs()),
+  'a suspended company''s jobs leave the sitemap and the counts');
+reset role;
+update orgs set suspended_at = null where slug = 'region-co';
 \echo 'All boundary tests passed.'
