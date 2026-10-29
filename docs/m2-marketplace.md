@@ -1,4 +1,4 @@
-# Milestone 2: Marketplace
+# Milestone 2: Marketplace (done)
 
 Goal: a company posts a job, Ocelot reviews it, and it shows in job search. Done when an employer publishes a reviewed job and candidates can find it by search and filters, open it, and report it.
 
@@ -30,7 +30,7 @@ Each ships as its own pull request.
 | Closed and expired jobs | Page stays with "This role has closed", no Google job data, not indexed |
 | Company page | Logo, labels, facts, open jobs |
 
-### 3. Reports
+### 3. Reports (done)
 
 | Item | Detail |
 |---|---|

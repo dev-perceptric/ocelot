@@ -12,7 +12,7 @@ export default async function AdminHome() {
   const c = (data ?? {}) as Counts;
   const groups: { title: string; stats: [string, number, string?][] }[] = [
     { title: "People", stats: [["People", c.people], ["Candidates with a profile", c.candidates], ["Companies", c.companies, "/admin/companies"], ["Company members", c.members]] },
-    { title: "Marketplace", stats: [["Live jobs", c.jobs_live], ["Waiting for review", c.jobs_review, "/admin/review"], ["Applications", c.applications], ["Open reports", c.reports_open]] },
+    { title: "Marketplace", stats: [["Live jobs", c.jobs_live], ["Waiting for review", c.jobs_review, "/admin/review"], ["Applications", c.applications], ["Open reports", c.reports_open, "/admin/reports"]] },
     { title: "Running", stats: [["Emails sent today", c.emails_today, "/admin/emails"], ["Emails failed, 7 days", c.emails_failed, "/admin/emails"], ["Failed tasks", c.tasks_failed, "/admin/queue"]] },
   ];
   return (

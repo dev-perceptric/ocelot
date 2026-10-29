@@ -401,14 +401,14 @@ isOneToOne: false
                   ]
                 },"reports": {
                   Row: {
-                    "created_at": string,"details": string,"id": string,"job_id": string | null,"org_id": string | null,"reason": string,"reporter_id": string | null,"status": string
+                    "admin_note": string | null,"contact_email": string | null,"created_at": string,"details": string,"handled_at": string | null,"handled_by": string | null,"id": string,"job_id": string | null,"org_id": string | null,"reason": string,"reporter_id": string | null,"status": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"details"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"reason": string,"reporter_id"?: string | null,"status"?: string
+                    "admin_note"?: string | null,"contact_email"?: string | null,"created_at"?: string,"details"?: string,"handled_at"?: string | null,"handled_by"?: string | null,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"reason": string,"reporter_id"?: string | null,"status"?: string
                   }
                   Update: {
-                    "created_at"?: string,"details"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"reason"?: string,"reporter_id"?: string | null,"status"?: string
+                    "admin_note"?: string | null,"contact_email"?: string | null,"created_at"?: string,"details"?: string,"handled_at"?: string | null,"handled_by"?: string | null,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"reason"?: string,"reporter_id"?: string | null,"status"?: string
                   }
                   Relationships: [
                     {

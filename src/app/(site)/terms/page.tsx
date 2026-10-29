@@ -89,7 +89,7 @@ export default function Terms() {
         },
         {
           id: "contact", title: "Contact", body: (
-            <p>Questions about these terms, or to report a listing: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>
+            <p>Questions about these terms: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>. To report a listing, use Report this job on the job page.</p>
           ),
         },
       ]}

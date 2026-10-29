@@ -427,4 +427,19 @@ update orgs set suspended_at = now() where id = :'delta';
 select pg_temp.act(null);
 select pg_temp.expect((select count(*) from search_jobs() where org_id = :'delta') = 0, 'a suspended company''s jobs leave search');
 reset role;
+-- ---------- Milestone 2, part 3: reports ----------
+reset role;
+update orgs set suspended_at = null where id = :'gamma';
+select id as gamma_draft from jobs where slug = 'gamma-cs' \gset
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+insert into reports (reporter_id, job_id, org_id, reason, details) select auth.uid(), id, org_id, 'fee_required', 'Asked me to pay for training.' from jobs where slug = 'gamma-sdr';
+select pg_temp.fails($$insert into reports (reporter_id, job_id, org_id, reason) select auth.uid(), id, org_id, 'scam' from jobs where slug = 'gamma-sdr'$$, 'one open report per person per job');
+select pg_temp.fails($$insert into reports (reporter_id, job_id, reason) select '00000000-0000-0000-0000-00000000000a', id, 'scam' from jobs where slug = 'gamma-sdr'$$, 'nobody reports in someone else''s name');
+select pg_temp.fails($$insert into reports (reporter_id, job_id, reason, status) select auth.uid(), id, 'scam', 'dismissed' from jobs where slug = 'gamma-ae'$$, 'a report starts open');
+select pg_temp.fails($$insert into reports (reporter_id, job_id, reason, admin_note) select auth.uid(), id, 'scam', 'pre-handled' from jobs where slug = 'gamma-ae'$$, 'reporters cannot write admin notes');
+select pg_temp.fails(format($$insert into reports (reporter_id, job_id, reason) values (auth.uid(), %L, 'scam')$$, :'gamma_draft'), 'a draft job cannot be reported (it isn''t public)');
+select pg_temp.expect((select count(*) from reports) = 1, 'a reporter sees their own report');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from reports) = 0, 'the reported company cannot see who reported it');
+reset role;
 \echo 'All boundary tests passed.'

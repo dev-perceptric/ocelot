@@ -88,3 +88,14 @@ export async function retryTask(id: number): Promise<Result> {
   await audit(user.id, "queue.retry", { table: "jobs_queue", id: null }, { task: id });
   return done(["/admin/queue"]);
 }
+
+// ---------- Reports ----------
+
+export async function handleReport(id: string, status: "actioned" | "dismissed", note: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const { error } = await createAdmin().from("reports")
+    .update({ status, admin_note: note.trim() || null, handled_by: user.id, handled_at: new Date().toISOString() }).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, `report.${status}`, { table: "reports", id }, note.trim() ? { note: note.trim() } : {});
+  return done(["/admin/reports", "/admin"]);
+}
