@@ -6,7 +6,7 @@ import type { Filters } from "@/lib/search";
 
 export type JobWithOrg = Job & { org: Pick<Org, "name" | "slug" | "logo_url"> };
 
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 50;
 
 // Job search through search_jobs (supabase/migrations/009_search.sql): only live jobs from companies that
 // aren't suspended, promoted first, then taking turns between companies (025_search_mix.sql). A database hiccup shows an empty list instead of an error page.

@@ -30,7 +30,7 @@ export function Floating({ anchor, open, onClose, children, matchWidth = false, 
       const up = below < 240 && above > below;
       const width = matchWidth ? a.width : null;
       Object.assign(el.style, {
-        left: align === "end" ? "" : `${Math.max(8, Math.min(a.left, window.innerWidth - (width ?? 220) - 8))}px`,
+        left: align === "end" ? "" : `${Math.max(8, Math.min(a.left, window.innerWidth - (width ?? Math.max(220, el.offsetWidth)) - 8))}px`,
         right: align === "end" ? `${Math.max(8, window.innerWidth - a.right)}px` : "",
         top: up ? "" : `${a.bottom + 4}px`,
         bottom: up ? `${window.innerHeight - a.top + 4}px` : "",
