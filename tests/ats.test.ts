@@ -166,3 +166,15 @@ test("imported jobs keep their states and provinces", () => {
   assert.deepEqual(one(["Remote - US"]), []);
   assert.deepEqual(one(["Austin, TX", "Dublin, Ireland"]), ["US-TX"]);
 });
+
+test("trades, care and campus jobs stay out; their sales jobs stay in", () => {
+  for (const t of ["Service Desk Support Technician II", "Intensive Support Social Worker", "Junior Technical Writer", "Analyst, IT Help Desk", "Student and Family Support Specialist", "Inventory Support Technician"])
+    assert.equal(guessRole(t).category, null, t);
+  for (const t of ["Dental Sales Representative", "Pharmaceutical Sales Representative", "Director of Business Development"]) assert.ok(guessRole(t).category, t);
+});
+
+test("a state code means the US only when the board doesn't name another country", () => {
+  assert.deepEqual(readPlaces({ places: ["Buenos Aires, AR"], countries: ["AR"], remote: null, hybrid: null }).countries, []);
+  assert.deepEqual(readPlaces({ places: ["Little Rock, AR"], countries: [], remote: null, hybrid: null }).countries, ["US"]);
+  assert.deepEqual(readPlaces({ places: ["Austin, TX"], countries: ["United States of America"], remote: null, hybrid: null }).countries, ["US"]);
+});

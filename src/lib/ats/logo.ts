@@ -3,7 +3,8 @@ import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { slugify } from "@/lib/jobs";
 import { createAdmin } from "@/lib/supabase/server";
-import type { Provider } from "./boards";
+import { isClassic, type Provider } from "./boards";
+import { boardHome } from "./readers";
 import {
   guessLabels, iconsFromHome, imageKind, isAtsHost, LOGO_TYPES, logosFromBoardPage, looksLikeCompany, pngFromIco, privateAddress, safeUrl,
   siteFromLinks, siteHost, siteInName, websiteFromBoardPage,
@@ -152,7 +153,8 @@ const found = (b: Best, site: URL | null): FoundLogo => ({ website: site ? `http
 export async function findLogo(name: string, provider: Provider, board: string, fetchImpl: typeof fetch = fetch, links: string[] = []): Promise<FoundLogo | null> {
   // The board page: where it sends people, the site it links to and the logo it shows.
   let page: { url: URL; html: string } | null = null;
-  for (const url of BOARD_PAGES[provider]?.(board) ?? []) {
+  const pages = isClassic(provider) ? BOARD_PAGES[provider]?.(board) ?? [] : [boardHome(provider, board)].filter((u): u is string => !!u);
+  for (const url of pages) {
     const p = await get(url, MAX_PAGE, fetchImpl, true);
     if (p) { page = { url: p.url, html: text(p.body) }; break; }
   }

@@ -2,12 +2,16 @@
 
 Ocelot pulls jobs from companies' public job boards so Find jobs fills up without each company posting by hand. It runs by itself:
 
-1. **Finding boards.** A list of company names (about 1,200 to start, mostly companies hiring in the US and Canada, plus every company that joins Ocelot) is checked once a week against every board type. A board with jobs that pass the filters is added under the company's name and synced at once.
-2. **Syncing boards.** Every board is synced every 6 hours.
+1. **Finding boards.** Two lists feed it:
+   - Company names (about 1,300, mostly companies hiring in the US and Canada, plus every company that joins Ocelot), checked once a week against every board type whose address is the company's name. The board's company name must match.
+   - About 44,600 boards of the 16 kinds below, found in three months of the public web crawl (Common Crawl, October 2026; `supabase/migrations/029_more_boards.sql`), checked once a month.
 
-The hourly call answers at once; board work runs after it for up to about 4 minutes (30 boards synced, up to 400 names checked).
+   A board with jobs that pass the filters is added under the company's name and synced at once. Discovery stops adding boards once 15,000 imported jobs are live (`app_settings.max_imported_jobs`), so the database stays inside its plan. Raise it after moving Supabase to Pro.
+2. **Syncing boards.** Boards from the name list sync every 6 hours; boards from the crawl, once a day.
 
-When this was built (October 2026), a test run from the starting list found 398 boards and about 4,600 live US and Canadian jobs within three hourly runs.
+The hourly call answers at once; board work runs after it: syncing for up to 4 minutes (six boards at a time), finding for up to 4 minutes (up to 1,000 checks, ten at a time), then logos.
+
+When the name list was built (October 2026), a test run found 398 boards and about 4,600 live US and Canadian jobs within three hourly runs. A test of 30 random crawl boards of each kind found US and Canadian jobs on a third of them, which points to roughly 40,000 to 50,000 more jobs across the crawl list (before the cap).
 
 Admin → Job boards shows every board, its live jobs and last error, and has Sync now, Pause and Delete. "Look for a company" adds a name to the list; "Add job board" adds a board by its link. A board Ocelot deletes is never found again.
 
@@ -23,6 +27,18 @@ Admin → Job boards shows every board, its live jobs and last error, and has Sy
 | Workable | apply.workable.com/company | `apply.workable.com/api/v1/widget/accounts/{board}?details=true` (not yet tried on a live board: it was rate limited when this was built) |
 
 All are public feeds made for career pages. No keys.
+| Workday | company.wd5.myworkdayjobs.com/Site | `{tenant}.{wdN}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` (searches for sales, marketing and customer success), plus one call per job |
+| BambooHR | company.bamboohr.com/careers | `{board}.bamboohr.com/careers/list`, plus one call per job |
+| Breezy | company.breezy.hr | `{board}.breezy.hr/json`, plus each job's page |
+| Rippling | ats.rippling.com/company/jobs | `api.rippling.com/platform/api/ats/v1/board/{board}/jobs`, plus one call per job |
+| Pinpoint | company.pinpointhq.com | `{board}.pinpointhq.com/postings.json` |
+| Teamtailor | company.teamtailor.com/jobs | `{board}.teamtailor.com/jobs.rss` |
+| Personio | company.jobs.personio.de | `{board}.jobs.personio.de/xml` |
+| Jobvite | jobs.jobvite.com/company | the jobs page, plus each job's page |
+| JazzHR | company.applytojob.com | the jobs page, plus each job's page |
+| iCIMS | careers-company.icims.com/jobs | the search pages, plus each job's page |
+
+Boards read through several calls (`src/lib/ats/readers.ts`) only open jobs whose title Ocelot wants, up to 40 per board. Job pages are read from the JobPosting data they carry for search engines.
 
 ## Rules
 
@@ -53,6 +69,8 @@ All are public feeds made for career pages. No keys.
 | Item | Beta | Growth |
 |---|---:|---:|
 | Feeds: public, free | $0 | $0 |
-| Sync and discovery: inside the existing hourly run on the web app, under a minute an hour | $0 | $0 |
+| Sync and discovery: inside the existing hourly run on the web app, up to about 8 minutes an hour | $0 | $0 |
+| Web app memory 512 MB to 1 GB for the larger board work | $2 (check) | $4, two machines (check) |
+| Database: 15,000 imported jobs (about 120 MB) fits Supabase Free; more needs Pro, already in the plan before real users | $0 | $0 |
 | Logos: about 10 KB each in Supabase Storage (under 20 MB for 2,000 companies, inside the plan's 100 GB) | $0 | $0 |
-| **Adds** | **$0** | **$0** |
+| **Adds** | **$2 (check)** | **$4 (check)** |

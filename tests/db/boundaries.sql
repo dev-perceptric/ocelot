@@ -911,4 +911,23 @@ select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q =
 select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'regionword', region => 'US-TN')) = '{rg-memphis,rg-remote}', 'a state from the location text');
 select pg_temp.fails($$update jobs set office_regions = '{XX-YY}' where slug = 'rg-memphis'$$, 'only state and province codes are kept');
 reset role;
+-- ---------- More job boards ----------
+reset role;
+select pg_temp.expect((select count(*) from board_candidates where found_by = 'crawl') > 40000, 'boards from the web crawl are on the list');
+select pg_temp.expect((select count(distinct provider) from board_candidates where found_by = 'crawl') = 16, 'of every kind Ocelot reads');
+update board_candidates set checked_at = now() - interval '8 days' where slug in ('wd-salesforce.wd12.external_career_site', 'ramp');
+select pg_temp.expect(exists (select 1 from due_candidates() where slug = 'ramp') and not exists (select 1 from due_candidates() where found_by = 'crawl'), 'crawl boards wait a month');
+update board_candidates set checked_at = now() - interval '31 days' where found_by = 'crawl' and provider = 'workday';
+select pg_temp.expect(exists (select 1 from due_candidates(5000) where provider = 'workday'), 'then are checked again');
+update board_candidates set checked_at = now();
+insert into job_sources (org_id, provider, board) select id, 'workday', 'acme.wd5.External' from orgs where slug = 'region-co';
+select pg_temp.expect(exists (select 1 from job_sources where provider = 'workday'), 'Workday boards can be added');
+update job_sources set sync_hours = 24, last_synced_at = now() - interval '7 hours', active = true where provider = 'workday';
+select pg_temp.expect(not exists (select 1 from due_sources() where provider = 'workday'), 'crawl boards sync once a day');
+update job_sources set last_synced_at = now() - interval '25 hours' where provider = 'workday';
+select pg_temp.expect(exists (select 1 from due_sources() where provider = 'workday'), 'and sync again after a day');
+select pg_temp.expect((select max_imported_jobs from app_settings) = 15000, 'imported jobs are capped');
+select pg_temp.fails($$insert into job_sources (org_id, provider, board) select id, 'myspace', 'acme' from orgs where slug = 'region-co'$$, 'unknown board kinds are refused');
+select pg_temp.fails($$insert into board_candidates (slug, name, found_by) values ('odd', 'Odd', 'rumor')$$, 'a list entry says where it came from');
+reset role;
 \echo 'All boundary tests passed.'

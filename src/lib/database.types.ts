@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "app_settings": {
                   Row: {
-                    "id": boolean,"last_cron_at": string | null,"last_cron_result": string | null,"payments_on": boolean,"updated_at": string
+                    "id": boolean,"last_cron_at": string | null,"last_cron_result": string | null,"max_imported_jobs": number,"payments_on": boolean,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"payments_on"?: boolean,"updated_at"?: string
+                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"max_imported_jobs"?: number,"payments_on"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"payments_on"?: boolean,"updated_at"?: string
+                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"max_imported_jobs"?: number,"payments_on"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -107,14 +107,14 @@ isOneToOne: false
                   ]
                 },"board_candidates": {
                   Row: {
-                    "board": string | null,"checked_at": string | null,"created_at": string,"name": string,"provider": string | null,"skip": boolean,"slug": string,"source_id": string | null
+                    "board": string | null,"checked_at": string | null,"created_at": string,"found_by": string,"name": string,"provider": string | null,"skip": boolean,"slug": string,"source_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"name": string,"provider"?: string | null,"skip"?: boolean,"slug": string,"source_id"?: string | null
+                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"found_by"?: string,"name": string,"provider"?: string | null,"skip"?: boolean,"slug": string,"source_id"?: string | null
                   }
                   Update: {
-                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"name"?: string,"provider"?: string | null,"skip"?: boolean,"slug"?: string,"source_id"?: string | null
+                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"found_by"?: string,"name"?: string,"provider"?: string | null,"skip"?: boolean,"slug"?: string,"source_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -241,14 +241,14 @@ isOneToOne: false
                   ]
                 },"job_sources": {
                   Row: {
-                    "active": boolean,"board": string,"countries": (string)[],"created_at": string,"created_by": string | null,"id": string,"last_error": string | null,"last_imported": number | null,"last_seen": number | null,"last_synced_at": string | null,"niche_only": boolean,"org_id": string,"provider": string
+                    "active": boolean,"board": string,"countries": (string)[],"created_at": string,"created_by": string | null,"id": string,"last_error": string | null,"last_imported": number | null,"last_seen": number | null,"last_synced_at": string | null,"niche_only": boolean,"org_id": string,"provider": string,"sync_hours": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "active"?: boolean,"board": string,"countries"?: (string)[],"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error"?: string | null,"last_imported"?: number | null,"last_seen"?: number | null,"last_synced_at"?: string | null,"niche_only"?: boolean,"org_id": string,"provider": string
+                    "active"?: boolean,"board": string,"countries"?: (string)[],"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error"?: string | null,"last_imported"?: number | null,"last_seen"?: number | null,"last_synced_at"?: string | null,"niche_only"?: boolean,"org_id": string,"provider": string,"sync_hours"?: number
                   }
                   Update: {
-                    "active"?: boolean,"board"?: string,"countries"?: (string)[],"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error"?: string | null,"last_imported"?: number | null,"last_seen"?: number | null,"last_synced_at"?: string | null,"niche_only"?: boolean,"org_id"?: string,"provider"?: string
+                    "active"?: boolean,"board"?: string,"countries"?: (string)[],"created_at"?: string,"created_by"?: string | null,"id"?: string,"last_error"?: string | null,"last_imported"?: number | null,"last_seen"?: number | null,"last_synced_at"?: string | null,"niche_only"?: boolean,"org_id"?: string,"provider"?: string,"sync_hours"?: number
                   }
                   Relationships: [
                     {
@@ -737,6 +737,7 @@ isOneToOne: false
               "board": string | null,
 "checked_at": string | null,
 "created_at": string,
+"found_by": string,
 "name": string,
 "provider": string | null,
 "skip": boolean,
@@ -778,7 +779,8 @@ isOneToOne: false
 "last_synced_at": string | null,
 "niche_only": boolean,
 "org_id": string,
-"provider": string
+"provider": string,
+"sync_hours": number
             }[]
                           SetofOptions: {
         from: "*"

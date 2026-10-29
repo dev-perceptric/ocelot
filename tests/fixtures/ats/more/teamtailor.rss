@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:tt="https://teamtailor.com/locations">
+  <channel>
+    <title>Stillfront</title>
+    <description>Job openings</description>
+    <link>https://stillfrontgroup.teamtailor.com/jobs</link>
+    <item>
+      <title>Senior Backend Engineer</title>
+      <description><![CDATA[<p>Join the team building games played by millions. You will own the backend of our live titles.</p>]]></description>
+      <pubDate>Fri, 09 Oct 2026 09:46:31 +0200</pubDate>
+      <link>https://twinharbour.teamtailor.com/jobs/8521629-senior-backend-engineer</link>
+      <remoteStatus>hybrid</remoteStatus>
+      <guid>1d914747-94f6-420d-92eb-23274450fa9f</guid>
+      <company_name>Twin Harbour Interactive</company_name>
+      <company_uuid>aQ7nSLLSbco</company_uuid>
+      <tt:locations>
+        <tt:location>
+          <tt:name>San Ġiljan, Malta</tt:name>
+          <tt:address>Triq Ir-Rampa Ta' San Ġiljan</tt:address>
+          <tt:zip/>
+          <tt:city>San Ġiljan</tt:city>
+          <tt:country>Malta</tt:country>
+        </tt:location>
+      </tt:locations>
+      <tt:department>Game Programming/Engineering</tt:department>
+      <tt:role/>
+    </item><item>
+      <title>Associate/Senior Associate- UA</title>
+      <description><![CDATA[<p>Join the team building games played by millions. You will own the backend of our live titles.</p>]]></description>
+      <pubDate>Tue, 06 Oct 2026 07:09:29 +0200</pubDate>
+      <link>https://moonfroglabsbystillfront.teamtailor.com/jobs/8502190-associate-senior-associate-ua</link>
+      <remoteStatus>onsite</remoteStatus>
+      <guid>64621c52-a899-4ab0-a177-175d4536adf9</guid>
+      <company_name>Moonfrog Labs</company_name>
+      <company_uuid>Ok2_waU7DTY</company_uuid>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Bengaluru</tt:name>
+          <tt:address>Old Madras Road</tt:address>
+          <tt:zip>560038</tt:zip>
+          <tt:city>Bengaluru</tt:city>
+          <tt:country>India</tt:country>
+        </tt:location>
+      </tt:locations>
+      <tt:department>Marketing &amp; User Acquisition</tt:department>
+      <tt:role/>
+    </item><item>
+      <title>Junior Office Manager (m/f/d)</title>
+      <description><![CDATA[<p>Join the team building games played by millions. You will own the backend of our live titles.</p>]]></description>
+      <pubDate>Fri, 02 Oct 2026 16:52:33 +0200</pubDate>
+      <link>https://sandboxinteractive.teamtailor.com/jobs/8494323-junior-office-manager-m-f-d</link>
+      <remoteStatus>onsite</remoteStatus>
+      <guid>fda58924-43d3-4955-86c5-22c332f5c7f4</guid>
+      <company_name>Sandbox Interactive</company_name>
+      <company_uuid>uREgPP07nqA</company_uuid>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Berlin</tt:name>
+          <tt:address>Pappelallee 78</tt:address>
+          <tt:zip>10437</tt:zip>
+          <tt:city>Berlin</tt:city>
+          <tt:country>Germany</tt:country>
+        </tt:location>
+      </tt:locations>
+      <tt:department>Administration &amp; Support</tt:department>
+      <tt:role/>
+    </item></channel></rss>
