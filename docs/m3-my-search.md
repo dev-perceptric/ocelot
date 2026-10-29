@@ -29,7 +29,7 @@ Each ships as its own pull request.
 | Overview | "Next up": the next tasks and interviews |
 | Cards | Show the next step: "Interview tomorrow", "Follow up Friday", "Add a next step" |
 
-### 3. Résumés
+### 3. Résumés (done)
 
 | Item | Detail |
 |---|---|
