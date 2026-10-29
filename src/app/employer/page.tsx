@@ -1,18 +1,11 @@
-import { Tag } from "@/components/ui";
+import Link from "next/link";
+import { ButtonLink, Tag } from "@/components/ui";
+import { JOB_STATUS as STATUS } from "@/lib/jobStatus";
 import { myOrgs } from "@/lib/org";
 import { CreateCompany } from "./CreateCompany";
 
 export const dynamic = "force-dynamic";
 
-const STATUS: Record<string, { label: string; tone: "neutral" | "warning" | "success" | "danger" }> = {
-  draft: { label: "Draft", tone: "neutral" },
-  pending_review: { label: "Pending review", tone: "warning" },
-  published: { label: "Published", tone: "success" },
-  closed: { label: "Closed", tone: "neutral" },
-  expired: { label: "Expired", tone: "neutral" },
-  rejected: { label: "Needs an update", tone: "warning" },
-  suspended: { label: "Suspended", tone: "danger" },
-};
 
 export default async function EmployerHome() {
   const { supabase, current: org } = await myOrgs();
@@ -37,13 +30,13 @@ export default async function EmployerHome() {
         <ul className="mt-4 divide-y divide-border border border-border bg-surface rounded-[var(--radius-card)]">
           {jobs.map((j) => (
             <li key={j.id} className="flex items-center justify-between gap-4 p-4">
-              <span className="font-bold">{j.title}</span>
+              <Link href={`/employer/jobs/${j.id}`} className="font-bold hover:underline">{j.title || "Untitled job"}</Link>
               <Tag tone={STATUS[j.status]?.tone}>{STATUS[j.status]?.label ?? j.status}</Tag>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-4 text-body text-muted">No jobs yet.</p>
+        <ButtonLink href="/employer/jobs/new" className="mt-4">Post a job</ButtonLink>
       )}
     </>
   );
