@@ -869,4 +869,23 @@ select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
 select pg_temp.fails($$select * from due_logos()$$, 'companies cannot run the logo list');
 select pg_temp.fails(format($$update orgs set logo_checked_at = now() where id = %L$$, :'gamma'), 'or change when it was looked at');
 reset role;
+-- ---------- Search: companies take turns, more filters ----------
+reset role;
+insert into orgs (name, slug) values ('Mix One', 'mix-one'), ('Mix Two', 'mix-two'), ('Mix Three', 'mix-three');
+insert into jobs (org_id, slug, title, description, status, published_at, expires_at, apply_method, apply_url, eligible_countries, workplace, salary_min, salary_max, salary_currency, salary_period)
+select o.id, v.slug, 'Mixword Seller', 'Sell things.', 'published', now() - v.age, now() + interval '30 days', 'external', 'https://example.com/apply', '{US}', 'remote', v.lo, v.hi, v.cur, v.per
+from (values ('mix-one', 'm1a', interval '1 hour', null::int, null::int, null, null), ('mix-one', 'm1b', interval '2 hours', null, null, null, null),
+             ('mix-one', 'm1c', interval '3 hours', null, null, null, null), ('mix-two', 'm2a', interval '10 days', 100000, 120000, 'USD', 'year'),
+             ('mix-two', 'm2b', interval '12 days', null, null, null, null)) v(org, slug, age, lo, hi, cur, per)
+join orgs o on o.slug = v.org;
+select pg_temp.expect((select array_agg(left(slug, 2) order by ord) from (select slug, row_number() over () as ord from search_jobs(q => 'mixword')) s) in ('{m1,m2,m1,m2,m1}', '{m2,m1,m2,m1,m1}'), 'companies take turns: each one''s best job first');
+select pg_temp.expect((select array_agg(slug order by ord) from (select slug, row_number() over () as ord from search_jobs(q => 'mixword', sort => 'new')) s) = '{m1a,m1b,m1c,m2a,m2b}', 'or newest first');
+select pg_temp.expect((select count(*) from search_jobs(q => 'mixwo')) = 5, 'part of a word finds titles');
+select pg_temp.expect((select array_agg(slug) from search_jobs(q => 'mixword', posted_days => 7)) @> '{m1a}' and not exists (select 1 from search_jobs(q => 'mixword', posted_days => 7) where slug = 'm2a'), 'posted in the last days');
+select pg_temp.expect((select array_agg(slug) from search_jobs(q => 'mixword', min_pay => 100000)) = '{m2a}' and not exists (select 1 from search_jobs(q => 'mixword', min_pay => 150000)), 'lowest yearly pay');
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(company => 'mix-two')) = '{m2a,m2b}', 'one company');
+select pg_temp.act(null);
+select pg_temp.expect(exists (select 1 from live_companies() where slug = 'mix-one') and not exists (select 1 from live_companies() where slug = 'mix-three'), 'the company list has companies with live jobs only');
+select pg_temp.expect((select count(*) from search_jobs(q => 'mixword')) = 5, 'visitors can search');
+reset role;
 \echo 'All boundary tests passed.'

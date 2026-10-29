@@ -14,7 +14,16 @@ export type Filters = {
   level: string[]; // seniorities
   type: string[]; // employment types
   pay: boolean;
+  company: string | null; // company slug
+  posted: number | null; // days
+  minPay: number | null; // yearly
+  sort: "best" | "new";
 };
+
+export const POSTED = [1, 3, 7, 30];
+export const MIN_PAY = [50_000, 75_000, 100_000, 125_000, 150_000, 200_000];
+export const POSTED_LABEL: Record<number, string> = { 1: "Past 24 hours", 3: "Past 3 days", 7: "Past week", 30: "Past month" };
+export const payLabel = (n: number) => `$${n / 1000}k a year or more`;
 
 const WORKPLACES = ["remote", "hybrid", "on_site"];
 const LEVELS = ["intern", "entry", "mid", "senior", "lead", "director", "executive"];
@@ -40,6 +49,10 @@ export function readFilters(p: Params): Filters {
     level: all(p.level).filter((l) => LEVELS.includes(l)),
     type: all(p.type).filter((t) => TYPES.includes(t)),
     pay: one(p.pay) === "1",
+    company: /^[a-z0-9][a-z0-9-]{0,79}$/.test(one(p.company) ?? "") ? one(p.company) : null,
+    posted: POSTED.includes(Number(one(p.posted))) ? Number(one(p.posted)) : null,
+    minPay: MIN_PAY.includes(Number(one(p.min_pay))) ? Number(one(p.min_pay)) : null,
+    sort: one(p.sort) === "new" ? "new" : "best",
   };
 }
 
@@ -54,18 +67,24 @@ export function filtersQuery(f: Filters, page = 1): string {
   if (f.level.length) s.set("level", f.level.join(","));
   if (f.type.length) s.set("type", f.type.join(","));
   if (f.pay) s.set("pay", "1");
+  if (f.company) s.set("company", f.company);
+  if (f.posted) s.set("posted", String(f.posted));
+  if (f.minPay) s.set("min_pay", String(f.minPay));
+  if (f.sort === "new") s.set("sort", "new");
   if (page > 1) s.set("page", String(page));
   const out = s.toString();
   return out ? `?${out}` : "";
 }
 
 export const activeCount = (f: Filters) =>
-  f.where.length + (f.country ? 1 : 0) + (f.city ? 1 : 0) + (f.role || f.category ? 1 : 0) + f.level.length + f.type.length + (f.pay ? 1 : 0);
+  f.where.length + (f.country ? 1 : 0) + (f.city ? 1 : 0) + (f.role || f.category ? 1 : 0) + f.level.length + f.type.length + (f.pay ? 1 : 0)
+  + (f.company ? 1 : 0) + (f.posted ? 1 : 0) + (f.minPay ? 1 : 0);
 
-// Saved searches keep the filters (without the words) as JSON; the words go in their own column.
-export type SavedFilters = Omit<Filters, "q">;
+// Saved searches keep the filters (without the words) as JSON; the words go in their own column. When a job was
+// posted and the order don't apply to alerts, which only send new jobs.
+export type SavedFilters = Omit<Filters, "q" | "posted" | "sort" | "minPay"> & { min_pay: number | null };
 export const toSaved = (f: Filters): SavedFilters =>
-  ({ where: f.where, country: f.country, city: f.city, category: f.category, role: f.role, level: f.level, type: f.type, pay: f.pay });
+  ({ where: f.where, country: f.country, city: f.city, category: f.category, role: f.role, level: f.level, type: f.type, pay: f.pay, company: f.company, min_pay: f.minPay });
 
 // Reads saved filters back through readFilters, so anything stale or unknown is dropped.
 export function fromSaved(query: string, json: unknown): Filters {
@@ -75,5 +94,7 @@ export function fromSaved(query: string, json: unknown): Filters {
   return readFilters({
     q: query, where: list(s.where), country: str(s.country), city: str(s.city), category: str(s.category), role: str(s.role),
     level: list(s.level), type: list(s.type), pay: s.pay === true ? "1" : undefined,
+    company: str(s.company),
+    min_pay: typeof s.min_pay === "number" ? String(s.min_pay) : undefined,
   });
 }

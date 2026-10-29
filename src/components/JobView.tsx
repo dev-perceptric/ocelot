@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JobDescription } from "@/components/JobDescription";
 import { ButtonLink, CompanyLogo, Tag } from "@/components/ui";
 import { CATEGORY, EMPLOYMENT, SENIORITY, formatSalary, formatWhere, postedAgo, type Job, type Org } from "@/lib/jobs";
 import { roleName } from "@/lib/taxonomy";
@@ -42,8 +43,8 @@ export function JobView({ job, org, questions, mode = "public", aside, apply, sa
           {facts.map((f) => <Tag key={f}>{f}</Tag>)}
           {closed ? <Tag>This role has closed</Tag> : null}
         </div>
-        <div className="mt-10 max-w-[70ch] whitespace-pre-line break-words font-[family-name:var(--font-editorial)] text-[18px] leading-[30px]">
-          {job.description}
+        <div className="mt-10">
+          <JobDescription text={job.description} />
         </div>
         {questions.length && job.apply_method === "ocelot" ? (
           <section className="mt-10 max-w-[70ch]">
