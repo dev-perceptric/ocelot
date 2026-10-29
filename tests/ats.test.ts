@@ -155,3 +155,14 @@ test("company names and further pages come from the feed", async () => {
   assert.equal(nextPageUrl("smartrecruiters", "acme", { offset: 200, limit: 100, totalFound: 250 }), null);
   assert.equal(nextPageUrl("greenhouse", "acme", {}), null);
 });
+
+test("imported jobs keep their states and provinces", () => {
+  const NA = { countries: ["US", "CA"], niche_only: true };
+  const base = { externalId: "1", applyUrl: "https://x.test/apply", postingUrl: "https://x.test", countries: [], remote: null, hybrid: null, employment: "Full-time", experience: null, html: "<p>Hi</p>", text: null, salary: null };
+  const one = (places: string[]) => { const t = toJob({ ...base, title: "Account Executive", places }, NA); return "job" in t ? t.job.office_regions : null; };
+  assert.deepEqual(one(["Memphis, TN"]), ["US-TN"]);
+  assert.deepEqual(one(["Toronto"]), ["CA-ON"], "a city on the list gives its province");
+  assert.deepEqual(one(["Remote - Texas"]), ["US-TX"]);
+  assert.deepEqual(one(["Remote - US"]), []);
+  assert.deepEqual(one(["Austin, TX", "Dublin, Ireland"]), ["US-TX"]);
+});

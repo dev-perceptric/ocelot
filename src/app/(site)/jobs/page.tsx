@@ -4,6 +4,7 @@ import { JobCard } from "@/components/JobCard";
 import { Button, inputClass, Pagination } from "@/components/ui";
 import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { countryName, placeName } from "@/lib/places";
+import { regionName } from "@/lib/regions";
 import { liveCompanies, PAGE_SIZE, searchJobs } from "@/lib/queries";
 import { activeCount, filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } from "@/lib/search";
 import { categoryName, roleName } from "@/lib/taxonomy";
@@ -29,6 +30,7 @@ function chips(f: F, companies: { name: string; slug: string }[]) {
   const out: { label: string; without: Partial<F> }[] = [];
   f.where.forEach((w) => out.push({ label: WHERE[w], without: { where: f.where.filter((x) => x !== w) } }));
   if (f.country) out.push({ label: `Hiring in ${countryName(f.country)}`, without: { country: null } });
+  if (f.region) out.push({ label: regionName(f.region), without: { region: null } });
   if (f.city) out.push({ label: placeName(f.city), without: { city: null } });
   if (f.role) out.push({ label: roleName(f.role), without: { role: null, category: null } });
   else if (f.category) out.push({ label: categoryName(f.category), without: { category: null } });

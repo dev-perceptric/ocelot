@@ -8,6 +8,7 @@ import { Button, Checkbox } from "@/components/ui";
 import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { CITIES, COUNTRIES } from "@/lib/places";
 import { filtersQuery, MIN_PAY, payLabel, POSTED, POSTED_LABEL, type Filters as F } from "@/lib/search";
+import { REGIONS } from "@/lib/regions";
 import { CATEGORIES, ROLES } from "@/lib/taxonomy";
 
 const WHERE = [{ value: "remote", label: "Remote" }, { value: "hybrid", label: "Hybrid" }, { value: "on_site", label: "On-site" }];
@@ -51,6 +52,15 @@ export function Filters({ filters: fromUrl, total, companies }: { filters: F; to
         <div className="mt-2">
           <Select id="f-country" placeholder="Any country" options={[{ value: "", label: "Any country" }, ...COUNTRIES.map((c) => ({ value: c.country_code, label: c.name }))]}
             value={filters.country ?? ""} onChange={(v) => go({ country: v || null })} />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="f-region" className="text-meta font-bold">State or province</label>
+        <div className="mt-2">
+          <Select id="f-region" placeholder="Any state or province" searchable
+            options={[{ value: "", label: "Any state or province" }, ...REGIONS.filter((r) => !filters.country || r.country === filters.country)
+              .map((r) => ({ value: r.code, label: r.name, group: r.country === "US" ? "United States" : "Canada" }))]}
+            value={filters.region ?? ""} onChange={(v) => go({ region: v || null })} />
         </div>
       </div>
       <div>

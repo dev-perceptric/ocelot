@@ -25,7 +25,7 @@ Each ships as its own pull request.
 
 | Item | Detail |
 |---|---|
-| Search `/jobs` | Keywords across title, description and company name; part of a word finds titles. Filters: remote / hybrid / on-site, country you can be hired from, city, category and role, company, when it was posted, lowest yearly pay, seniority, employment type, pay shown. Best match (promoted first, then companies take turns: each one's best job, then each one's second, in an order that changes daily) or Newest. 20 per page. Filters in a sheet on phones |
+| Search `/jobs` | Keywords across title, description and company name; part of a word finds titles. Filters: remote / hybrid / on-site, country you can be hired from, US state or Canadian province (offices there plus remote jobs open to the whole country; typing just the name, like "Texas", does the same), city, category and role, company, when it was posted, lowest yearly pay, seniority, employment type, pay shown. Best match (promoted first, then companies take turns: each one's best job, then each one's second, in an order that changes daily) or Newest. 20 per page. Filters in a sheet on phones |
 | Job page | Company logo and labels, where you can be hired from, pay, facts, description, screening questions listed, apply button (outside link now; Ocelot applications arrive in Milestone 4) |
 | Closed and expired jobs | Page stays with "This role has closed", no Google job data, not indexed |
 | Company page | Logo, labels, facts, open jobs |

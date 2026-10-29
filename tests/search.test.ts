@@ -52,3 +52,13 @@ test("saved searches keep the company and pay, and leave out posted and order", 
   const back = fromSaved("", JSON.parse(JSON.stringify(toSaved(f))));
   assert.deepEqual([back.company, back.minPay, back.posted, back.sort], ["ramp", 150000, null, "best"]);
 });
+
+test("a state or province: from the address, or typed as the whole search", () => {
+  const f = readFilters({ region: "US-TX" });
+  assert.equal(f.region, "US-TX");
+  assert.equal(filtersQuery(f), "?region=US-TX");
+  assert.equal(readFilters({ region: "US-ZZ" }).region, null);
+  const typed = readFilters({ q: " ontario " });
+  assert.deepEqual([typed.q, typed.region], ["", "CA-ON"]);
+  assert.equal(readFilters({ q: "texas sales" }).region, null, "only a search that is just the name");
+});
