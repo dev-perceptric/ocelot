@@ -957,7 +957,12 @@ select pg_temp.act(null);
 select pg_temp.expect(shown_copy((select dupe_key from jobs where slug = 'dp-a')) = 'dp-a', 'visitors can ask which copy is shown');
 reset role;
 -- ---------- Role and place pages ----------
+reset role;
+select refresh_seo_counts();
 select pg_temp.act(null);
+select pg_temp.fails($$select refresh_seo_counts()$$, 'visitors cannot recount');
+delete from seo_page_counts;
+select pg_temp.expect((select count(*) from seo_page_counts) > 0, 'or change the counts');
 select pg_temp.expect((select jobs from seo_counts() where area = 'all' and place = 'all') = (select count(*) from search_jobs()), 'page counts match search: one copy of each live job');
 select pg_temp.expect((select jobs from seo_counts() where area = 'all' and place = 'region:US-TX') = (select count(*) from search_jobs(region => 'US-TX')) - (select coalesce(max(jobs), 0) from seo_counts() where area = 'all' and place = 'remote-in:US'),
   'a state counts its offices; remote jobs open to the whole country are counted apart');
@@ -970,6 +975,7 @@ select pg_temp.act(null);
 select pg_temp.expect((select count(*) from sitemap_jobs() where slug in ('sm-1', 'sm-2')) = 1, 'and leaves the other copy out');
 reset role;
 update orgs set suspended_at = now() where slug = 'region-co';
+select refresh_seo_counts();
 select pg_temp.act(null);
 select pg_temp.expect(not exists (select 1 from sitemap_jobs() where slug like 'sm-%') and (select jobs from seo_counts() where area = 'all' and place = 'all') = (select count(*) from search_jobs()),
   'a suspended company''s jobs leave the sitemap and the counts');
