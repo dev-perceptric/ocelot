@@ -633,6 +633,9 @@ isOneToOne: false
 "like_escape":
 { Args: { "p": string }; Returns: string
                            },
+"mark_applied":
+{ Args: { "p_job": string }; Returns: string
+                           },
 "my_email":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -653,6 +656,9 @@ isOneToOne: false
                            },
 "revoke_invite":
 { Args: { "p_id": string }; Returns: undefined
+                           },
+"save_job":
+{ Args: { "p_job": string }; Returns: string
                            },
 "search_jobs":
 { Args: { "category"?: string,"city"?: string,"country"?: string,"pay_only"?: boolean,"q"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {

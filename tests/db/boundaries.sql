@@ -442,4 +442,26 @@ select pg_temp.expect((select count(*) from reports) = 1, 'a reporter sees their
 select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
 select pg_temp.expect((select count(*) from reports) = 0, 'the reported company cannot see who reported it');
 reset role;
+-- ---------- Milestone 3, part 1: the tracker ----------
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select save_job(id) as saved_card from jobs where slug = 'gamma-sdr' \gset
+select pg_temp.expect(save_job((select id from jobs where slug = 'gamma-sdr')) = :'saved_card', 'saving a job twice finds the same card');
+select pg_temp.expect((select stage = 'saved' and title = 'Lead SDR' and company = 'Gamma' and location = 'Hybrid, Hanoi' from tracker_items where id = :'saved_card'), 'a saved card copies the listing');
+select pg_temp.expect((select count(*) from tracker_events where item_id = :'saved_card' and kind = 'created') = 1, 'making a card is logged');
+select pg_temp.fails(format($$select save_job(%L)$$, :'gamma_draft'), 'a job you cannot see cannot be saved');
+select mark_applied(id) from jobs where slug = 'gamma-sdr';
+select pg_temp.expect((select stage = 'applied' and applied_at is not null from tracker_items where id = :'saved_card'), 'Did you apply? Yes moves the card to Applied');
+update tracker_items set stage = 'interviewing' where id = :'saved_card';
+select mark_applied(id) from jobs where slug = 'gamma-sdr';
+select pg_temp.expect((select stage from tracker_items where id = :'saved_card') = 'interviewing', 'a later Yes never moves a card backwards');
+insert into tracker_items (user_id, title, company, url, notes) values (auth.uid(), 'Brand Lead', 'Elsewhere', 'https://elsewhere.test/jobs/1', 'Found on LinkedIn');
+select pg_temp.fails($$insert into tracker_items (user_id, title, company, url) values (auth.uid(), 'Bad link', 'X', 'javascript:alert(1)')$$, 'a card link must be a web address');
+select pg_temp.fails($$insert into tracker_items (user_id, title, company, contacts) values (auth.uid(), 'Bad contacts', 'X', '{"a":1}')$$, 'contacts are a list');
+select pg_temp.fails($$insert into tracker_items (user_id, title, company) values ('00000000-0000-0000-0000-0000000000a2', 'Planted', 'X')$$, 'nobody adds cards to someone else''s tracker');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from tracker_items) = 0, 'the employer cannot see a candidate''s saved or applied cards');
+select pg_temp.expect((select count(*) from tracker_events) = 0, 'or their history');
+update tracker_items set notes = 'hacked';
+reset role;
+select pg_temp.expect((select notes from tracker_items where title = 'Brand Lead') = 'Found on LinkedIn', 'nobody else can edit a card');
 \echo 'All boundary tests passed.'
