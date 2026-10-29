@@ -43,6 +43,8 @@ insert into jobs (org_id, slug, title, created_by, workplace, eligible_countries
 select pg_temp.expect((select count(*) from jobs) = 1, 'Ana sees her draft');
 select pg_temp.fails($$update jobs set status = 'published'$$, 'a member cannot publish a job themselves');
 select pg_temp.fails($$update jobs set expires_at = now() + interval '90 days'$$, 'a member cannot change the end date');
+select pg_temp.fails($$update jobs set status = 'pending_review'$$, 'an incomplete job cannot go to review');
+update jobs set role = 'growth', seniority = 'mid', employment_type = 'full_time', description = repeat('Lead campaigns across Vietnam. ', 10);
 update jobs set status = 'pending_review';
 select pg_temp.fails(
   $$insert into jobs (org_id, slug, title, created_by, status) select id, 'x', 'X', auth.uid(), 'published' from orgs where slug = 'acme'$$,
@@ -133,7 +135,8 @@ reset role;
 update jobs set expires_at = now() - interval '1 minute';
 select pg_temp.expect(expire_jobs() = 1, 'expiry closes one job');
 select pg_temp.act(null);
-select pg_temp.expect((select count(*) from jobs) = 0, 'an expired job is no longer public');
+select pg_temp.expect((select count(*) from jobs where status = 'published') = 0, 'an expired job leaves the live list');
+select pg_temp.expect((select status from jobs) = 'expired', 'an expired job keeps its page, marked closed');
 reset role;
 
 -- ---------- Milestone 1, part G: lists, profiles, deleted candidates ----------
@@ -322,4 +325,80 @@ select pg_temp.fails($$update orgs set suspended_at = null$$, 'a member cannot l
 select pg_temp.fails($$select admin_counts()$$, 'people cannot read admin numbers');
 reset role;
 select pg_temp.expect((select (admin_counts()->>'companies')::int) >= 1, 'admin numbers work for the server');
+-- ---------- Milestone 2, part 1: posting and review ----------
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000a2', 'hanh@gamma.test');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select create_org('Gamma', 'gamma') as gamma \gset
+insert into jobs (org_id, slug, title, created_by, role, seniority, employment_type, workplace, eligible_countries, description)
+  values (:'gamma', 'gamma-sdr', 'SDR', auth.uid(), 'sdr', 'entry', 'full_time', 'hybrid', '{VN}', repeat('Book meetings with B2B buyers. ', 10));
+select pg_temp.fails($$update jobs set status = 'pending_review' where slug = 'gamma-sdr'$$, 'a hybrid job needs its office city before review');
+update jobs set office_places = '{hanoi}', salary_min = 800 where slug = 'gamma-sdr';
+select pg_temp.fails($$update jobs set status = 'pending_review' where slug = 'gamma-sdr'$$, 'pay needs a currency and period before review');
+update jobs set salary_currency = 'USD', salary_period = 'month' where slug = 'gamma-sdr';
+update jobs set status = 'pending_review' where slug = 'gamma-sdr';
+select pg_temp.expect((select status from jobs where slug = 'gamma-sdr') = 'pending_review', 'a complete job goes to review');
+select pg_temp.fails($$select publish_job(id) from jobs where slug = 'gamma-sdr'$$, 'people cannot publish through the review function');
+select pg_temp.fails($$update jobs set slug = 'cheaper-slug' where slug = 'gamma-sdr'$$, 'a member cannot change a job''s address');
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from jobs where slug = 'gamma-sdr') = 0, 'a job under review is not public');
+
+-- Ocelot sends it back with a note; Hanh fixes it and sends it again; Ocelot publishes it.
+reset role;
+select pg_temp.fails($$select send_back_job(id, '') from jobs where slug = 'gamma-sdr'$$, 'sending back needs a note');
+select send_back_job(id, 'Add the commission range.') from jobs where slug = 'gamma-sdr';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select status = 'rejected' and review_note = 'Add the commission range.' from jobs where slug = 'gamma-sdr'), 'the company sees the reviewer''s note');
+update jobs set description = description || ' Commission: 10-20% of first-year deals.', status = 'pending_review' where slug = 'gamma-sdr';
+select pg_temp.expect((select status = 'pending_review' and review_note is null from jobs where slug = 'gamma-sdr'), 'a fixed job goes back to review and the note clears');
+reset role;
+select publish_job(id) from jobs where slug = 'gamma-sdr';
+select pg_temp.expect((select status = 'published' and expires_at between now() + interval '29 days' and now() + interval '31 days' from jobs where slug = 'gamma-sdr'), 'publishing makes a job live for 30 days');
+select pg_temp.fails($$select publish_job(id) from jobs where slug = 'gamma-sdr'$$, 'a job is published once');
+
+-- Changing what candidates see on a live job sends it back to review.
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+update jobs set title = 'Senior SDR' where slug = 'gamma-sdr';
+select pg_temp.expect((select status from jobs where slug = 'gamma-sdr') = 'pending_review', 'editing a live job sends it back to review');
+delete from jobs where slug = 'gamma-sdr';
+select pg_temp.expect((select count(*) from jobs where slug = 'gamma-sdr') = 1, 'a job that was published cannot be deleted');
+reset role;
+select publish_job(id) from jobs where slug = 'gamma-sdr';
+
+-- Trusted companies publish without waiting, and can edit live jobs.
+update orgs set trusted = true where id = :'gamma';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+update jobs set title = 'Lead SDR' where slug = 'gamma-sdr';
+select pg_temp.expect((select status from jobs where slug = 'gamma-sdr') = 'published', 'a trusted company edits a live job without review');
+insert into jobs (org_id, slug, title, created_by, role, seniority, employment_type, workplace, eligible_countries, description)
+  values (:'gamma', 'gamma-ae', 'Account Executive', auth.uid(), 'account_executive', 'mid', 'full_time', 'remote', '{VN,SG}', repeat('Close new business across the region. ', 8));
+update jobs set status = 'pending_review' where slug = 'gamma-ae';
+select pg_temp.expect((select status = 'published' and published_at is not null from jobs where slug = 'gamma-ae'), 'a trusted company publishes without waiting');
+
+-- Closing keeps the page public; drafts stay private; drafts can be deleted.
+update jobs set status = 'closed' where slug = 'gamma-ae';
+insert into jobs (org_id, slug, title, created_by) values (:'gamma', 'gamma-draft', 'Draft role', auth.uid());
+select pg_temp.act(null);
+select pg_temp.expect((select status from jobs where slug = 'gamma-ae') = 'closed', 'a closed job keeps its public page');
+select pg_temp.expect((select count(*) from orgs where id = :'gamma') = 1, 'its company stays public');
+select pg_temp.expect((select count(*) from jobs where slug = 'gamma-draft') = 0, 'drafts are private');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+delete from jobs where slug = 'gamma-draft';
+select pg_temp.expect((select count(*) from jobs where slug = 'gamma-draft') = 0, 'a draft can be deleted');
+
+-- Screening questions: up to 5, only by the company.
+do $$ begin for i in 1..5 loop insert into job_questions (job_id, position, prompt) select id, i, 'Question number ' || i from jobs where slug = 'gamma-sdr'; end loop; end $$;
+select pg_temp.fails($$insert into job_questions (job_id, prompt) select id, 'One too many' from jobs where slug = 'gamma-sdr'$$, 'a job has at most 5 questions');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.expect((select count(*) from job_questions jq join jobs j on j.id = jq.job_id where j.slug = 'gamma-sdr') = 5, 'anyone can read a live job''s questions');
+select pg_temp.fails($$insert into job_questions (job_id, prompt) select id, 'Sneaky question' from jobs where slug = 'gamma-sdr'$$, 'outsiders cannot add questions');
+
+-- A suspended company can't send jobs for review.
+reset role;
+update orgs set trusted = false, suspended_at = now() where id = :'gamma';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+insert into jobs (org_id, slug, title, created_by, role, seniority, employment_type, workplace, eligible_countries, description)
+  values (:'gamma', 'gamma-cs', 'CSM', auth.uid(), 'cs_manager', 'mid', 'full_time', 'remote', '{VN}', repeat('Keep customers happy and growing. ', 8));
+select pg_temp.fails($$update jobs set status = 'pending_review' where slug = 'gamma-cs'$$, 'a suspended company cannot send jobs for review');
+reset role;
 \echo 'All boundary tests passed.'

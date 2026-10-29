@@ -12,6 +12,7 @@ export default async function EmployerLayout({ children }: { children: React.Rea
   const nav = current
     ? [
         { href: "/employer", label: "Overview" },
+        { href: "/employer/jobs", label: "Jobs" },
         { href: "/employer/company", label: "Company" },
         { href: "/employer/team", label: "Team" },
         { href: "/app", label: "My search" },

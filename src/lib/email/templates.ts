@@ -35,3 +35,36 @@ export function inviteAccepted(o: { company: string; member: string; teamUrl: st
     }),
   };
 }
+
+export function jobPublished(o: { company: string; title: string; jobUrl: string; manageUrl: string; until: string }): Email {
+  return {
+    subject: `${o.title} is live on Ocelot`,
+    pref: null,
+    ...layout({
+      title: `${o.title} is live`,
+      preview: `Candidates can find ${o.title} on Ocelot now.`,
+      blocks: [
+        { p: `${o.company}'s job ${o.title} passed review and is live on Ocelot until ${o.until}.` },
+        { button: { label: "View the job", url: o.jobUrl } },
+        { small: `Manage it any time: ${o.manageUrl}` },
+      ],
+    }),
+  };
+}
+
+export function jobSentBack(o: { title: string; note: string; editUrl: string }): Email {
+  return {
+    subject: `${o.title} needs an update before it goes live`,
+    pref: null,
+    ...layout({
+      title: "Your listing needs an update",
+      preview: `${o.title} needs a change before it can go live.`,
+      blocks: [
+        { p: `${o.title} needs an update before it can go live on Ocelot.` },
+        { p: `What to change: ${o.note}` },
+        { button: { label: "Edit the job", url: o.editUrl } },
+        { small: "After you edit it, send it for review again." },
+      ],
+    }),
+  };
+}

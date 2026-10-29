@@ -225,6 +225,7 @@ cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 (cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> node server.js) &
 node tests/e2e/team.cjs
 node tests/e2e/admin.cjs
+node tests/e2e/jobs.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
 

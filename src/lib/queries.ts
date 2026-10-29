@@ -25,12 +25,15 @@ export async function listJobs({ q, workplace, category, limit = 50 }: {
   return (data ?? []) as JobWithOrg[];
 }
 
-export async function getJob(slug: string): Promise<(Job & { org: Org }) | null> {
+export async function getJob(slug: string): Promise<(Job & { org: Org; questions: string[] }) | null> {
   if (!supabaseReady) return null;
   const supabase = await createClient();
-  const { data, error } = await supabase.from("jobs").select("*, org:orgs(*)").eq("slug", slug).maybeSingle();
+  const { data, error } = await supabase.from("jobs")
+    .select("*, org:orgs(*), job_questions(prompt, position)").eq("slug", slug).maybeSingle();
   if (error) throw error;
-  return data as (Job & { org: Org }) | null;
+  if (!data || !data.org) return null;
+  const questions = [...(data.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
+  return { ...(data as unknown as Job & { org: Org }), questions };
 }
 
 export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | { movedTo: string } | null> {

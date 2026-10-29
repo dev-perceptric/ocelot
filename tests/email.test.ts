@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EMAIL_COLORS } from "../src/lib/email/colors.ts";
 import { esc, layout, optionalFooter } from "../src/lib/email/layout.ts";
-import { inviteAccepted, teamInvite } from "../src/lib/email/templates.ts";
+import { inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
 import { oneClickUrl, sign, signingKey, unsubscribeUrl, verify } from "../src/lib/email/unsubscribe.ts";
 
 test("email colors match the brand tokens", () => {
@@ -19,7 +19,12 @@ test("templates fill every value and escape what people typed", () => {
   assert.ok(e.html.includes("Acme &lt;script&gt;"));
   assert.ok(e.html.includes('href="https://joinocelot.com/invite/abc"'));
   assert.match(e.text, /Accept invite: https:\/\/joinocelot.com\/invite\/abc/);
-  for (const m of [e, inviteAccepted({ company: "Acme", member: "Ben", teamUrl: "https://joinocelot.com/employer/team" })]) {
+  for (const m of [
+    e,
+    inviteAccepted({ company: "Acme", member: "Ben", teamUrl: "https://joinocelot.com/employer/team" }),
+    jobPublished({ company: "Acme", title: "SDR", jobUrl: "https://joinocelot.com/jobs/sdr", manageUrl: "https://joinocelot.com/employer/jobs", until: "28 November" }),
+    jobSentBack({ title: "SDR", note: "Add pay <please>", editUrl: "https://joinocelot.com/employer/jobs/1" }),
+  ]) {
     assert.ok(!/undefined|null|\{\{|\$\{/.test(m.html + m.text), "no empty or unfilled values");
   }
 });
