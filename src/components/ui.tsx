@@ -61,7 +61,7 @@ const TONE = {
 export type Tone = keyof typeof TONE;
 
 export function Tag({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
-  return <span className={`inline-flex items-center px-2 py-0.5 text-label font-bold ${TONE[tone]}`}>{children}</span>;
+  return <span className={`inline-flex shrink-0 items-center whitespace-nowrap px-2 py-0.5 text-label font-bold ${TONE[tone]}`}>{children}</span>;
 }
 
 // A tool's first screen before there's data: one title, one line, one button.

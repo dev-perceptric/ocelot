@@ -21,7 +21,7 @@ Each ships as its own pull request.
 | Editing a live job | For companies that aren't trusted, changing what candidates see sends the job back to review |
 | Admin review `/admin/review/[id]` | The job as candidates will see it, the company's labels and history. Publish (live for 30 days) or Send back with a note. Emails to the company's owners and admins either way. Audit log |
 
-### 2. Search and job pages
+### 2. Search and job pages (done)
 
 | Item | Detail |
 |---|---|

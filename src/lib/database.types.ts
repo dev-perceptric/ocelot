@@ -630,6 +630,9 @@ isOneToOne: false
 "job_missing":
 { Args: { "j": Omit<Database["public"]['Tables']["jobs"]['Row'], Database["public"]['Tables']["jobs"]['ComputedFields']> }; Returns: string
                            },
+"like_escape":
+{ Args: { "p": string }; Returns: string
+                           },
 "my_email":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
@@ -651,8 +654,53 @@ isOneToOne: false
 "revoke_invite":
 { Args: { "p_id": string }; Returns: undefined
                            },
+"search_jobs":
+{ Args: { "category"?: string,"city"?: string,"country"?: string,"pay_only"?: boolean,"q"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+              "apply_method": string,
+"apply_url": string | null,
+"category": string | null,
+"created_at": string,
+"created_by": string | null,
+"description": string,
+"eligible_countries": (string)[],
+"employment_type": string | null,
+"expires_at": string | null,
+"featured_until": string | null,
+"id": string,
+"office_places": (string)[],
+"org_id": string,
+"published_at": string | null,
+"review_note": string | null,
+"role": string | null,
+"salary_currency": string | null,
+"salary_max": number | null,
+"salary_min": number | null,
+"salary_period": string | null,
+"search": unknown,
+"seniority": string | null,
+"slug": string,
+"source": string,
+"source_url": string | null,
+"status": string,
+"time_zones": (string)[],
+"title": string,
+"updated_at": string,
+"workplace": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "send_back_job":
 { Args: { "p_job": string,"p_note": string }; Returns: undefined
+                           },
+"show_limit":
+{ Args: Record<PropertyKey, never>; Returns: number
+                           },
+"show_trgm":
+{ Args: { "": string }; Returns: (string)[]
                            },
 "team_members":
 { Args: { "p_org": string }; Returns: {
