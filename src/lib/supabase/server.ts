@@ -30,6 +30,11 @@ export function createAdmin() {
   return createPlainClient<Database>(SUPABASE_URL, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
+// A visitor with no session: sees what anyone sees. For shared, cached public data (page counts, the sitemap).
+export function createVisitor() {
+  return createPlainClient<Database>(SUPABASE_URL || "http://127.0.0.1:54321", SUPABASE_ANON_KEY || "not-set", { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
 export async function currentUser() {
   const supabase = await createClient();
   if (!supabaseReady) return { supabase, user: null };

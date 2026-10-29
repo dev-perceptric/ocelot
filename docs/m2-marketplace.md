@@ -25,7 +25,7 @@ Each ships as its own pull request.
 
 | Item | Detail |
 |---|---|
-| Search `/jobs` | Keywords across title, description and company name; part of a word finds titles. Filters: remote / hybrid / on-site, country you can be hired from, US state or Canadian province (offices there plus remote jobs open to the whole country; typing just the name, like "Texas", does the same), city, category and role, company, when it was posted, lowest yearly pay, seniority, employment type, pay shown. Best match (promoted first, then companies take turns: each one's best job, then each one's second, in an order that changes daily) or Newest. 20 per page. Filters in a sheet on phones |
+| Search `/jobs` | Keywords across title, description and company name; part of a word finds titles. Filters: remote / hybrid / on-site, country you can be hired from, US state or Canadian province (offices there plus remote jobs open to the whole country; typing just the name, like "Texas", does the same), city, category and role, company, when it was posted, lowest yearly pay, seniority, employment type, pay shown. Best match (promoted first, then companies take turns: each one's best job, then each one's second, in an order that changes daily) or Newest. 20 per page. One row of filter buttons under the search box (sideways scroll on phones). 50 a page with numbered pages. A job listed more than once (same company, title without place words, workplace and places) shows once. |
 | Job page | Company logo and labels, where you can be hired from, pay, facts, description, screening questions listed, apply button (outside link now; Ocelot applications arrive in Milestone 4) |
 | Closed and expired jobs | Page stays with "This role has closed", no Google job data, not indexed |
 | Company page | Logo, labels, facts, open jobs |
@@ -46,6 +46,7 @@ Role and city landing pages for search engines (after there are enough live jobs
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
 | Search runs in Postgres; no search service | $0 | $0 |
+| Role and place pages (`/sales-jobs-in-texas`, `/remote-marketing-jobs`, `/jobs-in-ontario`): 24 areas × the US, Canada, every state and province, their cities on the list, and remote. Pages with 3 or more jobs are in the sitemap (in parts of 40,000) and open to search engines; filter mixes without a page of their own stay on `/jobs` and out of search engines | $0 | $0 |
 | Job descriptions shown as headings, paragraphs and lists, read from the text on each page view | $0 | $0 |
 | Review and report emails (inside Resend free 3,000 a month at Beta) | $0 | covered by the $20 plan already counted |
 | **Milestone 2 adds** | **$0** | **$0** |

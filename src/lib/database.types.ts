@@ -921,6 +921,11 @@ isOneToOne: false
 "send_back_job":
 { Args: { "p_job": string,"p_note": string }; Returns: undefined
                            },
+"seo_counts":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "area": string,"jobs": number,"place": string
+            }[]
+                           },
 "set_payments":
 { Args: { "p_on": boolean }; Returns: undefined
                            },
@@ -932,6 +937,11 @@ isOneToOne: false
                            },
 "shown_copy":
 { Args: { "p_key": string }; Returns: string
+                           },
+"sitemap_jobs":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "published_at": string,"slug": string
+            }[]
                            },
 "take_cron_pass":
 { Args: { "p_token": string }; Returns: boolean
