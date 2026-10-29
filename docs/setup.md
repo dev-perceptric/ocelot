@@ -241,6 +241,7 @@ node tests/e2e/resumes.cjs
 node tests/e2e/apply.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
 node tests/e2e/billing.cjs
+SUPABASE_SECRET=<secret> node tests/e2e/alerts.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
 
@@ -249,5 +250,5 @@ SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 Between runs, clear test data (companies first, so the "company needs an owner" rule doesn't block it):
 
 ```
-psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from entitlements; delete from orders; delete from stripe_events; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
+psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from entitlements; delete from orders; delete from stripe_events; delete from saved_searches; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
 ```

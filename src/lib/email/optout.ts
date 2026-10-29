@@ -5,6 +5,7 @@ import { signingKey, verify, type Pref } from "./unsubscribe";
 export const PREF_LABEL: Record<Pref, string> = {
   application_updates: "updates on applications you send",
   new_applicants: "emails about new applicants",
+  task_reminders: "task reminders",
   job_alerts: "alerts for searches you saved",
   weekly_digest: "the weekly jobs digest",
   product_news: "news about Ocelot",

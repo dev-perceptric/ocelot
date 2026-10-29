@@ -247,14 +247,14 @@ isOneToOne: false
                   ]
                 },"notification_prefs": {
                   Row: {
-                    "application_updates": boolean,"job_alerts": boolean,"new_applicants": boolean,"product_news": boolean,"updated_at": string,"user_id": string,"weekly_digest": boolean
+                    "application_updates": boolean,"digest_sent_at": string | null,"job_alerts": boolean,"new_applicants": boolean,"product_news": boolean,"task_reminders": boolean,"updated_at": string,"user_id": string,"weekly_digest": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "application_updates"?: boolean,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id": string,"weekly_digest"?: boolean
+                    "application_updates"?: boolean,"digest_sent_at"?: string | null,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"task_reminders"?: boolean,"updated_at"?: string,"user_id": string,"weekly_digest"?: boolean
                   }
                   Update: {
-                    "application_updates"?: boolean,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id"?: string,"weekly_digest"?: boolean
+                    "application_updates"?: boolean,"digest_sent_at"?: string | null,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"task_reminders"?: boolean,"updated_at"?: string,"user_id"?: string,"weekly_digest"?: boolean
                   }
                   Relationships: [
                     
@@ -475,14 +475,14 @@ isOneToOne: false
                   ]
                 },"saved_searches": {
                   Row: {
-                    "created_at": string,"filters": NonNullable<Json>,"frequency": string,"id": string,"last_sent_at": string | null,"query": string,"user_id": string
+                    "checked_at": string,"created_at": string,"filters": NonNullable<Json>,"frequency": string,"id": string,"last_sent_at": string | null,"name": string,"query": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"filters"?: NonNullable<Json>,"frequency"?: string,"id"?: string,"last_sent_at"?: string | null,"query"?: string,"user_id": string
+                    "checked_at"?: string,"created_at"?: string,"filters"?: NonNullable<Json>,"frequency"?: string,"id"?: string,"last_sent_at"?: string | null,"name"?: string,"query"?: string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"filters"?: NonNullable<Json>,"frequency"?: string,"id"?: string,"last_sent_at"?: string | null,"query"?: string,"user_id"?: string
+                    "checked_at"?: string,"created_at"?: string,"filters"?: NonNullable<Json>,"frequency"?: string,"id"?: string,"last_sent_at"?: string | null,"name"?: string,"query"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -503,14 +503,14 @@ isOneToOne: false
                   ]
                 },"tasks": {
                   Row: {
-                    "created_at": string,"done_at": string | null,"due_at": string | null,"id": string,"item_id": string | null,"title": string,"user_id": string
+                    "created_at": string,"done_at": string | null,"due_at": string | null,"id": string,"item_id": string | null,"reminded_at": string | null,"title": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"item_id"?: string | null,"title": string,"user_id": string
+                    "created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"item_id"?: string | null,"reminded_at"?: string | null,"title": string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"item_id"?: string | null,"title"?: string,"user_id"?: string
+                    "created_at"?: string,"done_at"?: string | null,"due_at"?: string | null,"id"?: string,"item_id"?: string | null,"reminded_at"?: string | null,"title"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -585,6 +585,45 @@ isOneToOne: false
 "admin_counts":
 { Args: Record<PropertyKey, never>; Returns: Json
                            },
+"alert_jobs":
+{ Args: { "p_search": string }; Returns: {
+              "apply_method": string,
+"apply_url": string | null,
+"category": string | null,
+"created_at": string,
+"created_by": string | null,
+"description": string,
+"eligible_countries": (string)[],
+"employment_type": string | null,
+"expires_at": string | null,
+"featured_until": string | null,
+"id": string,
+"office_places": (string)[],
+"org_id": string,
+"published_at": string | null,
+"review_note": string | null,
+"role": string | null,
+"salary_currency": string | null,
+"salary_max": number | null,
+"salary_min": number | null,
+"salary_period": string | null,
+"search": unknown,
+"seniority": string | null,
+"slug": string,
+"source": string,
+"source_url": string | null,
+"status": string,
+"time_zones": (string)[],
+"title": string,
+"updated_at": string,
+"workplace": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "jobs"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "apply_to_job":
 { Args: { "p_answers"?: Json,"p_job": string,"p_note"?: string,"p_resume": string }; Returns: string
                            },
@@ -623,6 +662,21 @@ isOneToOne: false
                            },
 "dearmor":
 { Args: { "": string }; Returns: string
+                           },
+"due_alerts":
+{ Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
+              "checked_at": string,"email": string,"filters": Json,"id": string,"name": string,"query": string,"user_id": string
+            }[]
+                           },
+"due_digests":
+{ Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
+              "email": string,"user_id": string
+            }[]
+                           },
+"due_reminders":
+{ Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
+              "email": string,"tasks": Json,"time_zone": string,"user_id": string
+            }[]
                            },
 "expire_jobs":
 { Args: Record<PropertyKey, never>; Returns: number

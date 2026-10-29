@@ -33,7 +33,7 @@ Each ships as its own pull request.
 | `/admin/billing` | Payments switch (needs the Stripe secrets), every order with what was paid this month, refund an order whose job never went live (refunds through Stripe, removes the credit, moves the job back to draft) |
 | Admin company page | Credits left, give founding credits (1 to 20). Every billing change is in the audit log |
 
-### 3. Alerts, digest and reminders
+### 3. Alerts, digest and reminders (done)
 
 | Item | Detail |
 |---|---|
@@ -41,7 +41,8 @@ Each ships as its own pull request.
 | Alert email | Only jobs published since the last alert, up to 10, with a link to the full search. Nothing new, no email |
 | Weekly digest | Mondays, for people who turned it on: featured jobs first, then the week's new jobs |
 | Task reminders | The morning a task is due (8:00 in the person's time zone), one email listing that day's tasks |
-| Timing | The worker calls a signed app address every hour; the app finds what's due and queues the emails |
+| Timing | The worker calls `/api/cron` every hour with a key made from the service role secret (nothing new to set up); the app finds what's due and queues the emails. Each part marks its work done, so a stopped run finishes next hour |
+| Turning off | Alerts, digest and reminders each have a switch in Settings and an unsubscribe link in every email |
 
 ## Running cost
 

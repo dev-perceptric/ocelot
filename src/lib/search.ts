@@ -61,3 +61,19 @@ export function filtersQuery(f: Filters, page = 1): string {
 
 export const activeCount = (f: Filters) =>
   f.where.length + (f.country ? 1 : 0) + (f.city ? 1 : 0) + (f.role || f.category ? 1 : 0) + f.level.length + f.type.length + (f.pay ? 1 : 0);
+
+// Saved searches keep the filters (without the words) as JSON; the words go in their own column.
+export type SavedFilters = Omit<Filters, "q">;
+export const toSaved = (f: Filters): SavedFilters =>
+  ({ where: f.where, country: f.country, city: f.city, category: f.category, role: f.role, level: f.level, type: f.type, pay: f.pay });
+
+// Reads saved filters back through readFilters, so anything stale or unknown is dropped.
+export function fromSaved(query: string, json: unknown): Filters {
+  const s = (json && typeof json === "object" ? json : {}) as Record<string, unknown>;
+  const list = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").join(",") : undefined);
+  const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+  return readFilters({
+    q: query, where: list(s.where), country: str(s.country), city: str(s.city), category: str(s.category), role: str(s.role),
+    level: list(s.level), type: list(s.type), pay: s.pay === true ? "1" : undefined,
+  });
+}

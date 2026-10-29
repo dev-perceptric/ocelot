@@ -8,6 +8,8 @@ import { PAGE_SIZE, searchJobs } from "@/lib/queries";
 import { activeCount, filtersQuery, readFilters, type Filters as F } from "@/lib/search";
 import { categoryName, roleName } from "@/lib/taxonomy";
 import { Filters } from "./Filters";
+import { SaveSearch } from "./SaveSearch";
+import { currentUser } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
   const params = await searchParams;
   const f = readFilters(params);
   const page = Math.max(1, Number(params.page) || 1);
-  const { jobs, total } = await searchJobs(f, page);
+  const [{ jobs, total }, { user }] = await Promise.all([searchJobs(f, page), currentUser()]);
   const active = chips(f);
 
   return (
@@ -65,6 +67,10 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
               </Link>
             ))}
             {active.length > 1 ? <Link href={f.q ? `/jobs?q=${encodeURIComponent(f.q)}` : "/jobs"} className="text-meta underline">Clear filters</Link> : null}
+            <div className="ml-auto">
+              <SaveSearch signedIn={Boolean(user)} search={filtersQuery(f)}
+                defaultName={(f.q ? [f.q, ...active.map((c) => c.label)] : active.map((c) => c.label)).slice(0, 3).join(", ") || "New jobs"} />
+            </div>
           </div>
           {jobs.length ? (
             <div className="mt-4 grid gap-4">

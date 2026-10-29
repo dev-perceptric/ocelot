@@ -1,7 +1,7 @@
 // Sample data for each email, for /admin/emails. Add a sample whenever a template is added.
 
 import type { Email } from "./layout.ts";
-import { applicationSent, newApplicant, stageUpdate, inviteAccepted, jobPublished, jobSentBack, reportReceived, teamInvite } from "./templates.ts";
+import { applicationSent, newApplicant, stageUpdate, jobAlert, weeklyDigest, taskReminder, inviteAccepted, jobPublished, jobSentBack, reportReceived, teamInvite } from "./templates.ts";
 
 export function samples(siteUrl: string): { kind: string; name: string; email: Email }[] {
   return [
@@ -15,6 +15,15 @@ export function samples(siteUrl: string): { kind: string; name: string; email: E
     { kind: "stage_offer", name: "Stage: offer (to candidate)", email: stageUpdate({ company: "Example Co", job: "Marketing Manager", stage: "offer", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },
     { kind: "stage_hired", name: "Stage: hired (to candidate)", email: stageUpdate({ company: "Example Co", job: "Marketing Manager", stage: "hired", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },
     { kind: "stage_rejected", name: "Stage: not moving forward (to candidate)", email: stageUpdate({ company: "Example Co", job: "Marketing Manager", stage: "rejected", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },
+    { kind: "job_alert", name: "Saved search alert", email: jobAlert({ name: "Remote SEO jobs", searchUrl: `${siteUrl}/jobs?where=remote`, siteUrl, jobs: [
+      { title: "SEO Lead", company: "Example Co", where: "Remote, Vietnam", url: `${siteUrl}/jobs/sample` },
+      { title: "Content Marketer", company: "Sample Labs", where: "Hybrid, Ho Chi Minh City", url: `${siteUrl}/jobs/sample-2` },
+    ] }) },
+    { kind: "weekly_digest", name: "Weekly digest", email: weeklyDigest({ siteUrl,
+      featured: [{ title: "Head of Growth", company: "Example Co", where: "Remote, Southeast Asia", url: `${siteUrl}/jobs/sample` }],
+      latest: [{ title: "Account Executive", company: "Sample Labs", where: "Singapore", url: `${siteUrl}/jobs/sample-2` }] }) },
+    { kind: "task_reminder", name: "Task reminder", email: taskReminder({ tasksUrl: `${siteUrl}/app/tasks`, siteUrl,
+      tasks: [{ title: "Send portfolio to Minh", when: "10:00", job: "SEO Lead" }, { title: "Prepare case study", when: "15:00", job: null }] }) },
     { kind: "job_sent_back", name: "Job sent back", email: jobSentBack({ title: "Marketing Manager", note: "Add the countries you can hire from.", editUrl: `${siteUrl}/employer/jobs` }) },
   ];
 }

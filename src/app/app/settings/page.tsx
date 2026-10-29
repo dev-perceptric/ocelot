@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { ButtonLink } from "@/components/ui";
 import { DeleteAccount, EmailForm, NotificationSwitches } from "./SettingsForms";
+import { SavedSearches } from "./SavedSearches";
+import { filtersQuery, fromSaved } from "@/lib/search";
 
 export const metadata: Metadata = { title: "Settings" };
 export const dynamic = "force-dynamic";
@@ -10,7 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const { supabase, user } = await currentUser();
   if (!user) redirect("/login?next=/app/settings");
-  const { data: prefs } = await supabase.from("notification_prefs").select("*").eq("user_id", user.id).maybeSingle();
+  const [{ data: prefs }, { data: searches }] = await Promise.all([
+    supabase.from("notification_prefs").select("*").eq("user_id", user.id).maybeSingle(),
+    supabase.from("saved_searches").select("id, name, query, filters, frequency").eq("user_id", user.id).order("created_at"),
+  ]);
   // Companies where this person is the only member go with the account; the dialog names them.
   const { data: mine } = await supabase.from("org_members").select("org_id, org:orgs(name)").eq("user_id", user.id);
   const ids = (mine ?? []).map((m) => m.org_id);
@@ -34,11 +39,20 @@ export default async function SettingsPage() {
             application_updates: prefs?.application_updates ?? true,
             ...(mine?.length ? { new_applicants: prefs?.new_applicants ?? true } : {}),
             job_alerts: prefs?.job_alerts ?? true,
+            task_reminders: prefs?.task_reminders ?? true,
             weekly_digest: prefs?.weekly_digest ?? false,
             product_news: prefs?.product_news ?? false,
           }} />
         </div>
       </section>
+      {searches?.length ? (
+        <section className="mt-10 border-t border-border pt-6">
+          <h2 className="text-card font-bold">Saved searches</h2>
+          <div className="mt-2">
+            <SavedSearches searches={searches.map((s) => ({ id: s.id, name: s.name, frequency: s.frequency, href: `/jobs${filtersQuery(fromSaved(s.query, s.filters))}` }))} />
+          </div>
+        </section>
+      ) : null}
       <section className="mt-10 border-t border-border pt-6">
         <h2 className="text-card font-bold">Your data</h2>
         <div className="mt-4 flex flex-wrap gap-3">

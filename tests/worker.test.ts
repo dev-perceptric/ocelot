@@ -83,3 +83,26 @@ test("a stage email is dropped when the company moved the applicant again", asyn
   assert.equal((f.logs()[0] as { status: string }).status, "skipped");
   assert.deepEqual(f.finish(), [{ p_id: 7 }]);
 });
+
+test("the hourly run calls the app with the cron key, once an hour", async () => {
+  const { cronToken } = await import("../src/lib/cronToken.ts");
+  const calls: { url: string; auth?: string }[] = [];
+  let clock = 10_000_000;
+  const fetchImpl = async (url: string, init: { headers?: Record<string, string> }) => {
+    calls.push({ url, auth: init.headers?.Authorization });
+    if (url.endsWith("/rpc/claim_queue")) return new Response("[]");
+    if (url.endsWith("/rpc/expire_jobs")) return new Response("0");
+    return new Response("{}");
+  };
+  const worker = makeWorker({ url: "https://db.test", key: "service-key", siteUrl: "https://app.test/", fetchImpl, now: () => clock, log: { log() {}, error() {} } });
+  const cronCalls = () => calls.filter((c) => c.url === "https://app.test/api/cron");
+  await worker.tick();
+  assert.equal(cronCalls().length, 1);
+  assert.equal(cronCalls()[0].auth, `Bearer ${cronToken("service-key")}`);
+  clock += 59 * 60_000;
+  await worker.tick();
+  assert.equal(cronCalls().length, 1, "not again within the hour");
+  clock += 2 * 60_000;
+  await worker.tick();
+  assert.equal(cronCalls().length, 2);
+});

@@ -164,3 +164,54 @@ export function stageUpdate(o: { company: string; job: string; stage: StageEmail
     }),
   };
 }
+
+export type JobLine = { title: string; company: string; where: string; url: string };
+const lines = (jobs: JobLine[]) => jobs.map((j) => ({ title: j.title, line: [j.company, j.where].filter(Boolean).join(", "), url: j.url }));
+
+export function jobAlert(o: { name: string; jobs: JobLine[]; searchUrl: string; siteUrl: string }): Email {
+  const n = o.jobs.length;
+  return {
+    subject: `${n === 1 ? "1 new job" : `${n} new jobs`} for ${o.name}`,
+    pref: "job_alerts",
+    ...layout({
+      title: `New jobs for ${o.name}`,
+      preview: o.jobs.map((j) => j.title).slice(0, 3).join(", "),
+      blocks: [{ list: lines(o.jobs) }, { button: { label: "See all matches", url: o.searchUrl } }],
+      footer: optionalFooter(o.siteUrl),
+    }),
+  };
+}
+
+export function weeklyDigest(o: { featured: JobLine[]; latest: JobLine[]; siteUrl: string }): Email {
+  return {
+    subject: "This week's jobs on Ocelot",
+    pref: "weekly_digest",
+    ...layout({
+      title: "This week's jobs",
+      preview: [...o.featured, ...o.latest].map((j) => j.title).slice(0, 3).join(", "),
+      blocks: [
+        ...(o.featured.length ? [{ small: "Featured" }, { list: lines(o.featured) }] : []),
+        ...(o.latest.length ? [{ small: "New this week" }, { list: lines(o.latest) }] : []),
+        { button: { label: "Find jobs", url: `${o.siteUrl}/jobs` } },
+      ],
+      footer: optionalFooter(o.siteUrl),
+    }),
+  };
+}
+
+export function taskReminder(o: { tasks: { title: string; when: string; job: string | null }[]; tasksUrl: string; siteUrl: string }): Email {
+  const n = o.tasks.length;
+  return {
+    subject: n === 1 ? `Today: ${o.tasks[0].title}` : `${n} tasks for today`,
+    pref: "task_reminders",
+    ...layout({
+      title: "Today in your job search",
+      preview: o.tasks.map((t) => t.title).join(", "),
+      blocks: [
+        { list: o.tasks.map((t) => ({ title: t.title, line: [t.when, t.job].filter(Boolean).join(", "), url: o.tasksUrl })) },
+        { button: { label: "Open tasks", url: o.tasksUrl } },
+      ],
+      footer: optionalFooter(o.siteUrl),
+    }),
+  };
+}

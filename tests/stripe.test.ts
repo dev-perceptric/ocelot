@@ -37,3 +37,11 @@ test("prices read as dollars", () => {
   assert.equal(dollars(4900), "$49");
   assert.equal(dollars(9950), "$99.50");
 });
+
+test("the cron key matches only the same secret", async () => {
+  const { checkCronToken, cronToken } = await import("../src/lib/cronToken.ts");
+  const t = cronToken("secret-a");
+  assert.ok(checkCronToken(`Bearer ${t}`, "secret-a"));
+  assert.ok(!checkCronToken(`Bearer ${t}`, "secret-b"));
+  assert.ok(!checkCronToken(null, "secret-a") && !checkCronToken(`Bearer ${t}`, undefined) && !checkCronToken("Bearer x", "secret-a"));
+});
