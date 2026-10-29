@@ -48,10 +48,14 @@ export async function renameResume(id: string, name: string): Promise<Result> {
 export async function deleteResume(id: string): Promise<Result> {
   const { supabase, user } = await currentUser();
   if (!user) return { ok: false, message: "Your session ended. Log in again." };
-  const { data } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id).select("storage_path");
-  const path = data?.[0]?.storage_path;
-  if (!path) return { ok: false, message: "That didn't delete. Try again." };
-  await supabase.storage.from("resumes").remove([path]);
+  const fail = { ok: false, message: "That didn't delete. Try again." };
+  const { data: doc } = await supabase.from("documents").select("storage_path").eq("id", id).eq("user_id", user.id).is("deleted_at", null).maybeSingle();
+  if (!doc) return fail;
+  const { error } = await supabase.from("documents").delete().eq("id", id).eq("user_id", user.id);
+  if (error) return fail;
+  // A résumé sent with an application is only hidden (the database keeps it for the company), so its file stays.
+  const { data: kept } = await supabase.from("documents").select("id").eq("id", id).maybeSingle();
+  if (!kept) await supabase.storage.from("resumes").remove([doc.storage_path]);
   refresh();
   return { ok: true };
 }

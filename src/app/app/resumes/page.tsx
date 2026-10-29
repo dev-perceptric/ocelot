@@ -10,13 +10,15 @@ export const dynamic = "force-dynamic";
 export default async function Resumes() {
   const { supabase, user } = await currentUser();
   if (!user) redirect("/login?next=/app/resumes");
-  const [{ data: docs }, { data: used }] = await Promise.all([
-    supabase.from("documents").select("id, name, mime_type, size_bytes, created_at").eq("user_id", user.id).order("created_at", { ascending: false }),
+  const [{ data: docs }, { data: used }, { data: sent }] = await Promise.all([
+    supabase.from("documents").select("id, name, mime_type, size_bytes, created_at").eq("user_id", user.id).is("deleted_at", null).order("created_at", { ascending: false }),
     supabase.from("tracker_items").select("resume_id").not("resume_id", "is", null),
+    supabase.from("applications").select("resume_id").eq("candidate_id", user.id).not("resume_id", "is", null),
   ]);
   const count = new Map<string, number>();
   for (const u of used ?? []) if (u.resume_id) count.set(u.resume_id, (count.get(u.resume_id) ?? 0) + 1);
-  const resumes: Resume[] = (docs ?? []).map((d) => ({ ...d, used: count.get(d.id) ?? 0 }));
+  const sentIds = new Set((sent ?? []).map((a) => a.resume_id));
+  const resumes: Resume[] = (docs ?? []).map((d) => ({ ...d, used: count.get(d.id) ?? 0, sent: sentIds.has(d.id) }));
 
   if (!resumes.length) {
     return (

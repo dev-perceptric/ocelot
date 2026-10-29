@@ -66,8 +66,10 @@ export function JobView({ job, org, questions, mode = "public", aside, apply, sa
             )}
             <p className="text-meta text-muted">This opens the company&apos;s application page. After applying, mark the job as Applied.</p>
           </>
+        ) : mode === "public" && live && apply ? (
+          apply
         ) : (
-          <p className="text-body">Applications on Ocelot open soon.</p>
+          <span className="inline-flex min-h-11 items-center justify-center bg-brand px-5 font-bold rounded-[var(--radius-control)]">Apply</span>
         )}
         {mode === "public" && save ? save : null}
         {job.published_at ? <p className="text-meta text-muted">Posted {postedAgo(job.published_at).toLowerCase()}</p> : null}

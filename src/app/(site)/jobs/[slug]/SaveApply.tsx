@@ -67,3 +67,12 @@ export function SaveButton({ jobId, slug, signedIn, card }: Props) {
     </Button>
   );
 }
+
+// Applying on Ocelot: the form, or once sent, the date and a link to the card.
+export function OcelotApply({ slug, signedIn, applied }: { slug: string; signedIn: boolean; applied: { at: string; cardId: string | null } | null }) {
+  if (applied) {
+    const day = new Date(applied.at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return <ButtonLink href={applied.cardId ? `/app/tracker/${applied.cardId}` : "/app/tracker"} variant="outline">Applied {day}</ButtonLink>;
+  }
+  return <ButtonLink href={signedIn ? `/jobs/${slug}/apply` : `/login?next=/jobs/${slug}/apply`}>Apply</ButtonLink>;
+}

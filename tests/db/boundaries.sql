@@ -77,13 +77,19 @@ select pg_temp.expect((select count(*) from orgs) = 1, 'visitors see the company
 select pg_temp.expect((select count(*) from org_members) = 0, 'visitors cannot see company members');
 
 -- Cam saves the job, then applies. The saved card becomes Applied.
+reset role;
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-00000000000c', 'Cam CV', '00000000-0000-0000-0000-00000000000c/cv.pdf', 'application/pdf', 1000) returning id as cam_cv \gset
+update profiles set full_name = 'Cam Tran' where id = '00000000-0000-0000-0000-00000000000c';
 select pg_temp.act('00000000-0000-0000-0000-00000000000c');
 insert into tracker_items (user_id, job_id, title, company, notes)
   select auth.uid(), id, title, 'Acme', 'Ask about the team size' from jobs;
 insert into tracker_items (user_id, title, company, url, notes)
   values (auth.uid(), 'Sales Lead', 'Elsewhere Co', 'https://example.com/job/1', 'Found on LinkedIn');
-insert into applications (job_id, org_id, candidate_id, snapshot)
-  select id, org_id, auth.uid(), '{"name":"Cam"}' from jobs;
+select pg_temp.fails($$insert into applications (job_id, org_id, candidate_id, snapshot) select id, org_id, auth.uid(), '{"name":"Someone else"}' from jobs$$,
+  'applications go through apply_to_job only, so nobody can write their own snapshot');
+select apply_to_job((select id from jobs), :'cam_cv', '{}', 'Hello Acme');
+select pg_temp.expect((select snapshot->>'name' = 'Cam Tran' and snapshot->>'note' = 'Hello Acme' and resume_id = :'cam_cv' from applications), 'the snapshot is built from the profile');
 select pg_temp.expect((select stage from tracker_items where job_id is not null) = 'applied', 'applying moves the saved card to Applied');
 select pg_temp.expect((select count(*) from tracker_items) = 2, 'applying links the saved card instead of adding another');
 update applications set hiring_stage = 'hired';
@@ -185,6 +191,7 @@ select pg_temp.act('00000000-0000-0000-0000-00000000000a');
 select pg_temp.expect((select count(*) from applications) = 1, 'the company keeps the application');
 select pg_temp.expect((select candidate_id is null and snapshot = '{"deleted": true}' and candidate_deleted_at is not null from applications),
   'the kept application has no candidate details');
+select pg_temp.expect((select count(*) from documents) = 0, 'the résumé sent with it is gone too');
 select pg_temp.expect((select count(*) from email_log) = 0, 'people cannot read the email log');
 reset role;
 
@@ -318,7 +325,7 @@ select pg_temp.act('00000000-0000-0000-0000-00000000000d');
 reset role;
 select id as live_job from jobs where slug = 'acme-live' \gset
 select pg_temp.act('00000000-0000-0000-0000-00000000000d');
-select pg_temp.fails(format($$insert into applications (job_id, org_id, candidate_id) values (%L, %L, auth.uid())$$, :'live_job', :'acme'), 'nobody can apply to a suspended company');
+select pg_temp.fails(format($$select apply_to_job(%L, gen_random_uuid())$$, :'live_job'), 'nobody can apply to a suspended company');
 select pg_temp.act('00000000-0000-0000-0000-0000000000f1');
 select pg_temp.expect((select count(*) from jobs where org_id = :'acme') > 0, 'members of a suspended company still see their own jobs');
 select pg_temp.fails($$update orgs set suspended_at = null$$, 'a member cannot lift a suspension');
@@ -512,4 +519,79 @@ delete from documents where id = :'dee_cv';
 select pg_temp.expect((select resume_id is null from tracker_items where id = :'brand_card'), 'deleting a résumé clears it from cards');
 reset role;
 select pg_temp.expect((select count(*) from documents where user_id = '00000000-0000-0000-0000-00000000000e') = 1, 'nobody else can delete a résumé');
+-- ---------- Milestone 4, part 1: applying ----------
+reset role;
+update orgs set suspended_at = null, trusted = true where id = :'gamma';
+update job_questions set required = true where position = 1 and job_id = (select id from jobs where slug = 'gamma-sdr');
+update profiles set full_name = 'Dee Pham', phone = '+84 90 123 4567' where id = '00000000-0000-0000-0000-00000000000d';
+update profiles set full_name = 'Eve Le' where id = '00000000-0000-0000-0000-00000000000e';
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-00000000000d', 'Dee CV', '00000000-0000-0000-0000-00000000000d/m4.pdf', 'application/pdf', 1000) returning id as dee_m4 \gset
+select id as sdr from jobs where slug = 'gamma-sdr' \gset
+select id as ae from jobs where slug = 'gamma-ae' \gset
+select jsonb_object_agg(id, 'Answer ' || position) as answers from job_questions where job_id = :'sdr' \gset
+update profiles set full_name = 'Hanh Vo' where id = '00000000-0000-0000-0000-0000000000a2';
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-0000000000a2', 'Hanh CV', '00000000-0000-0000-0000-0000000000a2/cv.pdf', 'application/pdf', 1000) returning id as hanh_cv \gset
+update jobs set expires_at = now() - interval '1 minute' where id = :'sdr';
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L)$$, :'sdr', :'dee_m4', :'answers'), 'a job past its end date takes no applications, even before the expiry job runs');
+reset role;
+update jobs set expires_at = now() + interval '20 days' where id = :'sdr';
+select pg_temp.act(null);
+select pg_temp.fails(format($$select apply_to_job(%L, %L)$$, :'sdr', :'dee_m4'), 'visitors cannot apply');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, '{}')$$, :'sdr', :'dee_m4'), 'required questions need an answer');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L)$$, :'sdr', :'eve_cv', :'answers'), 'nobody can send someone else''s résumé');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L)$$, :'ae', :'dee_m4', :'answers'), 'a closed job takes no applications');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L, %L)$$, :'sdr', :'dee_m4', :'answers', repeat('x', 3001)), 'the note has a length limit');
+select apply_to_job(:'sdr', :'dee_m4', :'answers', 'I led SDR teams before.') as dee_app \gset
+select pg_temp.expect((select snapshot->>'name' = 'Dee Pham' and snapshot->>'phone' = '+84 90 123 4567' and snapshot->>'job_title' = 'Lead SDR'
+  and jsonb_array_length(snapshot->'answers') = 5 and snapshot->'answers'->0->>'prompt' = 'Question number 1' and snapshot->'answers'->0->>'answer' = 'Answer 1'
+  from applications where id = :'dee_app'), 'the snapshot holds the profile, the questions with answers and the job title');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L)$$, :'sdr', :'dee_m4', :'answers'), 'one application per job');
+select pg_temp.expect((select application_id = :'dee_app' and stage = 'interviewing' and resume_id = :'dee_m4' from tracker_items where id = :'saved_card'),
+  'applying links the saved card, keeps its stage and records the résumé');
+update profiles set full_name = 'Dee Changed' where id = auth.uid();
+select pg_temp.expect((select snapshot->>'name' from applications where id = :'dee_app') = 'Dee Pham', 'later profile edits never change what was sent');
+update applications set hiring_stage = 'hired' where id = :'dee_app';
+select pg_temp.expect((select hiring_stage from applications where id = :'dee_app') = 'new', 'the candidate cannot move the hiring stage');
+
+-- The company: sees it, moves it, cannot withdraw it, and cannot apply to its own jobs.
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from applications where id = :'dee_app') = 1, 'the company sees the application');
+select pg_temp.expect((select count(*) from documents where id = :'dee_m4') = 1, 'and the résumé details sent with it');
+select pg_temp.fails(format($$select apply_to_job(%L, %L, %L)$$, :'sdr', :'hanh_cv', :'answers'), 'a company member cannot apply to their own company''s job');
+select pg_temp.fails(format($$update applications set hiring_stage = 'withdrawn' where id = %L$$, :'dee_app'), 'only the candidate can withdraw');
+update applications set hiring_stage = 'interviewing' where id = :'dee_app';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a3');
+select pg_temp.expect((select count(*) from applications) = 0 and (select count(*) from documents) = 0, 'other companies see nothing');
+
+-- Deleting a sent résumé hides it and keeps it for the company.
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+delete from documents where id = :'dee_m4';
+select pg_temp.expect((select deleted_at is not null from documents where id = :'dee_m4'), 'a sent résumé is hidden, not removed');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from documents where id = :'dee_m4') = 1, 'the company keeps the résumé it got');
+
+-- Withdrawing is final and moves the candidate's own card.
+select pg_temp.act('00000000-0000-0000-0000-00000000000e');
+select pg_temp.fails(format($$select withdraw_application(%L)$$, :'dee_app'), 'nobody can withdraw someone else''s application');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select withdraw_application(:'dee_app');
+select pg_temp.expect((select hiring_stage from applications where id = :'dee_app') = 'withdrawn', 'the candidate can withdraw');
+select pg_temp.expect((select stage from tracker_items where id = :'saved_card') = 'withdrawn', 'withdrawing moves their card to Withdrawn');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.fails(format($$update applications set hiring_stage = 'offer' where id = %L$$, :'dee_app'), 'a withdrawn application cannot be moved');
+
+-- A deleted account takes its sent résumés with it.
+reset role;
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-00000000000e', 'Eve CV 2', '00000000-0000-0000-0000-00000000000e/m4.pdf', 'application/pdf', 1000) returning id as eve_m4 \gset
+select pg_temp.act('00000000-0000-0000-0000-00000000000e');
+select apply_to_job(:'sdr', :'eve_m4', :'answers') as eve_app \gset
+reset role;
+delete from auth.users where id = '00000000-0000-0000-0000-00000000000e';
+select pg_temp.expect((select count(*) from documents where user_id = '00000000-0000-0000-0000-00000000000e') = 0, 'deleting an account removes its sent résumés');
+select pg_temp.expect((select candidate_id is null and resume_id is null and snapshot = '{"deleted": true}' from applications where id = :'eve_app'), 'and leaves the company a record without details');
 \echo 'All boundary tests passed.'

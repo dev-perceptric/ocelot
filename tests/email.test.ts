@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EMAIL_COLORS } from "../src/lib/email/colors.ts";
 import { esc, layout, optionalFooter } from "../src/lib/email/layout.ts";
-import { inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
+import { applicationSent, inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
 import { oneClickUrl, sign, signingKey, unsubscribeUrl, verify } from "../src/lib/email/unsubscribe.ts";
 
 test("email colors match the brand tokens", () => {
@@ -24,6 +24,7 @@ test("templates fill every value and escape what people typed", () => {
     inviteAccepted({ company: "Acme", member: "Ben", teamUrl: "https://joinocelot.com/employer/team" }),
     jobPublished({ company: "Acme", title: "SDR", jobUrl: "https://joinocelot.com/jobs/sdr", manageUrl: "https://joinocelot.com/employer/jobs", until: "28 November" }),
     jobSentBack({ title: "SDR", note: "Add pay <please>", editUrl: "https://joinocelot.com/employer/jobs/1" }),
+    applicationSent({ job: "SDR", company: "Acme", cardUrl: "https://joinocelot.com/app/tracker/1" }),
   ]) {
     assert.ok(!/undefined|null|\{\{|\$\{/.test(m.html + m.text), "no empty or unfilled values");
   }
