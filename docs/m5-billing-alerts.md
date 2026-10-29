@@ -30,7 +30,8 @@ Each ships as its own pull request.
 | Item | Detail |
 |---|---|
 | `/employer/billing` | Credits left by package, buy credits ahead, orders with Stripe receipts |
-| `/admin/billing` | Payments switch, give founding credits to a company, every order, refund an order whose job never went live (refunds through Stripe, removes the credit, moves the job back to draft) |
+| `/admin/billing` | Payments switch (needs the Stripe secrets), every order with what was paid this month, refund an order whose job never went live (refunds through Stripe, removes the credit, moves the job back to draft) |
+| Admin company page | Credits left, give founding credits (1 to 20). Every billing change is in the audit log |
 
 ### 3. Alerts, digest and reminders
 
