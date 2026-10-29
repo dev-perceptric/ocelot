@@ -153,14 +153,14 @@ isOneToOne: false
                   ]
                 },"interviews": {
                   Row: {
-                    "created_at": string,"id": string,"item_id": string,"meeting_url": string | null,"notes": string,"starts_at": string,"user_id": string
+                    "created_at": string,"id": string,"item_id": string,"meeting_url": string | null,"notes": string,"starts_at": string,"title": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"item_id": string,"meeting_url"?: string | null,"notes"?: string,"starts_at": string,"user_id": string
+                    "created_at"?: string,"id"?: string,"item_id": string,"meeting_url"?: string | null,"notes"?: string,"starts_at": string,"title"?: string | null,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"item_id"?: string,"meeting_url"?: string | null,"notes"?: string,"starts_at"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"item_id"?: string,"meeting_url"?: string | null,"notes"?: string,"starts_at"?: string,"title"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {

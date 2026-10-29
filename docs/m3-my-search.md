@@ -20,7 +20,7 @@ Each ships as its own pull request.
 | Card page `/app/tracker/[id]` | Edit details, change stage, private notes, contacts, history of changes, archive or delete |
 | Overview `/app` | Counts per stage and the most recent cards |
 
-### 2. Tasks and interviews
+### 2. Tasks and interviews (done)
 
 | Item | Detail |
 |---|---|
