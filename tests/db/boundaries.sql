@@ -464,4 +464,22 @@ select pg_temp.expect((select count(*) from tracker_events) = 0, 'or their histo
 update tracker_items set notes = 'hacked';
 reset role;
 select pg_temp.expect((select notes from tracker_items where title = 'Brand Lead') = 'Found on LinkedIn', 'nobody else can edit a card');
+-- ---------- Milestone 3, part 2: tasks and interviews ----------
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select id as brand_card from tracker_items where title = 'Brand Lead' \gset
+insert into tasks (user_id, item_id, title, due_at) values (auth.uid(), :'brand_card', 'Follow up with Minh', now() + interval '2 days');
+insert into tasks (user_id, title) values (auth.uid(), 'Update my CV');
+select pg_temp.fails($$insert into tasks (user_id, title) values (auth.uid(), '   ')$$, 'a task needs a title');
+insert into interviews (user_id, item_id, starts_at, title, meeting_url) values (auth.uid(), :'brand_card', now() + interval '3 days', 'Hiring manager', 'https://meet.test/abc');
+select pg_temp.expect((select stage from tracker_items where id = :'brand_card') = 'interviewing', 'adding an interview moves a Saved card to Interviewing');
+select pg_temp.expect((select count(*) from tracker_events where item_id = :'brand_card' and kind = 'interview') = 1, 'the interview is in the card''s history');
+update tracker_items set stage = 'offer' where id = :'brand_card';
+insert into interviews (user_id, item_id, starts_at) values (auth.uid(), :'brand_card', now() + interval '5 days');
+select pg_temp.expect((select stage from tracker_items where id = :'brand_card') = 'offer', 'a later interview never moves a card backwards');
+select pg_temp.fails(format($$insert into interviews (user_id, item_id, starts_at, meeting_url) values (auth.uid(), %L, now(), 'javascript:x')$$, :'brand_card'), 'a meeting link must be a web address');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from tasks) = 0 and (select count(*) from interviews) = 0, 'nobody else can see tasks or interviews');
+select pg_temp.fails(format($$insert into tasks (user_id, item_id, title) values (auth.uid(), %L, 'Sneaky')$$, :'brand_card'), 'nobody can add a task to someone else''s card');
+select pg_temp.fails(format($$insert into interviews (user_id, item_id, starts_at) values (auth.uid(), %L, now())$$, :'brand_card'), 'nobody can add an interview to someone else''s card');
+reset role;
 \echo 'All boundary tests passed.'

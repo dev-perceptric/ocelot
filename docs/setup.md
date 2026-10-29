@@ -229,6 +229,7 @@ node tests/e2e/jobs.cjs
 node tests/e2e/search.cjs
 node tests/e2e/reports.cjs
 node tests/e2e/tracker.cjs
+node tests/e2e/tasks.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
 
