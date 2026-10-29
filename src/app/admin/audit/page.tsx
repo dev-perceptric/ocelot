@@ -17,7 +17,8 @@ export default async function Audit({ searchParams }: { searchParams: Promise<{ 
   const { data: people } = actors.length ? await db.from("profiles").select("id, email").in("id", actors) : { data: [] };
   const who = new Map((people ?? []).map((p) => [p.id, p.email]));
   const link = (table: string | null, id: string | null) =>
-    table === "orgs" ? `/admin/companies/${id}` : table === "auth.users" ? `/admin/people/${id}` : table === "jobs_queue" ? "/admin/queue" : null;
+    table === "orgs" ? `/admin/companies/${id}` : table === "auth.users" ? `/admin/people/${id}` : table === "jobs_queue" ? "/admin/queue"
+    : table === "jobs" ? `/admin/review/${id}` : table === "reports" ? "/admin/reports?tab=handled" : null;
 
   return (
     <>

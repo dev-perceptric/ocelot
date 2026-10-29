@@ -68,3 +68,28 @@ export function jobSentBack(o: { title: string; note: string; editUrl: string })
     }),
   };
 }
+
+export const REPORT_REASONS: Record<string, string> = {
+  scam: "Scam or fake job",
+  fee_required: "Asks candidates to pay",
+  misleading: "Misleading details",
+  expired: "Already filled or closed",
+  other: "Something else",
+};
+
+// To Ocelot's admins, so scams come down fast.
+export function reportReceived(o: { job: string; company: string; reason: string; details: string; reviewUrl: string }): Email {
+  return {
+    subject: `Report: ${REPORT_REASONS[o.reason] ?? o.reason}, ${o.job} at ${o.company}`,
+    pref: null,
+    ...layout({
+      title: "A job was reported",
+      preview: `${o.job} at ${o.company}: ${REPORT_REASONS[o.reason] ?? o.reason}`,
+      blocks: [
+        { p: `${o.job} at ${o.company} was reported: ${REPORT_REASONS[o.reason] ?? o.reason}.` },
+        ...(o.details ? [{ p: `Details: ${o.details}` }] : []),
+        { button: { label: "Open reports", url: o.reviewUrl } },
+      ],
+    }),
+  };
+}

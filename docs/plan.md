@@ -93,7 +93,7 @@ Each milestone ends with tests on its access rules.
 |---|---|---|---|
 | 0 | Setup | Supabase project, Fly apps, domain, Resend, repo skeleton, all tables with access rules and tests, CI deploy, worker | `joinocelot.com` serves the app from Fly. Code done; accounts per `docs/setup.md` |
 | 1 | Foundation (`docs/m1-foundation.md`) | Shared parts, email code and Google sign-in, profile, company settings and invites, email pipeline, admin, delete and export, backups, monitoring, places and categories | A user can sign up, make a company and invite a teammate. Tests prove one org can't read another |
-| 2 | Marketplace | Job form, preview, review queue, job and company pages, search and filters, report button | An employer publishes a reviewed job and it shows in search |
+| 2 | Marketplace (`docs/m2-marketplace.md`, done) | Job form, preview, review queue, job and company pages, search and filters, report button | An employer publishes a reviewed job and it shows in search |
 | 3 | My search | Tracker board and list, add external job by URL, notes, tasks, interviews, résumé upload | A candidate tracks Ocelot jobs and outside jobs together |
 | 4 | Applications | Apply on Ocelot, screening answers, snapshot, applicant pipeline, emails | The full loop works end to end |
 | 5 | Billing and alerts | Stripe Checkout, webhook, credits, saved-search alerts, weekly digest | A paid job goes live only after payment and review |

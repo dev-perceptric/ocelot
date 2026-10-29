@@ -59,3 +59,16 @@ export function PersonActions({ id, email, banned }: { id: string; email: string
 export function RetryTask({ id }: { id: number }) {
   return <Act label="Retry" okText="Queued again" run={() => A.retryTask(id)} />;
 }
+
+export function ReportActions({ id }: { id: string }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Act label="Actioned" okText="Marked actioned" run={async () => {
+        const note = await askText({ title: "What did you do?", label: "Note (kept in the audit log)", confirm: "Mark actioned" });
+        return note ? A.handleReport(id, "actioned", note) : null;
+      }} />
+      <Act label="Dismiss" okText="Dismissed" run={async () =>
+        (await askConfirm({ title: "Dismiss this report?", body: "Nothing needs to change.", confirm: "Dismiss" })) ? A.handleReport(id, "dismissed", "") : null} />
+    </div>
+  );
+}
