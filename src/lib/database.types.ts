@@ -823,6 +823,11 @@ isOneToOne: false
 "like_escape":
 { Args: { "p": string }; Returns: string
                            },
+"live_companies":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "name": string,"slug": string
+            }[]
+                           },
 "mark_applied":
 { Args: { "p_job": string }; Returns: string
                            },
@@ -860,7 +865,7 @@ isOneToOne: false
 { Args: { "p_job": string }; Returns: string
                            },
 "search_jobs":
-{ Args: { "category"?: string,"city"?: string,"country"?: string,"pay_only"?: boolean,"q"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "apply_method": string,
 "apply_url": string | null,
 "category": string | null,

@@ -7,7 +7,7 @@ import { Select } from "@/components/Select";
 import { Button, Checkbox } from "@/components/ui";
 import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { CITIES, COUNTRIES } from "@/lib/places";
-import { filtersQuery, type Filters as F } from "@/lib/search";
+import { filtersQuery, MIN_PAY, payLabel, POSTED, POSTED_LABEL, type Filters as F } from "@/lib/search";
 import { CATEGORIES, ROLES } from "@/lib/taxonomy";
 
 const WHERE = [{ value: "remote", label: "Remote" }, { value: "hybrid", label: "Hybrid" }, { value: "on_site", label: "On-site" }];
@@ -18,7 +18,7 @@ const areaOptions = [
 
 // The filter panel: a column beside the results on wide screens, a full-screen sheet on phones.
 // Every change updates the address, so filters can be shared and the back button works.
-export function Filters({ filters: fromUrl, total }: { filters: F; total: number }) {
+export function Filters({ filters: fromUrl, total, companies }: { filters: F; total: number; companies: { name: string; slug: string }[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   // Shown at once while the new results load, then follows the address (e.g. after removing a tag).
@@ -66,6 +66,27 @@ export function Filters({ filters: fromUrl, total }: { filters: F; total: number
           <Select id="f-area" placeholder="Any area" options={[{ value: "", label: "Any area" }, ...areaOptions]}
             value={filters.role ? `r:${filters.role}` : filters.category ? `c:${filters.category}` : ""}
             onChange={(v) => go(v?.startsWith("r:") ? { role: v.slice(2), category: null } : { role: null, category: v ? v.slice(2) : null })} />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="f-company" className="text-meta font-bold">Company</label>
+        <div className="mt-2">
+          <Select id="f-company" placeholder="Any company" searchable options={[{ value: "", label: "Any company" }, ...companies.map((c) => ({ value: c.slug, label: c.name }))]}
+            value={filters.company ?? ""} onChange={(v) => go({ company: v || null })} />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="f-posted" className="text-meta font-bold">Posted</label>
+        <div className="mt-2">
+          <Select id="f-posted" placeholder="Any time" options={[{ value: "", label: "Any time" }, ...POSTED.map((d) => ({ value: String(d), label: POSTED_LABEL[d] }))]}
+            value={filters.posted ? String(filters.posted) : ""} onChange={(v) => go({ posted: v ? Number(v) : null })} />
+        </div>
+      </div>
+      <div>
+        <label htmlFor="f-min-pay" className="text-meta font-bold">Pay</label>
+        <div className="mt-2">
+          <Select id="f-min-pay" placeholder="Any pay" options={[{ value: "", label: "Any pay" }, ...MIN_PAY.map((n) => ({ value: String(n), label: payLabel(n) }))]}
+            value={filters.minPay ? String(filters.minPay) : ""} onChange={(v) => go({ minPay: v ? Number(v) : null })} />
         </div>
       </div>
       <fieldset>

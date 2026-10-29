@@ -36,3 +36,19 @@ test("saved filters go in and come back the same, and stale values drop out", as
   assert.deepEqual(fromSaved("", { where: ["moon"], country: "XX", level: "mid" }).where, []);
   assert.equal(fromSaved("", "nonsense").country, null);
 });
+
+test("company, posted, pay and sort read from the address and write back", () => {
+  const f = readFilters({ company: "zscaler", posted: "7", min_pay: "100000", sort: "new" });
+  assert.deepEqual([f.company, f.posted, f.minPay, f.sort], ["zscaler", 7, 100000, "new"]);
+  assert.equal(filtersQuery(f), "?company=zscaler&posted=7&min_pay=100000&sort=new");
+  assert.equal(activeCount(f), 3, "the order isn't a filter");
+  const bad = readFilters({ company: "Bad Slug!", posted: "2", min_pay: "99", sort: "random" });
+  assert.deepEqual([bad.company, bad.posted, bad.minPay, bad.sort], [null, null, null, "best"]);
+});
+
+test("saved searches keep the company and pay, and leave out posted and order", async () => {
+  const { fromSaved, toSaved } = await import("../src/lib/search.ts");
+  const f = readFilters({ company: "ramp", min_pay: "150000", posted: "1", sort: "new" });
+  const back = fromSaved("", JSON.parse(JSON.stringify(toSaved(f))));
+  assert.deepEqual([back.company, back.minPay, back.posted, back.sort], ["ramp", 150000, null, "best"]);
+});
