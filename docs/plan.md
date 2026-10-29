@@ -68,7 +68,7 @@ One small worker on Fly reads `jobs_queue` (same pattern as Claritia and Omnisci
 - The webhook is signed and idempotent (store the Stripe event id, ignore repeats).
 - A paid job goes live only after both payment and review pass. The 30 days start at publish.
 - A rejected paid listing keeps its credit for a fixed version, or gets a refund on request.
-- Stripe availability: Stripe does not support businesses based in Vietnam. Bill from an entity in a supported country (for example Singapore or the US), or use a local gateway later. (check)
+- Stripe availability: Stripe does not support businesses based in Vietnam. Ocelot bills from its Singapore company.
 
 ## Trust and safety
 
@@ -96,7 +96,7 @@ Each milestone ends with tests on its access rules.
 | 2 | Marketplace (`docs/m2-marketplace.md`, done) | Job form, preview, review queue, job and company pages, search and filters, report button | An employer publishes a reviewed job and it shows in search |
 | 3 | My search (`docs/m3-my-search.md`, done) | Tracker board and list, add external job by URL, notes, tasks, interviews, résumé upload | A candidate tracks Ocelot jobs and outside jobs together |
 | 4 | Applications (`docs/m4-applications.md`, done) | Apply on Ocelot, screening answers, snapshot, applicant pipeline, emails | The full loop works end to end |
-| 5 | Billing and alerts | Stripe Checkout, webhook, credits, saved-search alerts, weekly digest | A paid job goes live only after payment and review |
+| 5 | Billing and alerts (`docs/m5-billing-alerts.md`) | Stripe Checkout, webhook, credits, saved-search alerts, weekly digest | A paid job goes live only after payment and review |
 | 6 | Private beta | Founding employers, 50–100 live jobs, fixes | The loop runs with real people |
 
 Planning estimate for one full-time developer: 10–14 weeks to public beta.
@@ -111,12 +111,12 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 | Supabase compute upgrade (Small at Growth) | $0 | $5 (check) |
 | Fly.io web app, shared-cpu-1x 512 MB, always on, Singapore | $4 (check) | $8, two machines (check) |
 | Fly.io worker, shared-cpu-1x 256 MB | $2 (check) | $2 (check) |
-| Resend email (Free up to 3,000 a month, Pro $20 for 50,000) | $0 | $20 |
-| Stripe fees (2.9% + $0.30 per card payment, US rates) | about $5 on $100 of sales (check) | about $90 on $3,000 of sales (check) |
+| Resend email (Pro $20 for 50,000 a month at Beta once alerts start, Scale $90 for 100,000 at Growth) | $20 (check) | $90 (check) |
+| Stripe fees (Singapore account, about 3.4% + S$0.50 per card payment) | about $5 on $100 of sales (check) | about $140 on $3,000 of sales (check) |
 | Sentry errors (free tier) | $0 | $26 (check) |
 | PostHog analytics (free tier) | $0 | $0 (check) |
 | Domain joinocelot.com (about $12 a year) | $1 | $1 |
 | Claude tokens | $0 (no AI at launch) | $0 |
-| **Total** | **about $37** | **about $177** |
+| **Total** | **about $57** | **about $297** |
 
 AI is off for launch. When URL extraction for outside jobs is added (Milestone 7 or later), add its token cost here.

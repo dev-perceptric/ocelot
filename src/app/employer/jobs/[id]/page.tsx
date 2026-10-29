@@ -6,24 +6,30 @@ import { JOB_STATUS } from "@/lib/jobStatus";
 import { myOrgs } from "@/lib/org";
 import { JobForm } from "../JobForm";
 import { JobActions } from "./JobActions";
+import { BuyListing, PaymentWait } from "../../billing/BuyListing";
+import { PACKAGE_LABEL } from "@/lib/packages";
 
 export const metadata: Metadata = { title: "Job" };
 export const dynamic = "force-dynamic";
 
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long" }) : "");
 
-export default async function EditJob({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sent?: string; missing?: string }> }) {
+export default async function EditJob({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sent?: string; missing?: string; pay?: string; paid?: string }> }) {
   const { id } = await params;
-  const { sent, missing } = await searchParams;
+  const { sent, missing, pay, paid } = await searchParams;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { supabase, current } = await myOrgs();
   if (!current) redirect("/employer");
   const { data: job } = await supabase.from("jobs").select("*, job_questions(prompt, position)").eq("id", id).eq("org_id", current.id).maybeSingle();
   if (!job) notFound();
-  const [{ data: org }, { count: applicants }] = await Promise.all([
+  const [{ data: org }, { count: applicants }, { data: credit }, { data: settings }] = await Promise.all([
     supabase.from("orgs").select("trusted").eq("id", current.id).single(),
     supabase.from("applications").select("id", { count: "exact", head: true }).eq("job_id", job.id),
+    supabase.from("entitlements").select("package").eq("job_id", job.id).maybeSingle(),
+    supabase.from("app_settings").select("payments_on").maybeSingle(),
   ]);
+  const waitingToSend = job.status === "draft" || job.status === "rejected";
+  const needsListing = Boolean(settings?.payments_on) && !credit && !job.published_at && waitingToSend;
   const status = JOB_STATUS[job.status] ?? { label: job.status, tone: "neutral" as const };
   const questions = [...(job.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
   const editable = job.status !== "closed" && job.status !== "expired" && job.status !== "suspended";
@@ -43,6 +49,15 @@ export default async function EditJob({ params, searchParams }: { params: Promis
         <h1 className="text-title font-bold">{job.title || "Untitled job"}</h1>
         <Tag tone={status.tone}>{status.label}</Tag>
       </div>
+      {paid && waitingToSend ? <PaymentWait /> : null}
+      {paid && !waitingToSend ? <p className="mt-4 border border-border bg-surface p-4 text-body rounded-[var(--radius-card)]" role="status">{job.status === "published" ? "Payment received. Your job is live." : "Payment received. Sent for review. You'll get an email when it's live."}</p> : null}
+      {credit ? <p className="mt-2 text-meta text-muted">{PACKAGE_LABEL[credit.package]} listing</p> : null}
+      {pay && needsListing ? (
+        <section className="mt-6 border border-border bg-surface p-5 rounded-[var(--radius-card)]">
+          <h2 className="mb-4 text-card font-bold">Choose a listing to send this job for review</h2>
+          <BuyListing jobId={job.id} label="Pay and send for review" />
+        </section>
+      ) : null}
       {sent ? <p className="mt-4 border border-border bg-surface p-4 text-body rounded-[var(--radius-card)]" role="status">{job.status === "published" ? "Your job is live." : "Sent for review. You'll get an email when it's live."}</p> : null}
       {missing ? <p className="mt-4 border border-danger bg-danger-bg p-4 text-body text-danger rounded-[var(--radius-card)]" role="alert">Saved as a draft. {missing}</p> : null}
       {banner && !sent ? <p className={`mt-4 border p-4 text-body rounded-[var(--radius-card)] ${job.status === "rejected" ? "border-warning bg-warning-bg" : "border-border bg-surface"}`}>{banner}</p> : null}
