@@ -9,9 +9,15 @@ import { createVisitor } from "@/lib/supabase/server";
 // isn't kept: pages show without counts and links until the next one works.
 const cachedCounts = unstable_cache(async (): Promise<[string, number][]> => {
   if (!supabaseReady) return [];
-  const { data, error } = await createVisitor().rpc("seo_counts");
-  if (error) throw new Error(`seo_counts: ${error.message}`);
-  return (data ?? []).map((r) => [`${r.area}|${r.place}`, r.jobs]);
+  // A thousand rows at a time: the API's page size.
+  const out: [string, number][] = [];
+  for (let from = 0; from < 100_000; from += 1000) {
+    const { data, error } = await createVisitor().from("seo_page_counts").select("area, place, jobs").order("area").order("place").range(from, from + 999);
+    if (error) throw new Error(`seo_counts: ${error.message}`);
+    out.push(...(data ?? []).map((r): [string, number] => [`${r.area}|${r.place}`, r.jobs]));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
 }, ["seo-counts"], { revalidate: 3600 });
 async function counts(): Promise<[string, number][]> {
   try { return await cachedCounts(); } catch (e) { console.error(e); return []; }
