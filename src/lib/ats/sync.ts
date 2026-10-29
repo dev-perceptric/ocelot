@@ -1,7 +1,8 @@
 import "server-only";
 import { createAdmin } from "@/lib/supabase/server";
-import { detailUrl, feedCompany, feedUrl, nextPageUrl, parseDetail, parseFeed, type Provider, type RawJob } from "./boards";
-import { htmlToText, importedSlug, toJob } from "./normalize";
+import { detailUrl, feedCompany, feedUrl, isClassic, nextPageUrl, parseDetail, parseFeed, type Provider, type RawJob } from "./boards";
+import { guessRole, htmlToText, importedSlug, toJob } from "./normalize";
+import { READERS, type Get } from "./readers";
 
 // Keeps one company's Ocelot jobs in step with its job board. New jobs go live, changed ones update, and jobs
 // that left the board close. A board that fails to load changes nothing and records the error.
@@ -19,8 +20,29 @@ export async function getJson(url: string, fetchImpl: typeof fetch = fetch) {
   return res.json();
 }
 
-// Every job on a board, following its pages, plus the company name when the feed gives one.
-export async function loadBoard(provider: Provider, board: string, fetchImpl: typeof fetch = fetch): Promise<{ jobs: RawJob[]; company: string | null }> {
+// Boards read through several calls. Tests send every address to the local stand-in (/web/<host>/<path>).
+function getter(fetchImpl: typeof fetch): Get {
+  return async (url, init) => {
+    const u = new URL(url);
+    const res = await fetchImpl(TEST_BASE ? `${TEST_BASE.replace(/\/$/, "")}/web/${u.host}${u.pathname}${u.search}` : url, {
+      method: init?.post ? "POST" : "GET",
+      body: init?.post ? JSON.stringify(init.post) : undefined,
+      headers: { Accept: init?.text ? "text/html,application/xml,*/*" : "application/json", "User-Agent": "Ocelot job sync (joinocelot.com)", ...(init?.post ? { "Content-Type": "application/json" } : {}) },
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (res.status === 404) throw new Error("This board wasn't found. Check the link.");
+    if (!res.ok) throw new Error(`The board answered ${res.status}. Try again later.`);
+    return init?.text ? res.text() : res.json();
+  };
+}
+
+// Titles Ocelot imports: marketing, sales and customer success, unless a board takes every role.
+export const ourTitle = (title: string) => Boolean(guessRole(title).category);
+
+// Every job on a board, following its pages, plus the company name when the feed gives one. Boards read through
+// several calls only open the jobs whose title is `wanted`.
+export async function loadBoard(provider: Provider, board: string, fetchImpl: typeof fetch = fetch, wanted: (title: string) => boolean = () => true): Promise<{ jobs: RawJob[]; company: string | null }> {
+  if (!isClassic(provider)) return READERS[provider](board, { get: getter(fetchImpl), wanted });
   let url: string | null = feedUrl(provider, board, TEST_BASE);
   const jobs: RawJob[] = [];
   let company: string | null = null;
@@ -37,7 +59,7 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
   const db = createAdmin();
   const provider = src.provider as Provider;
   try {
-    const raw = (await loadBoard(provider, src.board, fetchImpl)).jobs;
+    const raw = (await loadBoard(provider, src.board, fetchImpl, src.niche_only ? ourTitle : () => true)).jobs;
     // Some boards list one job once per location under the same id: keep the first.
     const ids = new Set<string>();
     const picked = raw.flatMap((r) => {
@@ -48,7 +70,8 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
     });
 
     // SmartRecruiters lists jobs without their text: fetch it for the ones that came through.
-    for (const p of picked.slice(0, 60)) {
+    for (const p of isClassic(provider) ? picked.slice(0, 60) : []) {
+      if (!isClassic(provider)) break;
       const url = detailUrl(provider, src.board, p.raw.externalId, TEST_BASE);
       if (!url) break;
       try {
@@ -114,12 +137,18 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
   }
 }
 
-export async function runSources(): Promise<number> {
-  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 30 });
+// One hourly run: boards due a sync, six at a time, for at most 4 minutes.
+export async function runSources(budgetMs = 240_000): Promise<number> {
+  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 400 });
   if (error) throw error;
+  const queue = [...(due ?? [])];
+  const stopAt = Date.now() + budgetMs;
   let ok = 0;
-  for (const s of due ?? []) {
-    try { await syncSource(s); ok++; } catch (e) { console.error(`sync ${s.provider}/${s.board} failed`, e); }
-  }
+  await Promise.all(Array.from({ length: 6 }, async () => {
+    while (queue.length && Date.now() < stopAt) {
+      const s = queue.shift()!;
+      try { await syncSource(s); ok++; } catch (e) { console.error(`sync ${s.provider}/${s.board} failed`, e); }
+    }
+  }));
   return ok;
 }

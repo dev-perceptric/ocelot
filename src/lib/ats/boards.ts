@@ -1,7 +1,12 @@
 // Companies' public job boards: where each one lives, how to read it, and how to tell which board a link is.
 // Plain functions with no app imports, so tests can load them. No keys: these are the boards' public feeds.
 
-export type Provider = "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "recruitee" | "workable";
+import { MORE_PROVIDERS, parseMoreLink, type MoreProvider } from "./readers.ts";
+
+// Boards read with one feed (and pages); the rest are read by readers.ts.
+export type ClassicProvider = "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "recruitee" | "workable";
+export type Provider = ClassicProvider | MoreProvider;
+export const isClassic = (p: Provider): p is ClassicProvider => !(MORE_PROVIDERS as readonly string[]).includes(p);
 
 export const PROVIDERS: Record<Provider, { name: string; example: string }> = {
   greenhouse: { name: "Greenhouse", example: "boards.greenhouse.io/stripe" },
@@ -10,6 +15,16 @@ export const PROVIDERS: Record<Provider, { name: string; example: string }> = {
   smartrecruiters: { name: "SmartRecruiters", example: "jobs.smartrecruiters.com/SmartRecruiters" },
   recruitee: { name: "Recruitee", example: "bunq.recruitee.com" },
   workable: { name: "Workable", example: "apply.workable.com/company" },
+  workday: { name: "Workday", example: "salesforce.wd12.myworkdayjobs.com/External_Career_Site" },
+  bamboohr: { name: "BambooHR", example: "company.bamboohr.com/careers" },
+  breezy: { name: "Breezy", example: "company.breezy.hr" },
+  rippling: { name: "Rippling", example: "ats.rippling.com/company/jobs" },
+  pinpoint: { name: "Pinpoint", example: "company.pinpointhq.com" },
+  teamtailor: { name: "Teamtailor", example: "company.teamtailor.com/jobs" },
+  personio: { name: "Personio", example: "company.jobs.personio.de" },
+  jobvite: { name: "Jobvite", example: "jobs.jobvite.com/company" },
+  jazzhr: { name: "JazzHR", example: "company.applytojob.com/apply" },
+  icims: { name: "iCIMS", example: "careers-company.icims.com/jobs" },
 };
 export const isProvider = (p: string): p is Provider => p in PROVIDERS;
 
@@ -48,11 +63,12 @@ export function parseBoardLink(input: string): { provider: Provider; board: stri
   if (host === "jobs.smartrecruiters.com" || host === "careers.smartrecruiters.com") return pick("smartrecruiters", first);
   if (host.endsWith(".recruitee.com")) return pick("recruitee", host.split(".")[0]);
   if (host === "apply.workable.com") return pick("workable", first);
-  return null;
+  const more = parseMoreLink(u);
+  return more && BOARD.test(more.board) ? more : null;
 }
 
 // Where each board's feed is. ATS_TEST_URL points every board at a local stand-in for tests.
-export function feedUrl(p: Provider, board: string, testBase?: string): string {
+export function feedUrl(p: ClassicProvider, board: string, testBase?: string): string {
   if (testBase) return `${testBase.replace(/\/$/, "")}/${p}/${board}`;
   const b = encodeURIComponent(board);
   switch (p) {
@@ -66,7 +82,7 @@ export function feedUrl(p: Provider, board: string, testBase?: string): string {
 }
 
 // The next page of a feed, for boards that page (SmartRecruiters gives 100 at a time). null when there's no more.
-export function nextPageUrl(p: Provider, board: string, json: unknown, testBase?: string): string | null {
+export function nextPageUrl(p: ClassicProvider, board: string, json: unknown, testBase?: string): string | null {
   if (p !== "smartrecruiters") return null;
   const o = obj(json);
   const offset = Number(o.offset ?? 0), limit = Number(o.limit ?? 100), total = Number(o.totalFound ?? 0);
@@ -75,7 +91,7 @@ export function nextPageUrl(p: Provider, board: string, json: unknown, testBase?
 }
 
 // The company's name, when the feed says it.
-export function feedCompany(p: Provider, json: unknown): string | null {
+export function feedCompany(p: ClassicProvider, json: unknown): string | null {
   const root = obj(json);
   if (p === "greenhouse") return s(arr(root.jobs)[0]?.company_name);
   if (p === "smartrecruiters") return s(obj(arr(root.content)[0]?.company).name);
@@ -84,7 +100,7 @@ export function feedCompany(p: Provider, json: unknown): string | null {
   return null;
 }
 
-export function detailUrl(p: Provider, board: string, id: string, testBase?: string): string | null {
+export function detailUrl(p: ClassicProvider, board: string, id: string, testBase?: string): string | null {
   if (p !== "smartrecruiters") return null;
   if (testBase) return `${testBase.replace(/\/$/, "")}/${p}/${board}/${id}`;
   return `https://api.smartrecruiters.com/v1/companies/${encodeURIComponent(board)}/postings/${encodeURIComponent(id)}`;
@@ -101,7 +117,7 @@ const period = (v: unknown): "hour" | "month" | "year" | null => {
 };
 
 // Reads a board's feed into RawJobs. Anything missing a title, id or link is left out.
-export function parseFeed(p: Provider, json: unknown): RawJob[] {
+export function parseFeed(p: ClassicProvider, json: unknown): RawJob[] {
   const out: (RawJob | null)[] = [];
   const root = obj(json);
   if (p === "greenhouse") {
@@ -186,7 +202,7 @@ export function parseFeed(p: Provider, json: unknown): RawJob[] {
 }
 
 // SmartRecruiters lists jobs without their text; the detail call adds it.
-export function parseDetail(p: Provider, json: unknown): { html: string | null; applyUrl: string | null } {
+export function parseDetail(p: ClassicProvider, json: unknown): { html: string | null; applyUrl: string | null } {
   if (p !== "smartrecruiters") return { html: null, applyUrl: null };
   const d = obj(json);
   const sec = obj(obj(d.jobAd).sections);

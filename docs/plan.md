@@ -109,7 +109,7 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 |---|---:|---:|
 | Supabase (dev-omniscient org: Free while testing, Pro before real users; Micro compute covered by the $10 credit) | $25 | $25 |
 | Supabase compute upgrade (Small at Growth) | $0 | $5 (check) |
-| Fly.io web app, shared-cpu-1x 512 MB, always on, Singapore | $4 (check) | $8, two machines (check) |
+| Fly.io web app, shared-cpu-1x 1 GB (job board sync runs in it), always on, Singapore | $6 (check) | $12, two machines (check) |
 | Fly.io worker, shared-cpu-1x 256 MB | $2 (check) | $2 (check) |
 | Resend email (Pro $20 for 50,000 a month at Beta once alerts start, Scale $90 for 100,000 at Growth) | $20 (check) | $90 (check) |
 | Stripe fees (Singapore account, about 3.4% + S$0.50 per card payment) | about $5 on $100 of sales (check) | about $140 on $3,000 of sales (check) |
@@ -117,6 +117,6 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 | PostHog analytics (free tier) | $0 | $0 (check) |
 | Domain joinocelot.com (about $12 a year) | $1 | $1 |
 | Claude tokens | $0 (no AI at launch) | $0 |
-| **Total** | **about $57** | **about $297** |
+| **Total** | **about $59** | **about $301** |
 
 AI is off for launch. When URL extraction for outside jobs is added (Milestone 7 or later), add its token cost here.

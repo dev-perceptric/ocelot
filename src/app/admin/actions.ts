@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { audit, requireAdmin } from "@/lib/admin";
 import { createAdmin } from "@/lib/supabase/server";
 import { refundPayment, stripeEnv } from "@/lib/stripe";
-import { PROVIDERS, feedUrl, parseBoardLink } from "@/lib/ats/boards";
+import { PROVIDERS, feedUrl, isClassic, parseBoardLink } from "@/lib/ats/boards";
 import { syncSource } from "@/lib/ats/sync";
 import { slugify } from "@/lib/jobs";
 import { COUNTRIES } from "@/lib/places";
@@ -165,7 +165,8 @@ export async function addSource(_: SourceState, form: FormData): Promise<SourceS
   const db = createAdmin();
   const { data: dup } = await db.from("job_sources").select("id").eq("provider", link.provider).eq("board", link.board).maybeSingle();
   if (dup) return { error: "This board is already added." };
-  try {
+  // Boards with one feed are checked first; the others are checked by their first sync.
+  if (isClassic(link.provider)) try {
     const res = await fetch(feedUrl(link.provider, link.board, process.env.ATS_TEST_URL), { signal: AbortSignal.timeout(20_000) });
     if (!res.ok) return { error: res.status === 404 ? "That board wasn't found. Check the link." : `The board answered ${res.status}. Try again later.` };
   } catch {

@@ -69,6 +69,13 @@ const clean = (t: string) => t.toLowerCase().replace(/[^a-z0-9.\u00c0-\u024f\s-]
 const words = (t: string) => ` ${clean(t)} `;
 const has = (hay: string, needle: string) => hay.includes(` ${clean(needle)} `);
 
+// A country code from a code, a name or an alias ("US", "United States of America", "USA").
+function countryCode(c: string): string | null {
+  const t = c.trim();
+  if (/^[A-Z]{2}$/i.test(t)) return t.toUpperCase();
+  return COUNTRIES.find((k) => k.name.toLowerCase() === t.toLowerCase())?.country_code ?? COUNTRY_ALIASES[t.toLowerCase()] ?? null;
+}
+
 export function readPlaces(raw: Pick<RawJob, "places" | "countries" | "remote" | "hybrid">) {
   const text = words(raw.places.join(" , "));
   const countries = new Set<string>();
@@ -89,7 +96,10 @@ export function readPlaces(raw: Pick<RawJob, "places" | "countries" | "remote" |
     const code = CITIES.find((c) => c.slug === slug)?.country_code;
     if (code) countries.add(code);
   }
-  for (const p of raw.places) {
+  // State and province codes ("Austin, TX") mean the US or Canada, unless the board names another country
+  // ("Buenos Aires, AR" with country AR is Argentina).
+  const elsewhere = raw.countries.length > 0 && !raw.countries.some((c) => ["US", "CA"].includes(countryCode(c) ?? ""));
+  for (const p of elsewhere ? [] : raw.places) {
     if (US_STATE.test(p)) countries.add("US");
     if (CA_PROVINCE.test(p)) countries.add("CA");
   }
@@ -112,6 +122,10 @@ const NOT_OUR_ROLES = new RegExp([
   "it support", "it operations", "av support", "desktop support", "help ?desk analyst",
   // Shop floor and seasonal work, not office careers.
   "retail sales", "store", "seasonal", "cashier", "warehouse", "driver", "barista",
+  // Trades, care and campus jobs that big employers' boards list beside sales and marketing.
+  "technician", "service desk", "help ?desk", "social worker", "technical writer", "nurse", "nursing", "teacher", "therapist", "student",
+  "inventory", "maintenance", "mechanic", "electrician", "cook", "chef", "housekeeping", "custodian", "janitor", "caregiver",
+  "pharmacist", "physician", "medical assistant", "triage",
 ].map((w) => `\\b${w}\\b`).join("|"), "i");
 const ROLE_RULES: [RegExp, string, "marketing" | "sales" | "customer_success"][] = [
   [/\b(head|director|vp|vice president|chief)\b.*\bmarketing\b|\bcmo\b/i, "marketing_lead", "marketing"],
