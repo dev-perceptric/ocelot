@@ -157,6 +157,30 @@ export function Pagination({ page, hasNext, href }: { page: number; hasNext: boo
   );
 }
 
+// Numbered pages for long lists: ‹ 1 … 4 5 6 … 68 ›, with the current page marked.
+export function PageNumbers({ page, total, size, href }: { page: number; total: number; size: number; href: (page: number) => string }) {
+  const last = Math.max(1, Math.ceil(total / size));
+  if (last <= 1) return null;
+  const nums = [...new Set([1, page - 1, page, page + 1, last].filter((n) => n >= 1 && n <= last))].sort((a, b) => a - b);
+  const cell = "inline-flex h-10 min-w-10 items-center justify-center px-3 text-body rounded-[var(--radius-control)]";
+  return (
+    <nav aria-label="Pages" className="mt-6 flex flex-wrap items-center justify-center gap-1">
+      {page > 1 ? <Link href={href(page - 1)} aria-label="Previous page" className={`${cell} font-bold hover:bg-canvas`}>‹</Link> : null}
+      {nums.map((n, i) => (
+        <span key={n} className="contents">
+          {i > 0 && n - nums[i - 1] > 1 ? <span aria-hidden className={`${cell} text-muted`}>…</span> : null}
+          {n === page ? (
+            <span aria-current="page" className={`${cell} bg-ink font-bold text-surface`}>{n}</span>
+          ) : (
+            <Link href={href(n)} aria-label={`Page ${n}`} className={`${cell} hover:bg-canvas`}>{n}</Link>
+          )}
+        </span>
+      ))}
+      {page < last ? <Link href={href(page + 1)} aria-label="Next page" className={`${cell} font-bold hover:bg-canvas`}>›</Link> : null}
+    </nav>
+  );
+}
+
 // A company logo, or its initials on canvas when there's no logo yet.
 export function CompanyLogo({ name, src, size = 48 }: { name: string; src?: string | null; size?: number }) {
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
