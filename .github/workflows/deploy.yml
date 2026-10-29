@@ -86,7 +86,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: env.SUPABASE_ACCESS_TOKEN != ''
         with:
-          version: latest
+          version: 2.122.0 # pinned: "latest" asks GitHub and can hit its rate limit
       - name: Push migrations
         if: env.SUPABASE_ACCESS_TOKEN != ''
         run: |

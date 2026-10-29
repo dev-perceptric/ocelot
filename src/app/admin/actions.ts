@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { audit, requireAdmin } from "@/lib/admin";
 import { createAdmin } from "@/lib/supabase/server";
+import { refundPayment, stripeEnv } from "@/lib/stripe";
 
 type Result = { ok: boolean; message?: string };
 const done = (paths: string[]): Result => { paths.forEach((p) => revalidatePath(p)); return { ok: true }; };
@@ -98,4 +99,46 @@ export async function handleReport(id: string, status: "actioned" | "dismissed",
   if (error) return { ok: false, message: error.message };
   await audit(user.id, `report.${status}`, { table: "reports", id }, note.trim() ? { note: note.trim() } : {});
   return done(["/admin/reports", "/admin"]);
+}
+
+// ---------- Billing ----------
+
+export async function setPayments(on: boolean): Promise<Result> {
+  const { user } = await requireAdmin();
+  if (on && (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET)) {
+    return { ok: false, message: "Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET first (docs/setup.md)." };
+  }
+  const { error } = await createAdmin().rpc("set_payments", { p_on: on });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, on ? "billing.payments_on" : "billing.payments_off", { table: "app_settings", id: null });
+  return done(["/admin/billing"]);
+}
+
+export async function grantCredits(orgId: string, count: number): Promise<Result> {
+  const { user } = await requireAdmin();
+  if (!Number.isInteger(count) || count < 1 || count > 20) return { ok: false, message: "Give between 1 and 20 credits." };
+  const { error } = await createAdmin().rpc("grant_credits", { p_org: orgId, p_count: count, p_admin: user.id });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "billing.grant_credits", { table: "orgs", id: orgId }, { count });
+  return done([`/admin/companies/${orgId}`]);
+}
+
+// Refunds through Stripe first, then removes the credit. Only for listings that never went live.
+export async function refundOrder(orderId: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const db = createAdmin();
+  const { data: ok } = await db.rpc("can_refund", { p_order: orderId });
+  if (!ok) return { ok: false, message: "This order can't be refunded. Its listing went live or it isn't paid." };
+  const { data: order } = await db.from("orders").select("stripe_payment_intent, amount_cents").eq("id", orderId).single();
+  if (order?.stripe_payment_intent) {
+    try {
+      await refundPayment(stripeEnv(), order.stripe_payment_intent);
+    } catch (e) {
+      return { ok: false, message: e instanceof Error ? e.message : "Stripe didn't refund it." };
+    }
+  }
+  const { error } = await db.rpc("refund_order", { p_order: orderId });
+  if (error) return { ok: false, message: `Stripe refunded it, but the order didn't update: ${error.message}` };
+  await audit(user.id, "billing.refund", { table: "orders", id: orderId }, { amount_cents: order?.amount_cents });
+  return done(["/admin/billing"]);
 }

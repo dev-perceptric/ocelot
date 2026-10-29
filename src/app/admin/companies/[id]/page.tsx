@@ -5,7 +5,8 @@ import { SIZE_LABEL } from "@/lib/company";
 import { placeName } from "@/lib/places";
 import { createAdmin } from "@/lib/supabase/server";
 import { CompanyLogo, Table, Tag, Td, Th } from "@/components/ui";
-import { CompanyActions } from "../../AdminButtons";
+import { CompanyActions, GrantCredits } from "../../AdminButtons";
+import { PACKAGE_LABEL } from "@/lib/packages";
 import { day, when } from "../../format";
 
 export const dynamic = "force-dynamic";
@@ -17,11 +18,14 @@ export default async function Company({ params }: { params: Promise<{ id: string
   const db = createAdmin();
   const { data: org } = await db.from("orgs").select("*").eq("id", id).maybeSingle();
   if (!org) notFound();
-  const [{ data: members }, { data: jobs }, { data: log }] = await Promise.all([
+  const [{ data: members }, { data: jobs }, { data: log }, { data: credits }] = await Promise.all([
     db.from("org_members").select("role, created_at, user_id, profile:profiles(full_name, email)").eq("org_id", id).order("created_at"),
     db.from("jobs").select("id, title, status, published_at").eq("org_id", id).order("created_at", { ascending: false }),
     db.from("audit_events").select("*").eq("target_table", "orgs").eq("target_id", id).order("created_at", { ascending: false }).limit(20),
+    db.from("entitlements").select("package").eq("org_id", id).is("job_id", null),
   ]);
+  const free = new Map<string, number>();
+  for (const c of credits ?? []) free.set(c.package, (free.get(c.package) ?? 0) + 1);
   const facts = [org.website, org.industry, org.size ? SIZE_LABEL[org.size] : null, (org.office_places ?? []).map(placeName).join(", ")].filter(Boolean);
 
   return (
@@ -44,6 +48,12 @@ export default async function Company({ params }: { params: Promise<{ id: string
           <CompanyActions id={org.id} name={org.name} verified={Boolean(org.business_verified_at)} trusted={org.trusted} suspended={Boolean(org.suspended_at)} />
         </div>
       </div>
+
+      <section>
+        <h2 className="text-card font-bold">Listing credits</h2>
+        <p className="mt-2 text-body">{free.size ? [...free].map(([k, n]) => `${n} ${PACKAGE_LABEL[k] ?? k}`).join(", ") : "None left"}</p>
+        <div className="mt-3"><GrantCredits orgId={org.id} name={org.name} /></div>
+      </section>
 
       <section>
         <h2 className="mb-3 text-card font-bold">Members</h2>

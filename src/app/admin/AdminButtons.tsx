@@ -72,3 +72,29 @@ export function ReportActions({ id }: { id: string }) {
     </div>
   );
 }
+
+export function PaymentsSwitch({ on }: { on: boolean }) {
+  return on ? (
+    <Act label="Turn payments off" okText="Payments are off" run={async () =>
+      (await askConfirm({ title: "Turn payments off?", body: "New jobs go to review without a listing credit.", confirm: "Turn off", danger: true })) ? A.setPayments(false) : null} />
+  ) : (
+    <Act label="Turn payments on" variant="secondary" okText="Payments are on" run={async () =>
+      (await askConfirm({ title: "Turn payments on?", body: "New jobs need a listing credit to go to review.", confirm: "Turn on" })) ? A.setPayments(true) : null} />
+  );
+}
+
+export function GrantCredits({ orgId, name }: { orgId: string; name: string }) {
+  return (
+    <Act label="Give founding credits" okText="Credits added" run={async () => {
+      const n = await askText({ title: `Founding credits for ${name}`, label: "How many (1 to 20)", initial: "1", confirm: "Give credits" });
+      return n ? A.grantCredits(orgId, Number(n)) : null;
+    }} />
+  );
+}
+
+export function RefundOrder({ id, what }: { id: string; what: string }) {
+  return (
+    <Act label="Refund" okText="Refunded" run={async () =>
+      (await askConfirm({ title: `Refund ${what}?`, body: "Stripe returns the money. The credit is removed and the job goes back to draft.", confirm: "Refund", danger: true })) ? A.refundOrder(id) : null} />
+  );
+}

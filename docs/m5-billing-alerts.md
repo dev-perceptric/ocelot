@@ -25,12 +25,13 @@ Each ships as its own pull request.
 | Going live | Review passes and a credit is attached. Featured sets 7 days of promotion from the publish date |
 | Setup | Stripe account for the Singapore company, two Fly secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) and the webhook address. Steps in `docs/setup.md` |
 
-### 2. Billing pages
+### 2. Billing pages (done)
 
 | Item | Detail |
 |---|---|
 | `/employer/billing` | Credits left by package, buy credits ahead, orders with Stripe receipts |
-| `/admin/billing` | Payments switch, give founding credits to a company, every order, refund an order whose job never went live (refunds through Stripe, removes the credit, moves the job back to draft) |
+| `/admin/billing` | Payments switch (needs the Stripe secrets), every order with what was paid this month, refund an order whose job never went live (refunds through Stripe, removes the credit, moves the job back to draft) |
+| Admin company page | Credits left, give founding credits (1 to 20). Every billing change is in the audit log |
 
 ### 3. Alerts, digest and reminders
 
