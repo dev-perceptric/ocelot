@@ -172,9 +172,16 @@ npm test                     # unit tests
 npm run test:db              # access tests, needs a local Postgres (DATABASE_URL)
 ```
 
-## Later: Stripe (Milestone 5)
+## Stripe (Milestone 5)
 
-Stripe does not accept businesses based in Vietnam (check). Sign up with the company that will bill employers (for example one in Singapore or the US). Stay in test mode. Webhook endpoint: `https://joinocelot.com/api/stripe/webhook`, event `checkout.session.completed`. Then `fly secrets set --app ocelot-web STRIPE_SECRET_KEY=... STRIPE_WEBHOOK_SECRET=...`.
+Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/packages.ts`. Payments stay off until you turn them on, so jobs need no credit until then.
+
+1. Make a Stripe account for the Singapore company and finish its verification. Start in test mode.
+2. Developers → API keys → copy the Secret key, then: `fly secrets set STRIPE_SECRET_KEY=sk_... -a ocelot-web`
+3. Developers → Webhooks → Add endpoint `https://joinocelot.com/api/stripe/webhook` with the events `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its Signing secret, then: `fly secrets set STRIPE_WEBHOOK_SECRET=whsec_... -a ocelot-web`
+4. Settings → Customer emails → turn on receipts for successful payments.
+5. Buy a listing in test mode with card 4242 4242 4242 4242 and check the job goes to review.
+6. Switch to live keys (repeat steps 2 and 3 with the live ones), then turn payments on in Admin → Billing.
 
 ## Optional now, useful soon
 
@@ -222,7 +229,7 @@ npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,rea
 # copy PUBLISHABLE_KEY and SECRET_KEY from the output
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable> NEXT_PUBLIC_SITE_URL=http://localhost:3100 npm run build
 cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
-(cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> node server.js) &
+(cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> STRIPE_SECRET_KEY=sk_test_local STRIPE_WEBHOOK_SECRET=whsec_local STRIPE_API_URL=http://127.0.0.1:4243 node server.js) &
 node tests/e2e/team.cjs
 node tests/e2e/admin.cjs
 node tests/e2e/jobs.cjs
@@ -233,11 +240,14 @@ node tests/e2e/tasks.cjs
 node tests/e2e/resumes.cjs
 node tests/e2e/apply.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
+node tests/e2e/billing.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
+
+`billing.cjs` runs its own stand-in for the Stripe API on port 4243; the three STRIPE_ values above are local test values, never real keys.
 
 Between runs, clear test data (companies first, so the "company needs an owner" rule doesn't block it):
 
 ```
-psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
+psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from entitlements; delete from orders; delete from stripe_events; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
 ```

@@ -48,6 +48,18 @@ export async function saveJob(_: JobState, form: FormData): Promise<JobState> {
   if (qErr) return { error: say(qErr, "The questions didn't save. Try again.") };
 
   if (form.get("intent") === "review") {
+    // With payments on, a job that was never live needs a listing credit: use one the company has, or pay.
+    const [{ data: settings }, { data: job }] = await Promise.all([
+      supabase.from("app_settings").select("payments_on").maybeSingle(),
+      supabase.from("jobs").select("published_at").eq("id", id).single(),
+    ]);
+    if (settings?.payments_on && !job?.published_at) {
+      const { data: missing } = await supabase.rpc("job_ready", { p_job: id });
+      if (!missing) {
+        const { error: noCredit } = await supabase.rpc("attach_credit", { p_job: id });
+        if (noCredit) redirect(`/employer/jobs/${id}?pay=1`);
+      }
+    }
     const { error } = await supabase.from("jobs").update({ status: "pending_review" }).eq("id", id);
     revalidatePath("/employer/jobs");
     if (error) {

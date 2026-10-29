@@ -5,7 +5,21 @@ export type Database = {
   
   "public": {
           Tables: {
-            "application_events": {
+            "app_settings": {
+                  Row: {
+                    "id": boolean,"payments_on": boolean,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: boolean,"payments_on"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "id"?: boolean,"payments_on"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"application_events": {
                   Row: {
                     "actor_id": string | null,"application_id": string,"created_at": string,"from_stage": string | null,"id": string,"kind": string,"to_stage": string | null,"visible_to_candidate": boolean
                   }
@@ -121,14 +135,14 @@ isOneToOne: false
                   ]
                 },"entitlements": {
                   Row: {
-                    "created_at": string,"id": string,"job_id": string | null,"order_id": string | null,"org_id": string,"package": string,"used_at": string | null
+                    "created_at": string,"granted_by": string | null,"id": string,"job_id": string | null,"order_id": string | null,"org_id": string,"package": string,"used_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id": string,"package": string,"used_at"?: string | null
+                    "created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id": string,"package": string,"used_at"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id"?: string,"package"?: string,"used_at"?: string | null
+                    "created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id"?: string,"package"?: string,"used_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -247,14 +261,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "amount_cents": number,"created_at": string,"currency": string,"id": string,"job_id": string | null,"org_id": string,"package": string,"status": string,"stripe_session_id": string | null
+                    "amount_cents": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"job_id": string | null,"org_id": string | null,"org_name": string | null,"package": string,"paid_at": string | null,"receipt_url": string | null,"refunded_at": string | null,"status": string,"stripe_payment_intent": string | null,"stripe_session_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_cents"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id": string,"package": string,"status"?: string,"stripe_session_id"?: string | null
+                    "amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package": string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
                   }
                   Update: {
-                    "amount_cents"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string,"package"?: string,"status"?: string,"stripe_session_id"?: string | null
+                    "amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package"?: string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -574,6 +588,12 @@ isOneToOne: false
 "apply_to_job":
 { Args: { "p_answers"?: Json,"p_job": string,"p_note"?: string,"p_resume": string }; Returns: string
                            },
+"attach_credit":
+{ Args: { "p_job": string,"p_package"?: string }; Returns: string
+                           },
+"can_refund":
+{ Args: { "p_order": string }; Returns: boolean
+                           },
 "check_places":
 { Args: { "p_cities": (string)[],"p_countries": (string)[] }; Returns: undefined
                            },
@@ -616,6 +636,9 @@ isOneToOne: false
 "gen_salt":
 { Args: { "": string }; Returns: string
                            },
+"grant_credits":
+{ Args: { "p_admin": string,"p_count": number,"p_org": string }; Returns: undefined
+                           },
 "invite_preview":
 { Args: { "p_token": string }; Returns: {
               "company": string,"company_slug": string,"email": string,"inviter": string,"role": string,"status": string
@@ -633,6 +656,9 @@ isOneToOne: false
 "job_missing":
 { Args: { "j": Omit<Database["public"]['Tables']["jobs"]['Row'], Database["public"]['Tables']["jobs"]['ComputedFields']> }; Returns: string
                            },
+"job_ready":
+{ Args: { "p_job": string }; Returns: string
+                           },
 "like_escape":
 { Args: { "p": string }; Returns: string
                            },
@@ -648,14 +674,23 @@ isOneToOne: false
 "org_trusted":
 { Args: { "p_org": string }; Returns: boolean
                            },
+"payments_on":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "pgp_armor_headers":
 { Args: { "": string }; Returns: Record<string, unknown>[]
                            },
 "publish_job":
 { Args: { "p_job": string }; Returns: undefined
                            },
+"record_payment":
+{ Args: { "p_amount": number,"p_currency": string,"p_event": string,"p_order": string,"p_payment_intent": string,"p_session": string,"p_type": string }; Returns: string
+                           },
 "refresh_email_verified":
 { Args: { "p_org": string }; Returns: undefined
+                           },
+"refund_order":
+{ Args: { "p_order": string }; Returns: undefined
                            },
 "revoke_invite":
 { Args: { "p_id": string }; Returns: undefined
@@ -704,6 +739,9 @@ isOneToOne: false
       } },
 "send_back_job":
 { Args: { "p_job": string,"p_note": string }; Returns: undefined
+                           },
+"set_payments":
+{ Args: { "p_on": boolean }; Returns: undefined
                            },
 "show_limit":
 { Args: Record<PropertyKey, never>; Returns: number

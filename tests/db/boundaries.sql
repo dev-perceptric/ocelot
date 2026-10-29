@@ -17,7 +17,7 @@ end $$;
 
 create or replace function pg_temp.expect(ok boolean, what text) returns void language plpgsql as $$
 begin
-  if not ok then raise exception 'FAILED: %', what; end if;
+  if not coalesce(ok, false) then raise exception 'FAILED: %', what; end if;
   raise notice 'ok: %', what;
 end $$;
 
@@ -625,4 +625,112 @@ select pg_temp.act('00000000-0000-0000-0000-0000000000a4');
 update notification_prefs set new_applicants = true;
 reset role;
 select pg_temp.expect((select new_applicants from notification_prefs where user_id = '00000000-0000-0000-0000-0000000000a2') = false, 'nobody changes a teammate''s email choices');
+-- ---------- Milestone 5, part 1: listing credits and payment ----------
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000a5', 'kai@zeta.test');
+select set_payments(true);
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select create_org('Zeta', 'zeta') as zeta \gset
+create or replace function pg_temp.zeta_job(p_slug text) returns uuid language sql as $$
+  insert into jobs (org_id, slug, title, created_by, role, seniority, employment_type, workplace, eligible_countries, description)
+  select id, p_slug, 'Growth Marketer', auth.uid(), 'growth', 'mid', 'full_time', 'remote', '{VN}', repeat('Grow signups across Southeast Asia. ', 8)
+  from orgs where slug = 'zeta' returning id $$;
+select pg_temp.zeta_job('zeta-1') as z1 \gset
+select pg_temp.expect((select payments_on from app_settings), 'everyone can see whether payments are on');
+select pg_temp.fails(format($$update jobs set status = 'pending_review' where id = %L$$, :'z1'), 'with payments on, a job needs a credit to go to review');
+select pg_temp.expect((select job_ready(:'z1')) is null, 'a complete job is ready');
+select pg_temp.fails(format($$select attach_credit(%L)$$, :'z1'), 'no credit, nothing to attach');
+select pg_temp.fails(format($$insert into entitlements (org_id, package) values (%L, 'founding')$$, :'zeta'), 'companies cannot give themselves credits');
+select pg_temp.fails(format($$insert into orders (org_id, package) values (%L, 'standard')$$, :'zeta'), 'or write orders');
+select pg_temp.fails(format($$select grant_credits(%L, 5, auth.uid())$$, :'zeta'), 'or call the founding credit function');
+select pg_temp.fails(format($$select record_payment('evt_x', 'checkout.session.completed', gen_random_uuid(), 'cs_x', 4900, 'usd', 'pi_x')$$), 'or mark anything paid');
+select pg_temp.fails($$select set_payments(false)$$, 'or turn payments off');
+select pg_temp.fails($$update app_settings set payments_on = false$$, 'or change the setting directly');
+
+reset role;
+select grant_credits(:'zeta', 1, null);
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.fails(format($$select attach_credit(%L)$$, :'z1'), 'another company cannot touch Zeta''s jobs or credits');
+select pg_temp.expect((select count(*) from entitlements where org_id = :'zeta') = 0, 'or see them');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select pg_temp.expect((select count(*) from entitlements where job_id is null) = 1, 'the company sees its credit');
+select pg_temp.expect(attach_credit(:'z1') = 'founding', 'a founding credit goes on the job');
+select pg_temp.expect(attach_credit(:'z1') = 'founding', 'asking again keeps the same credit');
+update jobs set status = 'pending_review' where id = :'z1';
+select pg_temp.expect((select status from jobs where id = :'z1') = 'pending_review', 'with a credit, the job goes to review');
+reset role;
+select publish_job(:'z1');
+select pg_temp.expect((select status = 'published' and featured_until is null from jobs where id = :'z1'), 'review passed and credit attached: the job is live');
+
+-- A Featured payment through the webhook: the job goes to review by itself and is promoted for 7 days once live.
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select pg_temp.zeta_job('zeta-2') as z2 \gset
+reset role;
+insert into orders (org_id, job_id, package, amount_cents, currency, stripe_session_id) values (:'zeta', :'z2', 'featured', 9900, 'USD', 'cs_2') returning id as o2 \gset
+select pg_temp.expect(record_payment('evt_2', 'checkout.session.completed', :'o2', 'cs_2', 9900, 'usd', 'pi_2') = 'sent', 'a payment for a job sends it to review');
+select pg_temp.expect(record_payment('evt_2', 'checkout.session.completed', :'o2', 'cs_2', 9900, 'usd', 'pi_2') = 'repeat', 'the same Stripe event is handled once');
+select pg_temp.expect(record_payment('evt_2b', 'checkout.session.async_payment_succeeded', :'o2', 'cs_2', 9900, 'usd', 'pi_2') = 'already paid', 'a second event for a paid order adds nothing');
+select pg_temp.expect((select count(*) from entitlements where order_id = :'o2') = 1, 'one credit per order');
+select pg_temp.expect((select status from jobs where id = :'z2') = 'pending_review' and (select package from entitlements where job_id = :'z2') = 'featured', 'the job has its Featured credit');
+select publish_job(:'z2');
+select pg_temp.expect((select featured_until between now() + interval '6 days 23 hours' and now() + interval '7 days 1 minute' from jobs where id = :'z2'), 'Featured is promoted for 7 days from going live');
+
+-- Payments that don't match are refused.
+insert into orders (org_id, package, amount_cents, currency, stripe_session_id) values (:'zeta', 'standard', 4900, 'USD', 'cs_3') returning id as o3 \gset
+select pg_temp.expect(record_payment('evt_3', 'checkout.session.completed', :'o3', 'cs_wrong', 4900, 'usd', 'pi_3') = 'no order', 'a payment from another checkout is ignored');
+select pg_temp.expect(record_payment('evt_3b', 'checkout.session.completed', :'o3', 'cs_3', 100, 'usd', 'pi_3') = 'amount mismatch', 'a payment for the wrong amount is refused');
+select pg_temp.expect((select status from orders where id = :'o3') = 'failed' and not exists (select 1 from entitlements where order_id = :'o3'), 'and adds no credit');
+
+-- Refunds: only for listings that never went live. The job goes back to draft.
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select pg_temp.zeta_job('zeta-4') as z4 \gset
+reset role;
+insert into orders (org_id, job_id, package, amount_cents, currency, stripe_session_id) values (:'zeta', :'z4', 'standard', 4900, 'USD', 'cs_4') returning id as o4 \gset
+select record_payment('evt_4', 'checkout.session.completed', :'o4', 'cs_4', 4900, 'usd', 'pi_4');
+select pg_temp.expect(can_refund(:'o4') and not can_refund(:'o2'), 'refunds are open only while the listing never went live');
+select refund_order(:'o4');
+select pg_temp.expect((select status from orders where id = :'o4') = 'refunded' and (select status from jobs where id = :'z4') = 'draft'
+  and not exists (select 1 from entitlements where order_id = :'o4'), 'a refund removes the credit and moves the job back to draft');
+select pg_temp.fails(format($$select refund_order(%L)$$, :'o2'), 'a listing that went live cannot be refunded');
+
+-- A deleted draft gives its credit back.
+select grant_credits(:'zeta', 1, null);
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select attach_credit(:'z4');
+delete from jobs where id = :'z4';
+select pg_temp.expect((select count(*) from entitlements where job_id is null) = 1, 'deleting a draft returns its credit');
+
+-- Live jobs aren't charged again; trusted companies still need a credit to publish a new job.
+update jobs set title = 'Senior Growth Marketer' where id = :'z1';
+select pg_temp.expect((select status from jobs where id = :'z1') = 'pending_review', 'editing a live job goes back to review without a new credit');
+reset role;
+update orgs set trusted = true where id = :'zeta';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+select pg_temp.zeta_job('zeta-5') as z5 \gset
+select pg_temp.zeta_job('zeta-6') as z6 \gset
+select attach_credit(:'z5');
+update jobs set status = 'pending_review' where id = :'z5';
+select pg_temp.expect((select status from jobs where id = :'z5') = 'published', 'a trusted company publishes at once with a credit');
+select pg_temp.fails(format($$update jobs set status = 'pending_review' where id = %L$$, :'z6'), 'and cannot publish without one');
+
+-- With payments off, jobs need no credit.
+reset role;
+select set_payments(false);
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+update jobs set status = 'pending_review' where id = :'z6';
+select pg_temp.expect((select status from jobs where id = :'z6') = 'published', 'with payments off, jobs go live without a credit');
+reset role;
+insert into orgs (name, slug) values ('Gone Co', 'gone-co') returning id as gone \gset
+insert into orders (org_id, package, amount_cents, status) values (:'gone', 'standard', 4900, 'paid') returning id as gone_order \gset
+delete from orgs where id = :'gone';
+select pg_temp.expect((select org_id is null and org_name = 'Gone Co' from orders where id = :'gone_order'), 'orders stay as records when a company is deleted');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+reset role;
+select set_payments(true);
+update orgs set trusted = false where id = :'zeta';
+select pg_temp.act('00000000-0000-0000-0000-0000000000a5');
+update jobs set title = 'Growth Lead' where id = :'z6';
+select pg_temp.expect((select status from jobs where id = :'z6') = 'pending_review', 'a job that went live before payments were on is never charged for edits');
+reset role;
+select set_payments(false);
 \echo 'All boundary tests passed.'
