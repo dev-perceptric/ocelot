@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { audit, requireAdmin } from "@/lib/admin";
 import { createAdmin } from "@/lib/supabase/server";
 import { refundPayment, stripeEnv } from "@/lib/stripe";
+import { PROVIDERS, feedUrl, parseBoardLink } from "@/lib/ats/boards";
+import { syncSource } from "@/lib/ats/sync";
+import { slugify } from "@/lib/jobs";
+import { COUNTRIES } from "@/lib/places";
 
 type Result = { ok: boolean; message?: string };
 const done = (paths: string[]): Result => { paths.forEach((p) => revalidatePath(p)); return { ok: true }; };
@@ -141,4 +145,91 @@ export async function refundOrder(orderId: string): Promise<Result> {
   if (error) return { ok: false, message: `Stripe refunded it, but the order didn't update: ${error.message}` };
   await audit(user.id, "billing.refund", { table: "orders", id: orderId }, { amount_cents: order?.amount_cents });
   return done(["/admin/billing"]);
+}
+
+// ---------- Job boards ----------
+
+export type SourceState = { error?: string; done?: string };
+
+// Adds a company's public job board. Checks the board loads first, then makes the company if it's new,
+// saves the board and runs the first sync.
+export async function addSource(_: SourceState, form: FormData): Promise<SourceState> {
+  const { user } = await requireAdmin();
+  const link = parseBoardLink(String(form.get("link") ?? ""));
+  if (!link) return { error: "Paste a job board link from Greenhouse, Lever, Ashby, SmartRecruiters, Recruitee or Workable." };
+  const countries = form.getAll("countries").map(String).filter((c) => COUNTRIES.some((k) => k.country_code === c));
+  if (!countries.length) return { error: "Choose at least one country." };
+  const orgId = String(form.get("org_id") ?? "");
+  const newName = String(form.get("company") ?? "").trim();
+  if (!orgId && !newName) return { error: "Choose a company or name a new one." };
+  const db = createAdmin();
+  const { data: dup } = await db.from("job_sources").select("id").eq("provider", link.provider).eq("board", link.board).maybeSingle();
+  if (dup) return { error: "This board is already added." };
+  try {
+    const res = await fetch(feedUrl(link.provider, link.board, process.env.ATS_TEST_URL), { signal: AbortSignal.timeout(20_000) });
+    if (!res.ok) return { error: res.status === 404 ? "That board wasn't found. Check the link." : `The board answered ${res.status}. Try again later.` };
+  } catch {
+    return { error: "The board didn't answer. Try again later." };
+  }
+
+  let org = orgId;
+  if (!org) {
+    if (newName.length > 120) return { error: "Keep the company name under 120 characters." };
+    const base = slugify(newName) || "company";
+    const { data: taken } = await db.from("orgs").select("slug").like("slug", `${base}%`);
+    const used = new Set((taken ?? []).map((t) => t.slug));
+    let slug = base;
+    for (let i = 2; used.has(slug); i++) slug = `${base}-${i}`;
+    const { data: made, error } = await db.from("orgs").insert({ name: newName, slug, created_by: user.id }).select("id").single();
+    if (error || !made) return { error: error?.message ?? "The company didn't save." };
+    org = made.id;
+    await audit(user.id, "company.create_for_board", { table: "orgs", id: org }, { name: newName });
+  }
+  const { data: src, error } = await db.from("job_sources").insert({
+    org_id: org, provider: link.provider, board: link.board, countries, niche_only: form.get("niche_only") === "on", created_by: user.id,
+  }).select("*").single();
+  if (error || !src) return { error: error?.message ?? "The board didn't save." };
+  await audit(user.id, "board.add", { table: "job_sources", id: src.id }, { provider: link.provider, board: link.board });
+  revalidatePath("/admin/sources");
+  try {
+    const r = await syncSource(src);
+    return { done: `${PROVIDERS[link.provider].name} board added. ${r.imported} of ${r.seen} jobs came in.` };
+  } catch (e) {
+    return { done: `Board added, but the first sync failed: ${e instanceof Error ? e.message : "unknown error"}` };
+  }
+}
+
+export async function syncSourceNow(id: string): Promise<Result & { line?: string }> {
+  const { user } = await requireAdmin();
+  const { data: src } = await createAdmin().from("job_sources").select("*").eq("id", id).single();
+  if (!src) return { ok: false, message: "Board not found." };
+  try {
+    const r = await syncSource(src);
+    await audit(user.id, "board.sync", { table: "job_sources", id }, { ...r });
+    revalidatePath("/admin/sources");
+    return { ok: true, line: `${r.imported} of ${r.seen} jobs: ${r.added} new, ${r.closed} closed` };
+  } catch (e) {
+    revalidatePath("/admin/sources");
+    return { ok: false, message: e instanceof Error ? e.message : "The sync failed." };
+  }
+}
+
+export async function setSourceActive(id: string, active: boolean): Promise<Result> {
+  const { user } = await requireAdmin();
+  const { error } = await createAdmin().from("job_sources").update({ active }).eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, active ? "board.resume" : "board.pause", { table: "job_sources", id });
+  return done(["/admin/sources"]);
+}
+
+// Removes a board. Its live jobs close; their pages stay, marked closed.
+export async function deleteSource(id: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const db = createAdmin();
+  const { error: e1 } = await db.from("jobs").update({ status: "closed" }).eq("source_id", id).eq("status", "published");
+  if (e1) return { ok: false, message: e1.message };
+  const { error } = await db.from("job_sources").delete().eq("id", id);
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "board.delete", { table: "job_sources", id });
+  return done(["/admin/sources", "/jobs"]);
 }

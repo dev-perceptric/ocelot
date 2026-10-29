@@ -32,11 +32,13 @@ export default async function EditJob({ params, searchParams }: { params: Promis
   const needsListing = Boolean(settings?.payments_on) && !credit && !job.published_at && waitingToSend;
   const status = JOB_STATUS[job.status] ?? { label: job.status, tone: "neutral" as const };
   const questions = [...(job.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
-  const editable = job.status !== "closed" && job.status !== "expired" && job.status !== "suspended";
+  const imported = job.source === "ats";
+  const editable = !imported && job.status !== "closed" && job.status !== "expired" && job.status !== "suspended";
 
   const banner =
     job.status === "pending_review" ? "Ocelot is reviewing this job. You'll get an email when it's live or if it needs an update."
     : job.status === "rejected" ? `This job needs an update before it can go live: ${job.review_note}`
+    : imported && job.status === "published" ? "This job comes from your job board. It updates there and stays live while it's on the board."
     : job.status === "published" ? `Live until ${day(job.expires_at)}.`
     : job.status === "closed" ? "This job is closed. Duplicate it to post it again."
     : job.status === "expired" ? "This job's 30 days are over. Duplicate it to post it again."

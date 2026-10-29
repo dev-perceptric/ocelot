@@ -1,0 +1,1674 @@
+{
+ "offers": [
+  {
+   "position": 1650,
+   "postal_code": null,
+   "max_hours": null,
+   "careers_url": "https://careers.bunq.com/o/support-experience-lead",
+   "state_name": "Sofia (stolitsa)",
+   "state_code": "22",
+   "careers_apply_url": "https://careers.bunq.com/o/support-experience-lead/c/new",
+   "education_code": "professional",
+   "created_at": "2026-10-27 10:32:26 UTC",
+   "experience_code": "mid_level",
+   "min_hours": null,
+   "location_question_visible": false,
+   "close_at": null,
+   "cover_image": null,
+   "locations": [
+    {
+     "id": 39967,
+     "name": "Sofia",
+     "state": "Sofia (stolitsa)",
+     "country": "Bulgaria",
+     "city": "Sofia",
+     "translations": {
+      "en": {
+       "name": "Sofia",
+       "city": "Sofia",
+       "postal_code": null,
+       "street": null,
+       "note": null
+      }
+     },
+     "country_code": "BG",
+     "state_code": "22",
+     "postal_code": null,
+     "street": null,
+     "note": null
+    },
+    {
+     "id": 39977,
+     "name": "Istanbul",
+     "state": "\u0130stanbul",
+     "country": "T\u00fcrkiye",
+     "city": "\u0130stanbul",
+     "translations": {
+      "en": {
+       "name": "Istanbul",
+       "city": "\u0130stanbul",
+       "postal_code": null,
+       "street": null,
+       "note": null
+      }
+     },
+     "country_code": "TR",
+     "state_code": "34",
+     "postal_code": null,
+     "street": null,
+     "note": null
+    }
+   ],
+   "max_hours_per_week": null,
+   "location": "Sofia, Sofia (stolitsa), Bulgaria",
+   "locations_question": "What is your preferred work location?",
+   "highlight": null,
+   "options_salutation": "off",
+   "options_title": "off",
+   "on_site": false,
+   "tags": [],
+   "country_code": "BG",
+   "country": "Bulgaria",
+   "min_hours_per_week": null,
+   "employment_type_code": "fulltime_fixed_term",
+   "dynamic_fields": [],
+   "sharing_image": null,
+   "department": "Support & Operations",
+   "published_at": "2026-10-27 12:11:34 UTC",
+   "description": "<p>At bunq, we\u2019re here to make life easy for our users; and that starts with support they can truly trust. When something goes wrong, we don\u2019t pass it around. We own it.<br>As a Support Team Lead, you\u2019ll play a key role in keeping our promise of premium support, making sure escalations from our Internal AI Agent Finn are handled fast, properly, and never repeated.</p><p style=\"min-height: 1.7em;\"></p><h4><strong>Take Ownership</strong></h4><p>As a Support Team Lead, you will:</p><ul><li><p>Own AI Support escalations end-to-end and ensure timely, high-quality resolutions</p></li><li><p>Act as the clear owner for complex issues, bringing clarity and direction when things go wrong</p></li><li><p>Lead, coach, and support a team of ~10 Support Experience Guides</p></li><li><p>Help your team improve decision-making, ownership, and service quality</p></li><li><p>Identify recurring issues and turn them into concrete process improvements</p></li><li><p>Improve and optimize Support processes, tooling, and ways of working</p></li><li><p>Work closely with stakeholders to implement solutions, not just document problems</p></li><li><p>Use AI and automation to improve efficiency and consistency in daily operations</p></li><li><p>Track success through outcomes such as KPIs, backlog health, and user impact</p></li></ul><p style=\"min-height: 1.7em;\"></p><p style=\"min-height: 1.7em;\"></p>",
+   "guid": "rt9a6",
+   "city": "Sofia",
+   "category_code": "banking",
+   "locations_question_type": "multiple_choice",
+   "remote": false,
+   "updated_at": "2026-10-28 06:39:52 UTC",
+   "requirements": "<ul><li><p>You naturally take ownership and don\u2019t wait for problems to be assigned to you</p></li><li><p>You enjoy fixing things that don\u2019t work, and making sure they stay fixed</p></li><li><p>You believe great customer support is about trust, clarity, and accountability</p></li><li><p>You like coaching others and helping them grow, even in tricky situations</p></li><li><p>You\u2019re comfortable in a fast-paced environment where priorities might evolve</p></li><li><p>You focus on outcomes over output and like seeing real impact from your work</p></li><li><p>You\u2019re curious about using AI to improve how support teams operate</p></li></ul><p style=\"min-height: 1.7em;\"></p><p><em>Curious to see how we make life easy? - try the <a rel=\"noopener\" target=\"_blank\" href=\"https://app.adjust.com/1tyd4x67?fallback=https%3A%2F%2Fwww.bunq.com%2F&redirect_macos=https%3A%2F%2Fwww.bunq.com%2F\">bunq app</a>, it only takes 5 minutes to sign up.</em></p><p style=\"min-height: 1.7em;\"></p><p style=\"text-align:start;\"><strong>Your space to perform</strong></p><p style=\"text-align:start;\">We give you the space and the tools you need to succeed \ud83d\udcaa</p><p>\ud83e\udd1f Great, international colleagues who share your mindset<br>\ud83d\udc69\u200d\ud83d\udcbb Hybrid setup: after 3 months in-office, work 2 days remote, 3 days in-office weekly.<br>\ud83d\udcda We support growth with bunq Academy and \u20ac1500 annual learning budget<br>\ud83c\udde7\ud83c\uddec Flex Benefits: \u20ac70 monthly budget via Re: benefit, offering access to 150+ perks tailored to your lifestyle.<br>\ud83e\uddf3 Digital",
+   "options_phone": "required",
+   "hybrid": true,
+   "company_name": "bunq",
+   "options_photo": "off",
+   "open_questions": [
+    {
+     "id": 4462972,
+     "position": 1,
+     "options": {},
+     "required": true,
+     "body": "What country do you currently live in?",
+     "kind": "string",
+     "translations": {
+      "en": {
+       "body": "What country do you currently live in?"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462973,
+     "position": 2,
+     "options": {},
+     "required": false,
+     "body": "<p>\ud83d\udca1 Each country has different rules for eligibility to work without requiring sponsorship.</p>\n<p><br /></p>\n<p>\ud83c\udde7\ud83c\uddec <strong>Bulgaria</strong>: You must have the legal right to work in Bulgaria without needing a company-sponsored visa.  </p>\n<p>\ud83c\uddf9\ud83c\uddf7 <strong>Turkey</strong>: You must be a Turkish citizen, hold a Turquoise Card, refugee status, or a permanent residency/work permit (student/family/temporary residencies are not eligible to work without company sponsorship).</p>\n<p><br /><strong>For this role, we are not sponsoring visas at the moment. But take a look at <strong><a target=\"_blank\" href=\"http://careers.bunq.com/\" rel=\"noopener\">careers.bunq.com</a>\u00a0</strong>- you might find another exciting role that\u2019s a great fit!\u00a0<strong>\ud83c\udf08</strong></strong></p>\n<p><strong><br /></strong><br /></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p>\ud83d\udca1 Each country has different rules for eligibility to work without requiring sponsorship.</p>\n<p><br /></p>\n<p>\ud83c\udde7\ud83c\uddec <strong>Bulgaria</strong>: You must have the legal right to work in Bulgaria without needing a company-sponsored visa.  </p>\n<p>\ud83c\uddf9\ud83c\uddf7 <strong>Turkey</strong>: You must be a Turkish citizen, hold a Turquoise Card, refugee status, or a permanent residency/work permit (student/family/temporary residencies are not eligible to work without company sponsorship).</p>\n<p><br /><strong>For this role, we are not sponsoring visas at the moment. But take a look at <strong><a target=\"_blank\" href=\"http://careers.bunq.com/\" rel=\"noopener\">careers.bunq.com</a>\u00a0</strong>- you might find another exciting role that\u2019s a great fit!\u00a0<strong>\ud83c\udf08</strong></strong></p>\n<p><strong><br /></strong><br /></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462974,
+     "position": 3,
+     "options": {},
+     "required": true,
+     "body": "Which visa situation fits you best? Please choose according to the office you are applying for:  Istanbul (TR), Sofia (BG).",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Which visa situation fits you best? Please choose according to the office you are applying for:  Istanbul (TR), Sofia (BG)."
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875449,
+       "position": 0,
+       "body": "TR: I am Turkish citizen",
+       "translations": {
+        "en": {
+         "body": "TR: I am Turkish citizen"
+        }
+       }
+      },
+      {
+       "id": 6875450,
+       "position": 1,
+       "body": "TR: I have a Turkish permanent residency / working permit / Turquoise Card / official refugee or subsidiary protection status",
+       "translations": {
+        "en": {
+         "body": "TR: I have a Turkish permanent residency / working permit / Turquoise Card / official refugee or subsidiary protection status"
+        }
+       }
+      },
+      {
+       "id": 6875451,
+       "position": 2,
+       "body": "TR: I need visa sponsorship / I have a short-term, long-term, family or student permit",
+       "translations": {
+        "en": {
+         "body": "TR: I need visa sponsorship / I have a short-term, long-term, family or student permit"
+        }
+       }
+      },
+      {
+       "id": 6875452,
+       "position": 3,
+       "body": "BG: I do not require visa sponsorship",
+       "translations": {
+        "en": {
+         "body": "BG: I do not require visa sponsorship"
+        }
+       }
+      },
+      {
+       "id": 6875453,
+       "position": 4,
+       "body": "BG: I require visa sponsorship",
+       "translations": {
+        "en": {
+         "body": "BG: I require visa sponsorship"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462975,
+     "position": 4,
+     "options": {},
+     "required": false,
+     "body": "<p><strong>\ud83d\udca1 Important Info: At bunq, our working language is English. Fluency in both writing and speaking English is a must for all roles in all locations.</strong></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><strong>\ud83d\udca1 Important Info: At bunq, our working language is English. Fluency in both writing and speaking English is a must for all roles in all locations.</strong></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462976,
+     "position": 5,
+     "options": {},
+     "required": true,
+     "body": "How do you assess your writing and speaking English skills?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How do you assess your writing and speaking English skills?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875454,
+       "position": 0,
+       "body": "Beginner",
+       "translations": {
+        "en": {
+         "body": "Beginner"
+        }
+       }
+      },
+      {
+       "id": 6875455,
+       "position": 1,
+       "body": "Intermediate",
+       "translations": {
+        "en": {
+         "body": "Intermediate"
+        }
+       }
+      },
+      {
+       "id": 6875456,
+       "position": 2,
+       "body": "Upper Intermediate",
+       "translations": {
+        "en": {
+         "body": "Upper Intermediate"
+        }
+       }
+      },
+      {
+       "id": 6875457,
+       "position": 3,
+       "body": "Advanced",
+       "translations": {
+        "en": {
+         "body": "Advanced"
+        }
+       }
+      },
+      {
+       "id": 6875458,
+       "position": 4,
+       "body": "Native",
+       "translations": {
+        "en": {
+         "body": "Native"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462977,
+     "position": 6,
+     "options": {},
+     "required": false,
+     "body": "<p><strong>\ud83d\udca1 If successful in the hiring process, the contractual arrangement would look like this:\u00a0<br /><br />\ud83c\uddf3\ud83c\uddf1 Netherlands: A first contract of 9 months, extended with a second contract of 12 months, followed by an indefinite contract.\u00a0<br />\ud83c\uddf9\ud83c\uddf7 Turkey: A first contract of 9 months, extended with a second contract of 12 months,\u00a0<strong>followed by</strong> an indefinite contract.\u00a0<br />\ud83c\udde7\ud83c\uddec Bulgaria: an indefinite contract.\u00a0<br /><br />\ud83d\udca1 For the first 3 months, all new hires are required to be in the office 5 days a week to complete the onboarding process, get to know everyone, and immerse\u00a0<strong>themselves in the culture of bunq. After that, the work arrangement will be hybrid, with 3 days in the office and 2 days working from home.<br /><br /><strong>\ud83d\udca1 </strong>Our standard working hours are from 09:00 to 18:00. This ensures that everyone is available and can rely on each other during this time.<br /></strong></strong></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><strong>\ud83d\udca1 If successful in the hiring process, the contractual arrangement would look like this:\u00a0<br /><br />\ud83c\uddf3\ud83c\uddf1 Netherlands: A first contract of 9 months, extended with a second contract of 12 months, followed by an indefinite contract.\u00a0<br />\ud83c\uddf9\ud83c\uddf7 Turkey: A first contract of 9 months, extended with a second contract of 12 months,\u00a0<strong>followed by</strong> an indefinite contract.\u00a0<br />\ud83c\udde7\ud83c\uddec Bulgaria: an indefinite contract.\u00a0<br /><br />\ud83d\udca1 For the first 3 months, all new hires are required to be in the office 5 days a week to complete the onboarding process, get to know everyone, and immerse\u00a0<strong>themselves in the culture of bunq. After that, the work arrangement will be hybrid, with 3 days in the office and 2 days working from home.<br /><br /><strong>\ud83d\udca1 </strong>Our standard working hours are from 09:00 to 18:00. This ensures that everyone is available and can rely on each other during this time.<br /></strong></strong></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462978,
+     "position": 7,
+     "options": {},
+     "required": true,
+     "body": "Do you agree and confirm with the above mentioned terms (contract duration, hybrid way of working, and standard working hours)?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Do you agree and confirm with the above mentioned terms (contract duration, hybrid way of working, and standard working hours)?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875459,
+       "position": 0,
+       "body": "Yes, I agree with the proposed setup.",
+       "translations": {
+        "en": {
+         "body": "Yes, I agree with the proposed setup."
+        }
+       }
+      },
+      {
+       "id": 6875460,
+       "position": 1,
+       "body": "No, I do not agree with the initial in-office and then hybrid setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the initial in-office and then hybrid setup"
+        }
+       }
+      },
+      {
+       "id": 6875461,
+       "position": 2,
+       "body": "No, I do not agree with the contract duration / setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the contract duration / setup"
+        }
+       }
+      },
+      {
+       "id": 6875462,
+       "position": 3,
+       "body": "No, I do not agree with the working hours setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the working hours setup"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462979,
+     "position": 8,
+     "options": {},
+     "required": true,
+     "body": "What are your salary expectations? (gross, annual, in EUR)",
+     "kind": "string",
+     "translations": {
+      "en": {
+       "body": "What are your salary expectations? (gross, annual, in EUR)"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462980,
+     "position": 9,
+     "options": {},
+     "required": false,
+     "body": "<p>Please double check if the salary expectations is the <strong>yearly</strong> <strong>gross</strong> amount, in <strong>EUR</strong>!</p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p>Please double check if the salary expectations is the <strong>yearly</strong> <strong>gross</strong> amount, in <strong>EUR</strong>!</p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462981,
+     "position": 10,
+     "options": {},
+     "required": true,
+     "body": "Have you previously worked at bunq?",
+     "kind": "boolean",
+     "translations": {
+      "en": {
+       "body": "Have you previously worked at bunq?"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462982,
+     "position": 11,
+     "options": {},
+     "required": false,
+     "body": "<p><em>All new hires are subject to Pre-employment Screening (PES), which includes checks conducted by our third-party partner, Zinc. This is part of our commitment to a secure and trustworthy workplace</em></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><em>All new hires are subject to Pre-employment Screening (PES), which includes checks conducted by our third-party partner, Zinc. This is part of our commitment to a secure and trustworthy workplace</em></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4462983,
+     "position": 12,
+     "options": {},
+     "required": true,
+     "body": "How do you usually approach your work, its impact, and solving challenges?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How do you usually approach your work, its impact, and solving challenges?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875465,
+       "position": 0,
+       "body": "I don\u2019t have formal work experience yet, but I\u2019ve practiced through studies or small projects",
+       "translations": {
+        "en": {
+         "body": "I don\u2019t have formal work experience yet, but I\u2019ve practiced through studies or small projects"
+        }
+       }
+      },
+      {
+       "id": 6875466,
+       "position": 1,
+       "body": "I successfully handle defined tasks, follow processes, and ask for guidance when needed",
+       "translations": {
+        "en": {
+         "body": "I successfully handle defined tasks, follow processes, and ask for guidance when needed"
+        }
+       }
+      },
+      {
+       "id": 6875467,
+       "position": 2,
+       "body": "I work mostly on my own, support team goals, and deal with common issues",
+       "translations": {
+        "en": {
+         "body": "I work mostly on my own, support team goals, and deal with common issues"
+        }
+       }
+      },
+      {
+       "id": 6875468,
+       "position": 3,
+       "body": "I deliver projects from start to finish, tie my work to team results, and suggest fixes",
+       "translations": {
+        "en": {
+         "body": "I deliver projects from start to finish, tie my work to team results, and suggest fixes"
+        }
+       }
+      },
+      {
+       "id": 6875469,
+       "position": 4,
+       "body": "I turn bigger goals into initiatives, improve how we work, and prevent problems",
+       "translations": {
+        "en": {
+         "body": "I turn bigger goals into initiatives, improve how we work, and prevent problems"
+        }
+       }
+      },
+      {
+       "id": 6875470,
+       "position": 5,
+       "body": "I lead projects across teams, align people, and create tools that help others solve problems faster",
+       "translations": {
+        "en": {
+         "body": "I lead projects across teams, align people, and create tools that help others solve problems faster"
+        }
+       }
+      },
+      {
+       "id": 6875471,
+       "position": 6,
+       "body": "I redesign systems across departments, focus on long-term goals, and drive strategic change",
+       "translations": {
+        "en": {
+         "body": "I redesign systems across departments, focus on long-term goals, and drive strategic change"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462984,
+     "position": 13,
+     "options": {},
+     "required": true,
+     "body": "Which of the following statements best describes your approach to using AI in a professional context?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Which of the following statements best describes your approach to using AI in a professional context?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875472,
+       "position": 0,
+       "body": "I have limited to no experience with AI tools and am not yet convinced of their practical benefits in a work environment.",
+       "translations": {
+        "en": {
+         "body": "I have limited to no experience with AI tools and am not yet convinced of their practical benefits in a work environment."
+        }
+       }
+      },
+      {
+       "id": 6875473,
+       "position": 1,
+       "body": "I consistently use AI tools to improve my personal efficiency, validate the quality of my own work, and build simple automations for my individual tasks.",
+       "translations": {
+        "en": {
+         "body": "I consistently use AI tools to improve my personal efficiency, validate the quality of my own work, and build simple automations for my individual tasks."
+        }
+       }
+      },
+      {
+       "id": 6875474,
+       "position": 2,
+       "body": "I proactively improve team efficiency by designing, building, and maintaining multi-step automated workflows, and I actively share these solutions with my team.",
+       "translations": {
+        "en": {
+         "body": "I proactively improve team efficiency by designing, building, and maintaining multi-step automated workflows, and I actively share these solutions with my team."
+        }
+       }
+      },
+      {
+       "id": 6875475,
+       "position": 3,
+       "body": "I strategically redesign core operations by architecting scalable AI systems, coaching others to raise their AI skills, and identifying work that can be entirely eliminated by AI.",
+       "translations": {
+        "en": {
+         "body": "I strategically redesign core operations by architecting scalable AI systems, coaching others to raise their AI skills, and identifying work that can be entirely eliminated by AI."
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462986,
+     "position": 14,
+     "options": {},
+     "required": true,
+     "body": "How familiar and practised are you with working in an outcome-driven environment (KPIs, backlog health, measurable impact)?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How familiar and practised are you with working in an outcome-driven environment (KPIs, backlog health, measurable impact)?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875480,
+       "position": 0,
+       "body": "Not familiar - I am enthusiastic to start learning about it.",
+       "translations": {
+        "en": {
+         "body": "Not familiar - I am enthusiastic to start learning about it."
+        }
+       }
+      },
+      {
+       "id": 6875481,
+       "position": 1,
+       "body": "Theoretical - I know the basics but have little hands-on experience.",
+       "translations": {
+        "en": {
+         "body": "Theoretical - I know the basics but have little hands-on experience."
+        }
+       }
+      },
+      {
+       "id": 6875482,
+       "position": 2,
+       "body": "Applied - I have applied this knowledge in projects or operations.",
+       "translations": {
+        "en": {
+         "body": "Applied - I have applied this knowledge in projects or operations."
+        }
+       }
+      },
+      {
+       "id": 6875483,
+       "position": 3,
+       "body": "Advanced - I have led implementations, designed processes, taught others.",
+       "translations": {
+        "en": {
+         "body": "Advanced - I have led implementations, designed processes, taught others."
+        }
+       }
+      },
+      {
+       "id": 6875484,
+       "position": 4,
+       "body": "Subject-matter expert - I am the go-to-person for complex issues.",
+       "translations": {
+        "en": {
+         "body": "Subject-matter expert - I am the go-to-person for complex issues."
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462987,
+     "position": 15,
+     "options": {},
+     "required": true,
+     "body": "How many years of experience do you have leading a customer support or customer service team?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How many years of experience do you have leading a customer support or customer service team?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875485,
+       "position": 0,
+       "body": "None",
+       "translations": {
+        "en": {
+         "body": "None"
+        }
+       }
+      },
+      {
+       "id": 6875486,
+       "position": 1,
+       "body": "Less than 1 year",
+       "translations": {
+        "en": {
+         "body": "Less than 1 year"
+        }
+       }
+      },
+      {
+       "id": 6875526,
+       "position": 2,
+       "body": "1-2 years",
+       "translations": {
+        "en": {
+         "body": "1-2 years"
+        }
+       }
+      },
+      {
+       "id": 6875527,
+       "position": 3,
+       "body": "3-5 years",
+       "translations": {
+        "en": {
+         "body": "3-5 years"
+        }
+       }
+      },
+      {
+       "id": 6875528,
+       "position": 4,
+       "body": "More than 5 years",
+       "translations": {
+        "en": {
+         "body": "More than 5 years"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462988,
+     "position": 16,
+     "options": {},
+     "required": true,
+     "body": "What is the largest team you have directly managed (people who reported to you)?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "What is the largest team you have directly managed (people who reported to you)?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875487,
+       "position": 0,
+       "body": "I have not directly managed anyone",
+       "translations": {
+        "en": {
+         "body": "I have not directly managed anyone"
+        }
+       }
+      },
+      {
+       "id": 6875488,
+       "position": 1,
+       "body": "1-3 people",
+       "translations": {
+        "en": {
+         "body": "1-3 people"
+        }
+       }
+      },
+      {
+       "id": 6875489,
+       "position": 2,
+       "body": "4-9 people",
+       "translations": {
+        "en": {
+         "body": "4-9 people"
+        }
+       }
+      },
+      {
+       "id": 6875490,
+       "position": 3,
+       "body": "10-19 people",
+       "translations": {
+        "en": {
+         "body": "10-19 people"
+        }
+       }
+      },
+      {
+       "id": 6875491,
+       "position": 4,
+       "body": "20 or more people",
+       "translations": {
+        "en": {
+         "body": "20 or more people"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4462989,
+     "position": 17,
+     "options": {},
+     "required": true,
+     "body": "How did you first hear about this role?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How did you first hear about this role?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6875492,
+       "position": 0,
+       "body": "I found it myself on bunq's careers website",
+       "translations": {
+        "en": {
+         "body": "I found it myself on bunq's careers website"
+        }
+       }
+      },
+      {
+       "id": 6875493,
+       "position": 1,
+       "body": "A current bunq employee told me about it",
+       "translations": {
+        "en": {
+         "body": "A current bunq employee told me about it"
+        }
+       }
+      },
+      {
+       "id": 6875494,
+       "position": 2,
+       "body": "A former bunq employee referred me",
+       "translations": {
+        "en": {
+         "body": "A former bunq employee referred me"
+        }
+       }
+      },
+      {
+       "id": 6875495,
+       "position": 3,
+       "body": "A bunq recruiter reached out to me",
+       "translations": {
+        "en": {
+         "body": "A bunq recruiter reached out to me"
+        }
+       }
+      },
+      {
+       "id": 6875496,
+       "position": 4,
+       "body": "A job portal (LinkedIn, Glassdoor, Indeed, Google Jobs)",
+       "translations": {
+        "en": {
+         "body": "A job portal (LinkedIn, Glassdoor, Indeed, Google Jobs)"
+        }
+       }
+      },
+      {
+       "id": 6875497,
+       "position": 5,
+       "body": "A social media post (LinkedIn, Instagram, Facebook, YouTube, X)",
+       "translations": {
+        "en": {
+         "body": "A social media post (LinkedIn, Instagram, Facebook, YouTube, X)"
+        }
+       }
+      },
+      {
+       "id": 6875498,
+       "position": 6,
+       "body": "News or media coverage",
+       "translations": {
+        "en": {
+         "body": "News or media coverage"
+        }
+       }
+      },
+      {
+       "id": 6875499,
+       "position": 7,
+       "body": "At an event where bunq was present",
+       "translations": {
+        "en": {
+         "body": "At an event where bunq was present"
+        }
+       }
+      },
+      {
+       "id": 6875500,
+       "position": 8,
+       "body": "Through my university (ad, newsletter, event)",
+       "translations": {
+        "en": {
+         "body": "Through my university (ad, newsletter, event)"
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "id": 2798695,
+   "sharing_description": "At bunq, we\u2019re here to make life easy for our users; and that starts with support they can truly trust. When something goes wrong, we don\u2019t pass it around. We own it. As a Support Team Lead, you\u2019ll pl",
+   "options_cover_letter": "optional",
+   "slug": "support-experience-lead",
+   "title": "Support Experience Lead",
+   "locations_question_required": true,
+   "sharing_title": "Support Experience Lead",
+   "salary": {
+    "max": null,
+    "min": null,
+    "period": null,
+    "currency": null
+   },
+   "status": "published",
+   "options_cv": "required"
+  },
+  {
+   "position": 1649,
+   "postal_code": null,
+   "max_hours": 40,
+   "careers_url": "https://careers.bunq.com/o/collections-expert",
+   "state_name": "Noord-Holland",
+   "state_code": "NH",
+   "careers_apply_url": "https://careers.bunq.com/o/collections-expert/c/new",
+   "education_code": "bachelor_degree",
+   "created_at": "2026-10-26 13:02:53 UTC",
+   "experience_code": "mid_level",
+   "min_hours": 40,
+   "location_question_visible": true,
+   "close_at": null,
+   "cover_image": null,
+   "locations": [
+    {
+     "id": 39979,
+     "name": "Amsterdam",
+     "state": "Noord-Holland",
+     "country": "Netherlands",
+     "city": "Amsterdam",
+     "translations": {
+      "en": {
+       "name": "Amsterdam",
+       "city": "Amsterdam",
+       "postal_code": null,
+       "street": null,
+       "note": null
+      }
+     },
+     "country_code": "NL",
+     "state_code": "NH",
+     "postal_code": null,
+     "street": null,
+     "note": null
+    },
+    {
+     "id": 39977,
+     "name": "Istanbul",
+     "state": "\u0130stanbul",
+     "country": "T\u00fcrkiye",
+     "city": "\u0130stanbul",
+     "translations": {
+      "en": {
+       "name": "Istanbul",
+       "city": "\u0130stanbul",
+       "postal_code": null,
+       "street": null,
+       "note": null
+      }
+     },
+     "country_code": "TR",
+     "state_code": "34",
+     "postal_code": null,
+     "street": null,
+     "note": null
+    },
+    {
+     "id": 39967,
+     "name": "Sofia",
+     "state": "Sofia (stolitsa)",
+     "country": "Bulgaria",
+     "city": "Sofia",
+     "translations": {
+      "en": {
+       "name": "Sofia",
+       "city": "Sofia",
+       "postal_code": null,
+       "street": null,
+       "note": null
+      }
+     },
+     "country_code": "BG",
+     "state_code": "22",
+     "postal_code": null,
+     "street": null,
+     "note": null
+    }
+   ],
+   "max_hours_per_week": "40",
+   "location": "Amsterdam, Noord-Holland, Netherlands",
+   "locations_question": "What is your preferred work location?",
+   "highlight": null,
+   "options_salutation": "off",
+   "options_title": "off",
+   "on_site": false,
+   "tags": [],
+   "country_code": "NL",
+   "country": "Netherlands",
+   "min_hours_per_week": "40",
+   "employment_type_code": "fulltime_permanent",
+   "dynamic_fields": [],
+   "sharing_image": null,
+   "department": "Support & Operations",
+   "published_at": "2026-10-26 13:13:39 UTC",
+   "description": "<p>Our users just got their bunq Credit Card and want to maintain their credit history. Most don\u2019t want to fall behind, and they worry about what happens if they do. If they miss a payment, they need bunq to help them catch up, not hit them with shame or surprises. As our Collections Expert, you make sure collections stay fair, human, and effective. \ud83e\udd1d</p><p style=\"min-height: 1.7em;\"></p><p>Up for this? Kick off your application by taking our assessment and find out if bunq is your perfect match! \ud83d\udc9a</p><p style=\"min-height: 1.7em;\"></p>",
+   "guid": "vy6tk",
+   "city": "Amsterdam",
+   "category_code": "banking",
+   "locations_question_type": "single_choice",
+   "remote": false,
+   "updated_at": "2026-10-27 09:49:57 UTC",
+   "requirements": "<p>As our Collections Expert, you\u2019ll own credit card collections end to end, from the first missed payment to a fair outcome for our users. Automation handles the first contact, and people step in from Day 30.</p><ul><li><p>\ud83d\udccb Make sure certified Support Adams offer standard payment plans correctly, and escalate non-standard cases to the Product Owner Lending</p></li><li><p>\ud83d\udcac Set the tone for every outreach, so it stays empathetic, clear, and compliant, especially for vulnerable users</p></li><li><p>\ud83e\udd16 Build AI-powered automation that scales our outreach, with a human in the loop where judgment matters</p></li><li><p>\ud83d\udcca Track delinquency, recovery, and outreach results, and turn what you find into process improvements</p></li><li><p>\u2696\ufe0f Keep every step compliant and fair, working closely with Legal and Risk</p></li><li><p>\ud83d\udd04 Run the handoff to our collections partner from Day 90, and make sure only cleared cases are referred</p><p style=\"min-height: 1.7em;\"></p></li></ul><p><strong>This challenge is perfect for you if</strong> \u2728</p><ul><li><p>You have deep expertise in collections strategy and portfolio risk, and you can decide when the picture is unclear</p></li><li><p>You stay calm and empathetic in stressful moments</p></li><li><p>You know debt collection and consumer credit regulations in depth, and you can apply them in gray areas</p></li><li><p>You analyze data and turn it into action</p></li><li><p>You lead across teams and balance competing priorities</p></li><li><p>Y",
+   "options_phone": "required",
+   "hybrid": true,
+   "company_name": "bunq",
+   "options_photo": "off",
+   "open_questions": [
+    {
+     "id": 4461163,
+     "position": 1,
+     "options": {},
+     "required": true,
+     "body": "What country do you currently live in?",
+     "kind": "string",
+     "translations": {
+      "en": {
+       "body": "What country do you currently live in?"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461164,
+     "position": 2,
+     "options": {},
+     "required": false,
+     "body": "<p>\ud83d\udca1 Each country has different rules for eligibility to work without requiring sponsorship.</p>\n<p><br />\ud83c\uddf3\ud83c\uddf1 <strong>Netherlands</strong>: You must be a Dutch/EU/EEA/Swiss citizen, or hold a valid Dutch residence permit with full work rights (e.g., refugee status, spousal visa, or permanent residence).</p>\n<p>\ud83c\udde7\ud83c\uddec <strong>Bulgaria</strong>: You must have the legal right to work in Bulgaria without needing a company-sponsored visa.  </p>\n<p>\ud83c\uddf9\ud83c\uddf7 <strong>Turkey</strong>: You must be a Turkish citizen, hold a Turquoise Card, refugee status, or a permanent residency/work permit (student/family/temporary residencies are not eligible to work without company sponsorship).</p>\n<p><br /><strong>For this role, we are not sponsoring visas at the moment. But take a look at <strong><a target=\"_blank\" href=\"http://careers.bunq.com/\" rel=\"noopener\">careers.bunq.com</a>\u00a0</strong>- you might find another exciting role that\u2019s a great fit!\u00a0<strong>\ud83c\udf08</strong></strong></p>\n<p><strong><br /></strong><br /></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p>\ud83d\udca1 Each country has different rules for eligibility to work without requiring sponsorship.</p>\n<p><br />\ud83c\uddf3\ud83c\uddf1 <strong>Netherlands</strong>: You must be a Dutch/EU/EEA/Swiss citizen, or hold a valid Dutch residence permit with full work rights (e.g., refugee status, spousal visa, or permanent residence).</p>\n<p>\ud83c\udde7\ud83c\uddec <strong>Bulgaria</strong>: You must have the legal right to work in Bulgaria without needing a company-sponsored visa.  </p>\n<p>\ud83c\uddf9\ud83c\uddf7 <strong>Turkey</strong>: You must be a Turkish citizen, hold a Turquoise Card, refugee status, or a permanent residency/work permit (student/family/temporary residencies are not eligible to work without company sponsorship).</p>\n<p><br /><strong>For this role, we are not sponsoring visas at the moment. But take a look at <strong><a target=\"_blank\" href=\"http://careers.bunq.com/\" rel=\"noopener\">careers.bunq.com</a>\u00a0</strong>- you might find another exciting role that\u2019s a great fit!\u00a0<strong>\ud83c\udf08</strong></strong></p>\n<p><strong><br /></strong><br /></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461165,
+     "position": 3,
+     "options": {},
+     "required": true,
+     "body": "Which visa situation fits you best? Please choose according to the office you are applying for: Amsterdam (NL), Istanbul (TR), Sofia (BG).",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Which visa situation fits you best? Please choose according to the office you are applying for: Amsterdam (NL), Istanbul (TR), Sofia (BG)."
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872768,
+       "position": 0,
+       "body": "NL: I am a EU/EEA/Swiss citizen",
+       "translations": {
+        "en": {
+         "body": "NL: I am a EU/EEA/Swiss citizen"
+        }
+       }
+      },
+      {
+       "id": 6872769,
+       "position": 1,
+       "body": "NL: I am on a spousal visa / search year visa / under the reduced salary criterion",
+       "translations": {
+        "en": {
+         "body": "NL: I am on a spousal visa / search year visa / under the reduced salary criterion"
+        }
+       }
+      },
+      {
+       "id": 6872770,
+       "position": 2,
+       "body": "NL: I require visa sponsorship and I am under 29 years of age",
+       "translations": {
+        "en": {
+         "body": "NL: I require visa sponsorship and I am under 29 years of age"
+        }
+       }
+      },
+      {
+       "id": 6872771,
+       "position": 3,
+       "body": "NL: I require visa sponsorship and I am over 29 years of age",
+       "translations": {
+        "en": {
+         "body": "NL: I require visa sponsorship and I am over 29 years of age"
+        }
+       }
+      },
+      {
+       "id": 6872772,
+       "position": 4,
+       "body": "TR: I am Turkish citizen",
+       "translations": {
+        "en": {
+         "body": "TR: I am Turkish citizen"
+        }
+       }
+      },
+      {
+       "id": 6872773,
+       "position": 5,
+       "body": "TR: I have a Turkish permanent residency / working permit / Turquoise Card / official refugee or subsidiary protection status",
+       "translations": {
+        "en": {
+         "body": "TR: I have a Turkish permanent residency / working permit / Turquoise Card / official refugee or subsidiary protection status"
+        }
+       }
+      },
+      {
+       "id": 6872774,
+       "position": 6,
+       "body": "TR: I need visa sponsorship / I have a short-term, long-term, family or student permit",
+       "translations": {
+        "en": {
+         "body": "TR: I need visa sponsorship / I have a short-term, long-term, family or student permit"
+        }
+       }
+      },
+      {
+       "id": 6872775,
+       "position": 7,
+       "body": "BG: I do not require visa sponsorship",
+       "translations": {
+        "en": {
+         "body": "BG: I do not require visa sponsorship"
+        }
+       }
+      },
+      {
+       "id": 6872776,
+       "position": 8,
+       "body": "BG: I require visa sponsorship",
+       "translations": {
+        "en": {
+         "body": "BG: I require visa sponsorship"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461166,
+     "position": 4,
+     "options": {},
+     "required": false,
+     "body": "<p><strong>\ud83d\udca1 Important Info: At bunq, our working language is English. Fluency in both writing and speaking English is a must for all roles in all locations.</strong></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><strong>\ud83d\udca1 Important Info: At bunq, our working language is English. Fluency in both writing and speaking English is a must for all roles in all locations.</strong></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461167,
+     "position": 5,
+     "options": {},
+     "required": true,
+     "body": "How do you assess your writing and speaking English skills?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How do you assess your writing and speaking English skills?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872777,
+       "position": 0,
+       "body": "Beginner",
+       "translations": {
+        "en": {
+         "body": "Beginner"
+        }
+       }
+      },
+      {
+       "id": 6872778,
+       "position": 1,
+       "body": "Intermediate",
+       "translations": {
+        "en": {
+         "body": "Intermediate"
+        }
+       }
+      },
+      {
+       "id": 6872779,
+       "position": 2,
+       "body": "Upper Intermediate",
+       "translations": {
+        "en": {
+         "body": "Upper Intermediate"
+        }
+       }
+      },
+      {
+       "id": 6872780,
+       "position": 3,
+       "body": "Advanced",
+       "translations": {
+        "en": {
+         "body": "Advanced"
+        }
+       }
+      },
+      {
+       "id": 6872781,
+       "position": 4,
+       "body": "Native",
+       "translations": {
+        "en": {
+         "body": "Native"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461168,
+     "position": 6,
+     "options": {},
+     "required": false,
+     "body": "<p><strong>\ud83d\udca1 If successful in the hiring process, the contractual arrangement would look like this:\u00a0<br /><br />\ud83c\uddf3\ud83c\uddf1 Netherlands: A first contract of 9 months, extended with a second contract of 12 months, followed by an indefinite contract.\u00a0<br />\ud83c\uddf9\ud83c\uddf7 Turkey: A first contract of 9 months, extended with a second contract of 12 months,\u00a0<strong>followed by</strong> an indefinite contract.\u00a0<br />\ud83c\udde7\ud83c\uddec Bulgaria: an indefinite contract.\u00a0<br /><br />\ud83d\udca1 For the first 3 months, all new hires are required to be in the office 5 days a week to complete the onboarding process, get to know everyone, and immerse\u00a0<strong>themselves in the culture of bunq. After that, the work arrangement will be hybrid, with 3 days in the office and 2 days working from home.<br /><br /><strong>\ud83d\udca1 </strong>Our standard working hours are from 09:00 to 18:00. This ensures that everyone is available and can rely on each other during this time.<br /></strong></strong></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><strong>\ud83d\udca1 If successful in the hiring process, the contractual arrangement would look like this:\u00a0<br /><br />\ud83c\uddf3\ud83c\uddf1 Netherlands: A first contract of 9 months, extended with a second contract of 12 months, followed by an indefinite contract.\u00a0<br />\ud83c\uddf9\ud83c\uddf7 Turkey: A first contract of 9 months, extended with a second contract of 12 months,\u00a0<strong>followed by</strong> an indefinite contract.\u00a0<br />\ud83c\udde7\ud83c\uddec Bulgaria: an indefinite contract.\u00a0<br /><br />\ud83d\udca1 For the first 3 months, all new hires are required to be in the office 5 days a week to complete the onboarding process, get to know everyone, and immerse\u00a0<strong>themselves in the culture of bunq. After that, the work arrangement will be hybrid, with 3 days in the office and 2 days working from home.<br /><br /><strong>\ud83d\udca1 </strong>Our standard working hours are from 09:00 to 18:00. This ensures that everyone is available and can rely on each other during this time.<br /></strong></strong></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461169,
+     "position": 7,
+     "options": {},
+     "required": true,
+     "body": "Do you agree and confirm with the above mentioned terms (contract duration, hybrid way of working, and standard working hours)?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Do you agree and confirm with the above mentioned terms (contract duration, hybrid way of working, and standard working hours)?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872782,
+       "position": 0,
+       "body": "Yes, I agree with the proposed setup.",
+       "translations": {
+        "en": {
+         "body": "Yes, I agree with the proposed setup."
+        }
+       }
+      },
+      {
+       "id": 6872783,
+       "position": 1,
+       "body": "No, I do not agree with the initial in-office and then hybrid setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the initial in-office and then hybrid setup"
+        }
+       }
+      },
+      {
+       "id": 6872784,
+       "position": 2,
+       "body": "No, I do not agree with the contract duration / setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the contract duration / setup"
+        }
+       }
+      },
+      {
+       "id": 6872785,
+       "position": 3,
+       "body": "No, I do not agree with the working hours setup",
+       "translations": {
+        "en": {
+         "body": "No, I do not agree with the working hours setup"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461170,
+     "position": 8,
+     "options": {},
+     "required": true,
+     "body": "What are your salary expectations? (gross, annual, in EUR)",
+     "kind": "string",
+     "translations": {
+      "en": {
+       "body": "What are your salary expectations? (gross, annual, in EUR)"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461171,
+     "position": 9,
+     "options": {},
+     "required": false,
+     "body": "<p>Please double check if the salary expectations is the <strong>yearly</strong> <strong>gross</strong> amount, in <strong>EUR</strong>!</p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p>Please double check if the salary expectations is the <strong>yearly</strong> <strong>gross</strong> amount, in <strong>EUR</strong>!</p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461172,
+     "position": 10,
+     "options": {},
+     "required": true,
+     "body": "Have you previously worked at bunq?",
+     "kind": "boolean",
+     "translations": {
+      "en": {
+       "body": "Have you previously worked at bunq?"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461173,
+     "position": 11,
+     "options": {},
+     "required": false,
+     "body": "<p><em>All new hires are subject to Pre-employment Screening (PES), which includes checks conducted by our third-party partner, Zinc. This is part of our commitment to a secure and trustworthy workplace</em></p>",
+     "kind": "infobox",
+     "translations": {
+      "en": {
+       "body": "<p><em>All new hires are subject to Pre-employment Screening (PES), which includes checks conducted by our third-party partner, Zinc. This is part of our commitment to a secure and trustworthy workplace</em></p>"
+      }
+     },
+     "open_question_options": []
+    },
+    {
+     "id": 4461174,
+     "position": 12,
+     "options": {},
+     "required": true,
+     "body": "How do you usually approach your work, its impact, and solving challenges?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How do you usually approach your work, its impact, and solving challenges?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872788,
+       "position": 0,
+       "body": "I don\u2019t have formal work experience yet, but I\u2019ve practiced through studies or small projects",
+       "translations": {
+        "en": {
+         "body": "I don\u2019t have formal work experience yet, but I\u2019ve practiced through studies or small projects"
+        }
+       }
+      },
+      {
+       "id": 6872789,
+       "position": 1,
+       "body": "I successfully handle defined tasks, follow processes, and ask for guidance when needed",
+       "translations": {
+        "en": {
+         "body": "I successfully handle defined tasks, follow processes, and ask for guidance when needed"
+        }
+       }
+      },
+      {
+       "id": 6872790,
+       "position": 2,
+       "body": "I work mostly on my own, support team goals, and deal with common issues",
+       "translations": {
+        "en": {
+         "body": "I work mostly on my own, support team goals, and deal with common issues"
+        }
+       }
+      },
+      {
+       "id": 6872791,
+       "position": 3,
+       "body": "I deliver projects from start to finish, tie my work to team results, and suggest fixes",
+       "translations": {
+        "en": {
+         "body": "I deliver projects from start to finish, tie my work to team results, and suggest fixes"
+        }
+       }
+      },
+      {
+       "id": 6872792,
+       "position": 4,
+       "body": "I turn bigger goals into initiatives, improve how we work, and prevent problems",
+       "translations": {
+        "en": {
+         "body": "I turn bigger goals into initiatives, improve how we work, and prevent problems"
+        }
+       }
+      },
+      {
+       "id": 6872793,
+       "position": 5,
+       "body": "I lead projects across teams, align people, and create tools that help others solve problems faster",
+       "translations": {
+        "en": {
+         "body": "I lead projects across teams, align people, and create tools that help others solve problems faster"
+        }
+       }
+      },
+      {
+       "id": 6872794,
+       "position": 6,
+       "body": "I redesign systems across departments, focus on long-term goals, and drive strategic change",
+       "translations": {
+        "en": {
+         "body": "I redesign systems across departments, focus on long-term goals, and drive strategic change"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461175,
+     "position": 13,
+     "options": {},
+     "required": true,
+     "body": "Which of the following statements best describes your approach to using AI in a professional context?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "Which of the following statements best describes your approach to using AI in a professional context?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872795,
+       "position": 0,
+       "body": "I have limited to no experience with AI tools and am not yet convinced of their practical benefits in a work environment.",
+       "translations": {
+        "en": {
+         "body": "I have limited to no experience with AI tools and am not yet convinced of their practical benefits in a work environment."
+        }
+       }
+      },
+      {
+       "id": 6872796,
+       "position": 1,
+       "body": "I consistently use AI tools to improve my personal efficiency, validate the quality of my own work, and build simple automations for my individual tasks.",
+       "translations": {
+        "en": {
+         "body": "I consistently use AI tools to improve my personal efficiency, validate the quality of my own work, and build simple automations for my individual tasks."
+        }
+       }
+      },
+      {
+       "id": 6872797,
+       "position": 2,
+       "body": "I proactively improve team efficiency by designing, building, and maintaining multi-step automated workflows, and I actively share these solutions with my team.",
+       "translations": {
+        "en": {
+         "body": "I proactively improve team efficiency by designing, building, and maintaining multi-step automated workflows, and I actively share these solutions with my team."
+        }
+       }
+      },
+      {
+       "id": 6872798,
+       "position": 3,
+       "body": "I strategically redesign core operations by architecting scalable AI systems, coaching others to raise their AI skills, and identifying work that can be entirely eliminated by AI.",
+       "translations": {
+        "en": {
+         "body": "I strategically redesign core operations by architecting scalable AI systems, coaching others to raise their AI skills, and identifying work that can be entirely eliminated by AI."
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461176,
+     "position": 14,
+     "options": {},
+     "required": true,
+     "body": "How many years of hands-on experience do you have in consumer credit collections (cards, loans, BNPL)?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How many years of hands-on experience do you have in consumer credit collections (cards, loans, BNPL)?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872799,
+       "position": 0,
+       "body": "No experience ",
+       "translations": {
+        "en": {
+         "body": "No experience "
+        }
+       }
+      },
+      {
+       "id": 6872800,
+       "position": 1,
+       "body": "Less than 2 years",
+       "translations": {
+        "en": {
+         "body": "Less than 2 years"
+        }
+       }
+      },
+      {
+       "id": 6872801,
+       "position": 2,
+       "body": "2-5 years",
+       "translations": {
+        "en": {
+         "body": "2-5 years"
+        }
+       }
+      },
+      {
+       "id": 6872802,
+       "position": 3,
+       "body": "5+ years",
+       "translations": {
+        "en": {
+         "body": "5+ years"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461210,
+     "position": 15,
+     "options": {},
+     "required": true,
+     "body": "Which of these have you done in a previous role? (Select all that apply)",
+     "kind": "multi_choice",
+     "translations": {
+      "en": {
+       "body": "Which of these have you done in a previous role? (Select all that apply)"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872871,
+       "position": 0,
+       "body": "Owned collections strategy or delinquency and recovery targets for a portfolio",
+       "translations": {
+        "en": {
+         "body": "Owned collections strategy or delinquency and recovery targets for a portfolio"
+        }
+       }
+      },
+      {
+       "id": 6872872,
+       "position": 1,
+       "body": "Applied consumer credit and debt collection regulations in practice (e.g., forbearance, vulnerable customers)",
+       "translations": {
+        "en": {
+         "body": "Applied consumer credit and debt collection regulations in practice (e.g., forbearance, vulnerable customers)"
+        }
+       }
+      },
+      {
+       "id": 6872873,
+       "position": 2,
+       "body": "Built or deployed automation or AI to scale collections or customer outreach",
+       "translations": {
+        "en": {
+         "body": "Built or deployed automation or AI to scale collections or customer outreach"
+        }
+       }
+      },
+      {
+       "id": 6872874,
+       "position": 3,
+       "body": "Managed a third-party collections agency or partner",
+       "translations": {
+        "en": {
+         "body": "Managed a third-party collections agency or partner"
+        }
+       }
+      },
+      {
+       "id": 6872875,
+       "position": 4,
+       "body": "None of the above",
+       "translations": {
+        "en": {
+         "body": "None of the above"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "id": 4461179,
+     "position": 16,
+     "options": {},
+     "required": true,
+     "body": "How did you first hear about this role?",
+     "kind": "single_choice",
+     "translations": {
+      "en": {
+       "body": "How did you first hear about this role?"
+      }
+     },
+     "open_question_options": [
+      {
+       "id": 6872810,
+       "position": 0,
+       "body": "I found it myself on bunq's careers website",
+       "translations": {
+        "en": {
+         "body": "I found it myself on bunq's careers website"
+        }
+       }
+      },
+      {
+       "id": 6872811,
+       "position": 1,
+       "body": "A current bunq employee told me about it",
+       "translations": {
+        "en": {
+         "body": "A current bunq employee told me about it"
+        }
+       }
+      },
+      {
+       "id": 6872812,
+       "position": 2,
+       "body": "A former bunq employee referred me",
+       "translations": {
+        "en": {
+         "body": "A former bunq employee referred me"
+        }
+       }
+      },
+      {
+       "id": 6872813,
+       "position": 3,
+       "body": "A bunq recruiter reached out to me",
+       "translations": {
+        "en": {
+         "body": "A bunq recruiter reached out to me"
+        }
+       }
+      },
+      {
+       "id": 6872814,
+       "position": 4,
+       "body": "A job portal (LinkedIn, Glassdoor, Indeed, Google Jobs)",
+       "translations": {
+        "en": {
+         "body": "A job portal (LinkedIn, Glassdoor, Indeed, Google Jobs)"
+        }
+       }
+      },
+      {
+       "id": 6872815,
+       "position": 5,
+       "body": "A social media post (LinkedIn, Instagram, Facebook, YouTube, X)",
+       "translations": {
+        "en": {
+         "body": "A social media post (LinkedIn, Instagram, Facebook, YouTube, X)"
+        }
+       }
+      },
+      {
+       "id": 6872816,
+       "position": 6,
+       "body": "News or media coverage",
+       "translations": {
+        "en": {
+         "body": "News or media coverage"
+        }
+       }
+      },
+      {
+       "id": 6872817,
+       "position": 7,
+       "body": "At an event where bunq was present",
+       "translations": {
+        "en": {
+         "body": "At an event where bunq was present"
+        }
+       }
+      },
+      {
+       "id": 6872818,
+       "position": 8,
+       "body": "Through my university (ad, newsletter, event)",
+       "translations": {
+        "en": {
+         "body": "Through my university (ad, newsletter, event)"
+        }
+       }
+      }
+     ]
+    }
+   ],
+   "id": 2797591,
+   "sharing_description": "Our users just got their bunq Credit Card and want to maintain their credit history. Most don\u2019t want to fall behind, and they worry about what happens if they do. If they miss a payment, they need bun",
+   "options_cover_letter": "off",
+   "slug": "collections-expert",
+   "title": "Collections Expert",
+   "locations_question_required": true,
+   "sharing_title": "Collections Expert",
+   "salary": {
+    "max": null,
+    "min": null,
+    "period": null,
+    "currency": null
+   },
+   "status": "published",
+   "options_cv": "off"
+  }
+ ]
+}

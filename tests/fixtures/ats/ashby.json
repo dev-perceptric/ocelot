@@ -1,0 +1,326 @@
+{
+ "apiVersion": "1",
+ "jobs": [
+  {
+   "id": "7458d4e9-da2e-47bd-98cb-adfda43d42b2",
+   "title": "Engineering Manager - EU",
+   "department": "Engineering",
+   "team": "EMEA Engineering",
+   "employmentType": "FullTime",
+   "location": "Remote - European Union",
+   "secondaryLocations": [
+    {
+     "location": "Spain",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Spain",
+       "addressCountry": "Spain",
+       "addressLocality": "Spain"
+      }
+     }
+    },
+    {
+     "location": "Italy",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Italy",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Germany",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Germany",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Switzerland",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Switzerland",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Denmark",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Denmark",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Norway",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Norway",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Croatia",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Croatia",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Ireland",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Ireland",
+       "addressCountry": "Ireland",
+       "addressLocality": "Ireland"
+      }
+     }
+    },
+    {
+     "location": "Stockholm",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Stockholm",
+       "addressCountry": "Sweden",
+       "addressLocality": "Stockholm"
+      }
+     }
+    },
+    {
+     "location": "Romania",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Romania",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Austria",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Austria"
+      }
+     }
+    },
+    {
+     "location": "Barcelona",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Catalonia",
+       "addressCountry": "Spain",
+       "addressLocality": "Barcelona"
+      }
+     }
+    },
+    {
+     "location": "Netherlands",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Netherlands",
+       "addressLocality": "Amsterdam"
+      }
+     }
+    },
+    {
+     "location": "Portugal",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Portugal"
+      }
+     }
+    },
+    {
+     "location": "France",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "France",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Berlin",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Germany",
+       "addressLocality": "Berlin"
+      }
+     }
+    },
+    {
+     "location": "Sweden",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Sweden",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Hungary",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Hungary",
+       "addressCountry": "Hungary",
+       "addressLocality": "Budapest"
+      }
+     }
+    },
+    {
+     "location": "Estonia",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Estonia",
+       "addressLocality": ""
+      }
+     }
+    }
+   ],
+   "publishedAt": "2024-03-04T14:29:08.532+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "postalCode": "",
+     "addressRegion": "",
+     "addressCountry": "European Union",
+     "addressLocality": ""
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/ashby/7458d4e9-da2e-47bd-98cb-adfda43d42b2",
+   "applyUrl": "https://jobs.ashbyhq.com/ashby/7458d4e9-da2e-47bd-98cb-adfda43d42b2/application",
+   "descriptionHtml": "<p style=\"min-height:1.5em\">Hi 👋 I’m <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://uk.linkedin.com/in/colinhoweuk\"><u>Colin</u></a>, Director of Engineering, Europe. How do you feel about software engineers writing product specs, making product decisions, and not breaking down projects into individual tickets? If that sounds exciting (even if a bit scary), read on because I’m looking for an engineering manager to help us build a different type of engineering team and culture at Ashby.</p><p style=\"min-height:1.5em\">To start, why do we need to be different? Time and again, I have witnessed engineers knowing what needs to be done yet being unable to get things done because of “the process” or because “more data is needed.” Some of the most effective projects have been <em>skunkworks </em>projects, where engineers have taken total ownership of a problem and driven it to completion. I want to normalize that at Ashby.</p><p style=\"min-height:1.5em\">When we think about how these processes came about, we realize they carry a <em>pessimistic</em> mindset. They box people into smaller roles to minimize the chance of not meeting a certain standard. At Ashby. we’re building an environment that is <em>optimistic </em>about what engineers can own and achieve and embraces the innovative engineers (and frankly, often stays out of their way).</p><p style=\"min-height:1.5em\">To accomplish this, our engineering leaders need to think deeply about individual performance, pr",
+   "descriptionPlain": "Hi 👋 I’m Colin https://uk.linkedin.com/in/colinhoweuk, Director of Engineering, Europe. How do you feel about software engineers writing product specs, making product decisions, and not breaking down projects into individual tickets? If that sounds exciting (even if a bit scary), read on because I’m looking for an engineering manager to help us build a different type of engineering team and culture at Ashby.\n\nTo start, why do we need to be different? Time and again, I have witnessed engineers knowing what needs to be done yet being unable to get things done because of “the process” or because “more data is needed.” Some of the most effective projects have been skunkworks projects, where engineers have taken total ownership of a problem and driven it to completion. I want to normalize that at Ashby.\n\nWhen we think about how these processes came about, we realize they carry a pessimistic mindset. They box people into smaller roles to minimize the chance of not meeting a certain standard. At Ashby. we’re building an environment that is optimistic about what engineers can own and achieve and embraces the innovative engineers (and frankly, often stays out of their way).\n\nTo accomplish this, our engineering leaders need to think deeply about individual performance, process, and culture - not running sprint planning or driving product and technical decisions. You’ll focus on building your team, their skills to thrive with the ownership they’re given, and an environment that empower"
+  },
+  {
+   "id": "86a60834-ba64-484d-9658-afa1bc97a957",
+   "title": "Mid Market Account Executive - EMEA (French Speaking)",
+   "department": "Sales",
+   "team": "Sales",
+   "employmentType": "FullTime",
+   "location": "France",
+   "secondaryLocations": [
+    {
+     "location": "United Kingdom",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "United Kingdom",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Belgium",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Belgium",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Germany",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Germany",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Switzerland",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Switzerland",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Ireland",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Ireland",
+       "addressLocality": ""
+      }
+     }
+    },
+    {
+     "location": "Austria",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Austria"
+      }
+     }
+    },
+    {
+     "location": "Spain",
+     "address": {
+      "postalAddress": {
+       "addressCountry": "Spain"
+      }
+     }
+    },
+    {
+     "location": "Stuttgart",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "Baden-Wurttemberg",
+       "addressCountry": "Germany",
+       "addressLocality": "Stuttgart"
+      }
+     }
+    },
+    {
+     "location": "Berlin",
+     "address": {
+      "postalAddress": {
+       "addressRegion": "",
+       "addressCountry": "Germany",
+       "addressLocality": "Berlin"
+      }
+     }
+    }
+   ],
+   "publishedAt": "2026-09-08T16:27:26.694+00:00",
+   "isListed": true,
+   "isRemote": true,
+   "workplaceType": "Remote",
+   "address": {
+    "postalAddress": {
+     "addressRegion": "",
+     "addressCountry": "France",
+     "addressLocality": ""
+    }
+   },
+   "jobUrl": "https://jobs.ashbyhq.com/ashby/86a60834-ba64-484d-9658-afa1bc97a957",
+   "applyUrl": "https://jobs.ashbyhq.com/ashby/86a60834-ba64-484d-9658-afa1bc97a957/application",
+   "descriptionHtml": "<h2><strong>Why Join Sales at Ashby</strong></h2><p style=\"min-height:1.5em\">Sales at Ashby is a unique opportunity to sell a <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://www.ashbyhq.com/customers\"><u>product customers genuinely love</u></a> during an AI-fueled market expansion. Over 5,000 companies rely on Ashby, including OpenAI, Doctolib, Alan, Mistral and <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"http://Monday.com\">Monday.com</a>, and our business is durably growing faster than 100% year-over-year. <a target=\"_blank\" rel=\"noopener noreferrer nofollow\" href=\"https://www.ashbyhq.com/blog/culture/series-d\"><u>We’re well funded</u></a>, and on a path to profitability. That's exceptionally rare for a company at our scale, and puts us in the top 10% of benchmarks.</p><p style=\"min-height:1.5em\">Nearly 1 in 3 of Ashby’s globally distributed team call Europe home! We’ve landed over 1000 customers in EMEA representing ~23% of our global revenue base<em>,</em>with well over 100 in France, clear evidence of strong product-market fit. We’re doubling down our investment in the region with in-market GTM, CS and Support resources. EU Data Residency and product localisation are committed and coming soon. We believe there is a meaningful opportunity to help modern teams move beyond legacy recruiting software.</p><p style=\"min-height:1.5em\">Ashby replaces 3-5 tools in a consolidation &amp; efficiency play that’s equally loved by recruiters and CFOs.",
+   "descriptionPlain": "WHY JOIN SALES AT ASHBY\n\nSales at Ashby is a unique opportunity to sell a product customers genuinely love https://www.ashbyhq.com/customers during an AI-fueled market expansion. Over 5,000 companies rely on Ashby, including OpenAI, Doctolib, Alan, Mistral and Monday.com http://Monday.com, and our business is durably growing faster than 100% year-over-year. We’re well funded https://www.ashbyhq.com/blog/culture/series-d, and on a path to profitability. That's exceptionally rare for a company at our scale, and puts us in the top 10% of benchmarks.\n\nNearly 1 in 3 of Ashby’s globally distributed team call Europe home! We’ve landed over 1000 customers in EMEA representing ~23% of our global revenue base,with well over 100 in France, clear evidence of strong product-market fit. We’re doubling down our investment in the region with in-market GTM, CS and Support resources. EU Data Residency and product localisation are committed and coming soon. We believe there is a meaningful opportunity to help modern teams move beyond legacy recruiting software.\n\nAshby replaces 3-5 tools in a consolidation & efficiency play that’s equally loved by recruiters and CFOs. We’re known as a clear AI-leader https://www.ashbyhq.com/ai in the recruiting space. We are rapidly extending from a best-in-class recruiting product toward a multi-product platform, expanding upmarket, into new industries, and internationally. For sales reps, that means a large market full of legacy tools, and a product portfolio "
+  }
+ ]
+}
