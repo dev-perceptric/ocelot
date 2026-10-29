@@ -93,3 +93,18 @@ export function reportReceived(o: { job: string; company: string; reason: string
     }),
   };
 }
+
+export function applicationSent(o: { job: string; company: string; cardUrl: string }): Email {
+  return {
+    subject: `Your application to ${o.company} was sent`,
+    pref: null,
+    ...layout({
+      title: "Application sent",
+      preview: `${o.job} at ${o.company}`,
+      blocks: [
+        { p: `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
+        { button: { label: "View in My search", url: o.cardUrl } },
+      ],
+    }),
+  };
+}

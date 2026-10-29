@@ -12,9 +12,9 @@ import { RESUME_EXT, RESUME_MAX, RESUME_TYPES, fileSize, type ResumeType } from 
 import { createClient } from "@/lib/supabase/browser";
 import { addResume, deleteResume, renameResume, setCardResume } from "./actions";
 
-export type Resume = { id: string; name: string; mime_type: string; size_bytes: number; created_at: string; used: number };
+export type Resume = { id: string; name: string; mime_type: string; size_bytes: number; created_at: string; used: number; sent: boolean };
 
-export function UploadResume({ userId, label = "Upload résumé" }: { userId: string; label?: string }) {
+export function UploadResume({ userId, label = "Upload résumé", variant }: { userId: string; label?: string; variant?: "outline" }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,7 +33,7 @@ export function UploadResume({ userId, label = "Upload résumé" }: { userId: st
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>{label}</Button>
+      <Button variant={variant} onClick={() => setOpen(true)}>{label}</Button>
       <Modal open={open} onClose={() => !busy && setOpen(false)} title="Upload a résumé">
         <FileDrop label="Résumé file" accept={RESUME_TYPES} maxBytes={RESUME_MAX} onFile={upload} disabled={busy}
           hint={busy ? "Uploading" : undefined} />
@@ -54,7 +54,7 @@ export function ResumeTable({ resumes }: { resumes: Resume[] }) {
   const remove = async (r: Resume) => {
     const ok = await askConfirm({
       title: `Delete ${r.name}?`,
-      body: r.used ? `It's picked on ${r.used === 1 ? "1 job" : `${r.used} jobs`} in your tracker. Those cards will show no résumé.` : undefined,
+      body: r.sent ? "Companies you sent it to keep their copy." : r.used ? `It's picked on ${r.used === 1 ? "1 job" : `${r.used} jobs`} in your tracker. Those cards will show no résumé.` : undefined,
       confirm: "Delete résumé", danger: true,
     });
     if (!ok) return;

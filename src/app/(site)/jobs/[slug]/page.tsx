@@ -6,7 +6,7 @@ import { jobPostingJsonLd } from "@/lib/jobs";
 import { getJob } from "@/lib/queries";
 import { currentUser } from "@/lib/supabase/server";
 import { ReportButton } from "./ReportButton";
-import { ApplyButton, SaveButton } from "./SaveApply";
+import { ApplyButton, OcelotApply, SaveButton } from "./SaveApply";
 import type { Stage } from "@/lib/tracker";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,10 @@ export default async function JobPage({ params }: Props) {
   if (!job) notFound();
   const live = job.status === "published";
   const { supabase, user } = await currentUser();
-  const { data: card } = user ? await supabase.from("tracker_items").select("id, stage").eq("job_id", job.id).maybeSingle() : { data: null };
+  const [{ data: card }, { data: sent }] = user ? await Promise.all([
+    supabase.from("tracker_items").select("id, stage, application_id").eq("job_id", job.id).order("created_at").limit(1).maybeSingle(),
+    supabase.from("applications").select("id, submitted_at").eq("job_id", job.id).eq("candidate_id", user.id).maybeSingle(),
+  ]) : [{ data: null }, { data: null }];
   const props = {
     jobId: job.id, slug: job.slug, title: job.title, company: job.org.name, applyUrl: job.apply_method === "external" ? job.apply_url : null,
     signedIn: Boolean(user), card: card ? { id: card.id, stage: card.stage as Stage } : null,
@@ -43,7 +46,10 @@ export default async function JobPage({ params }: Props) {
         }} />
       ) : null}
       <JobView job={job} org={job.org} questions={job.questions} aside={<ReportButton slug={job.slug} signedIn={Boolean(user)} />}
-        apply={<ApplyButton {...props} />} save={live ? <SaveButton {...props} /> : null} />
+        apply={job.apply_method === "ocelot"
+          ? <OcelotApply slug={job.slug} signedIn={Boolean(user)} applied={sent ? { at: sent.submitted_at, cardId: card?.application_id === sent.id ? card.id : null } : null} />
+          : <ApplyButton {...props} />}
+        save={live ? <SaveButton {...props} /> : null} />
     </article>
   );
 }

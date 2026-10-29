@@ -93,14 +93,14 @@ isOneToOne: false
                   ]
                 },"documents": {
                   Row: {
-                    "created_at": string,"id": string,"mime_type": string,"name": string,"size_bytes": number,"storage_path": string,"user_id": string
+                    "created_at": string,"deleted_at": string | null,"id": string,"mime_type": string,"name": string,"size_bytes": number,"storage_path": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"mime_type": string,"name": string,"size_bytes": number,"storage_path": string,"user_id": string
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"mime_type": string,"name": string,"size_bytes": number,"storage_path": string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"mime_type"?: string,"name"?: string,"size_bytes"?: number,"storage_path"?: string,"user_id"?: string
+                    "created_at"?: string,"deleted_at"?: string | null,"id"?: string,"mime_type"?: string,"name"?: string,"size_bytes"?: number,"storage_path"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -570,6 +570,9 @@ isOneToOne: false
                            },
 "admin_counts":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"apply_to_job":
+{ Args: { "p_answers"?: Json,"p_job": string,"p_note"?: string,"p_resume": string }; Returns: string
                            },
 "check_places":
 { Args: { "p_cities": (string)[],"p_countries": (string)[] }; Returns: undefined

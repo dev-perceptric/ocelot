@@ -94,3 +94,12 @@ export async function markApplied(jobId: string): Promise<Result> {
   refresh();
   return { ok: !error, id: data ?? undefined, message: say(error, "That didn't save. Try again.") };
 }
+
+// Withdraws an application sent through Ocelot. The company sees Withdrawn; the card moves to Withdrawn.
+export async function withdrawApplication(cardId: string, applicationId: string): Promise<Result> {
+  const { supabase, user } = await currentUser();
+  if (!user) return { ok: false, message: "Your session ended. Log in again." };
+  const { error } = await supabase.rpc("withdraw_application", { p_id: applicationId });
+  refresh(cardId);
+  return { ok: !error, message: say(error, "That didn't work. Try again.") };
+}

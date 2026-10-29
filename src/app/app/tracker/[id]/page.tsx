@@ -5,7 +5,7 @@ import { Tag } from "@/components/ui";
 import { currentUser } from "@/lib/supabase/server";
 import { cleanContacts, STAGE_LABEL, STAGE_TONE, type Stage } from "@/lib/tracker";
 import { CardResume } from "../../resumes/ResumeParts";
-import { CardDanger, Contacts, Details, Notes, StagePicker } from "./CardParts";
+import { CardDanger, Contacts, Details, Notes, StagePicker, Withdraw } from "./CardParts";
 import { AddInterview, AddTask, InterviewList, TaskList } from "../../tasks/TaskParts";
 import { myTimeZone } from "@/lib/myTz";
 
@@ -28,14 +28,19 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
   const { data: c } = await supabase.from("tracker_items").select("*, job:jobs(slug, status)").eq("id", id).maybeSingle();
   if (!c) notFound();
   const tz = await myTimeZone(supabase, user.id);
-  const [{ data: events }, { data: updates }, { data: tasks }, { data: interviews }, { data: resumes }] = await Promise.all([
+  const [{ data: events }, { data: updates }, { data: tasks }, { data: interviews }, { data: resumes }, { data: app }] = await Promise.all([
     supabase.from("tracker_events").select("kind, detail, created_at").eq("item_id", id).order("created_at", { ascending: false }).limit(50),
     c.application_id
       ? supabase.from("application_events").select("kind, to_stage, created_at").eq("application_id", c.application_id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as { kind: string; to_stage: string | null; created_at: string }[] }),
     supabase.from("tasks").select("id, title, due_at, done_at, item_id").eq("item_id", id),
     supabase.from("interviews").select("id, item_id, starts_at, title, meeting_url, notes").eq("item_id", id),
-    supabase.from("documents").select("id, name").eq("user_id", user.id).order("created_at", { ascending: false }),
+    // Your résumés, plus the one on this card if it was sent and then deleted.
+    supabase.from("documents").select("id, name").eq("user_id", user.id)
+      .or(c.resume_id ? `deleted_at.is.null,id.eq.${c.resume_id}` : "deleted_at.is.null").order("created_at", { ascending: false }),
+    c.application_id
+      ? supabase.from("applications").select("hiring_stage").eq("id", c.application_id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
   const job = c.job as { slug: string; status: string } | null;
   const stage = c.stage as Stage;
@@ -66,6 +71,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
             {(updates ?? []).map((u, i) => <li key={i}><span className="text-meta text-muted">{day(u.created_at)}</span> {u.kind === "submitted" ? "Application sent" : HIRING[u.to_stage ?? ""] ?? u.to_stage}</li>)}
           </ul>
           <p className="mt-3 text-meta text-muted">The company&apos;s updates never change your own stage.</p>
+          {app && !["withdrawn", "hired"].includes(app.hiring_stage) ? <div className="mt-4"><Withdraw cardId={c.id} applicationId={c.application_id} company={c.company} /></div> : null}
         </section>
       ) : null}
 

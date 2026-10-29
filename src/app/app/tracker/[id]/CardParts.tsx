@@ -8,7 +8,7 @@ import { Select } from "@/components/Select";
 import { toast } from "@/components/Toast";
 import { Button, Field, IconButton, inputClass, textAreaClass } from "@/components/ui";
 import { STAGE_LABEL, STAGES, type Contact, type Stage } from "@/lib/tracker";
-import { deleteCard, saveContacts, saveNotes, setStage, updateCard, type CardState } from "../actions";
+import { deleteCard, saveContacts, saveNotes, setStage, updateCard, withdrawApplication, type CardState } from "../actions";
 
 export function StagePicker({ id, stage }: { id: string; stage: Stage }) {
   const [value, setValue] = useState(stage);
@@ -121,5 +121,15 @@ export function CardDanger({ id, stage }: { id: string; stage: Stage }) {
         }
       }}>Delete</Button>
     </div>
+  );
+}
+
+export function Withdraw({ cardId, applicationId, company }: { cardId: string; applicationId: string; company: string }) {
+  return (
+    <Button variant="outline" onClick={async () => {
+      if (!(await askConfirm({ title: "Withdraw your application?", body: `${company} will see that you withdrew. You can't undo this.`, confirm: "Withdraw application", danger: true }))) return;
+      const r = await withdrawApplication(cardId, applicationId);
+      toast(r.ok ? "Application withdrawn" : r.message ?? "That didn't work. Try again.");
+    }}>Withdraw application</Button>
   );
 }
