@@ -547,6 +547,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"seo_page_counts": {
+                  Row: {
+                    "area": string,"jobs": number,"place": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "area": string,"jobs": number,"place": string
+                  }
+                  Update: {
+                    "area"?: string,"jobs"?: number,"place"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"stripe_events": {
                   Row: {
                     "id": string,"received_at": string,"type": string
@@ -864,6 +878,9 @@ isOneToOne: false
                            },
 "refresh_email_verified":
 { Args: { "p_org": string }; Returns: undefined
+                           },
+"refresh_seo_counts":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "refund_order":
 { Args: { "p_order": string }; Returns: undefined

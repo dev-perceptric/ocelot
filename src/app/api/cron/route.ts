@@ -37,6 +37,9 @@ export async function POST(req: NextRequest) {
         const synced = await runSources().catch((e) => { console.error("cron sources failed", e); return -1; });
         const found = await runDiscovery().catch((e) => { console.error("cron discovery failed", e); return -1; });
         const logos = await runLogos().catch((e) => { console.error("cron logos failed", e); return -1; });
+        // Role and place pages read their job counts from a table; count once an hour.
+        const { error: countError } = await db.rpc("refresh_seo_counts");
+        if (countError) console.error("cron page counts failed", countError);
         const done = `boards: ${synced} synced, ${found} found, ${logos} logos`;
         console.log(done);
         await db.from("app_settings").update({ last_cron_result: `${JSON.stringify(out)}; ${done}` }).eq("id", true);
