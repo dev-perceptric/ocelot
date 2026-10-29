@@ -9,6 +9,7 @@ export type Job = {
   slug: string;
   title: string;
   description: string;
+  dupe_key?: string | null; // the same job listed more than once shares this (030_duplicates.sql)
   category: string | null;
   seniority: string | null;
   employment_type: string | null;
