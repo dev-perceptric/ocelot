@@ -49,7 +49,33 @@ const job = (id, title, location) => ({ id, title, absolute_url: `https://boards
   content: `&lt;p&gt;Join ${title} at Acme Asia.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Own the plan&lt;/li&gt;&lt;/ul&gt;`, updated_at: "2026-10-01T00:00:00Z" });
 let board = { jobs: [job(1, "Senior SEO Specialist", "New York, NY"), job(2, "Account Executive", "Toronto, ON"), job(3, "Backend Engineer", "San Francisco, CA"), job(4, "Marketing Manager", "Dublin")] };
 let status = 200;
+// A real 180 by 180 PNG for the stand-in company's icon.
+const zlib = require("zlib");
+function png(side) {
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc = (b) => { let c = 0xffffffff; for (const x of b) c = crcTable[(c ^ x) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+  const head = Buffer.alloc(13); head.writeUInt32BE(side, 0); head.writeUInt32BE(side, 4); head[8] = 8; head[9] = 2;
+  const rows = Buffer.concat(Array.from({ length: side }, (_, y) => Buffer.concat([Buffer.from([0]), Buffer.from(Array.from({ length: side * 3 }, (_, i) => (i * 7 + y * 13) % 256))])));
+  return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", head), chunk("IDAT", zlib.deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
+}
+const ICON = png(180);
+// Web pages the logo check opens, at /web/<host>/<path>: Lumen Asia's board sends people to its careers site,
+// whose home page names a square icon.
+const WEB = {
+  "/web/job-boards.greenhouse.io/lumenasia": { status: 302, location: "https://careers.lumenasia.com/jobs" },
+  "/web/careers.lumenasia.com/jobs": { html: "<title>Careers</title>" },
+  "/web/lumenasia.com/": { html: '<title>Lumen Asia</title><link rel="icon" href="/favicon.svg"><link rel="apple-touch-icon" sizes="180x180" href="/touch.png">' },
+  "/web/lumenasia.com/touch.png": { png: ICON },
+};
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith("/web/")) {
+    const w = WEB[req.url];
+    if (!w) { res.statusCode = 404; return res.end("not found"); }
+    if (w.location) { res.writeHead(w.status, { Location: w.location }); return res.end(); }
+    if (w.png) { res.setHeader("Content-Type", "image/png"); return res.end(w.png); }
+    res.setHeader("Content-Type", "text/html"); return res.end(w.html);
+  }
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/greenhouse/lumenasia") return res.end(JSON.stringify({ jobs: [{ ...job(9, "Growth Marketing Lead", "Remote - North America"), company_name: "Lumen Asia" }, job(10, "Staff Engineer", "Austin, TX")] }));
   if (req.url !== "/greenhouse/acmeasia") { res.statusCode = 404; return res.end("{}"); }
@@ -149,6 +175,16 @@ const server = http.createServer((req, res) => {
     ok(sql("select provider || '/' || board || '|' || (select name from orgs where id = job_sources.org_id) from job_sources where board = 'lumenasia'") === "greenhouse/lumenasia|Lumen Asia", "adds it under the company's name from the board");
     ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:US,CA", "and imports its jobs that fit");
     ok(sql("select provider || '/' || board from board_candidates where slug = 'lumenasia'") === "greenhouse/lumenasia" && sql("select checked_at is not null from board_candidates where slug = 'lumenasia'") === "t", "the board is remembered for next week's check");
+
+    // Logos: the new company's website is found from its board, and its square icon becomes the logo.
+    ok(await until(() => sql("select logo_url is not null from orgs where name = 'Lumen Asia'") === "t", 30000), "the hourly run finds the company's logo");
+    const logo = one("select logo_url from orgs where name = 'Lumen Asia'");
+    const img = await fetch(logo);
+    ok(img.ok && img.headers.get("content-type") === "image/png" && Buffer.from(await img.arrayBuffer()).equals(ICON), "saved in Ocelot's storage as the site's square icon");
+    ok(one("select website from orgs where name = 'Lumen Asia'") === "https://lumenasia.com", "and the website is filled in");
+    ok(await until(() => sql("select logo_checked_at is not null and logo_url is null from orgs where name = 'Acme Asia'") === "t"), "a company with no website found keeps its letters");
+    await p.goto(`${APP}/companies/${one("select slug from orgs where name = 'Lumen Asia'")}`);
+    ok(await p.locator(`img[src="${logo}"]`).count() > 0, "the logo shows on the company page");
 
     await p.goto(`${APP}/admin/sources`);
     await p.getByRole("button", { name: "Actions for Greenhouse lumenasia" }).click();

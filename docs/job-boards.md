@@ -32,10 +32,19 @@ All are public feeds made for career pages. No keys.
 - The company's team can close an imported job but can't edit it; changes come from the board.
 - A board that fails to load changes nothing and shows its error in Admin → Job boards. An empty board where there were more than 5 live jobs is treated as a hiccup, not as every job closing.
 
+## Logos
+
+- Each hourly run, after sync and discovery, looks for logos for up to 100 companies that have a job board and no logo (`due_logos`, migration 024). A company is looked at again after 30 days if nothing was found.
+- The website comes from the job board page: where the board sends people (careers.toasttab.com gives toasttab.com) or the company site it links to. With neither, Ocelot tries <name>.com, .io, .ai and .co and keeps one only when the page title names the company.
+- The logo is the site's square phone icon or its largest icon (PNG, JPEG or WebP, 32 pixels or more), then Google's public icon service for that site. It's saved in the `logos` bucket, so pages never load it from the company's site.
+- Only https addresses with real public names are opened, each redirect is checked, and pages are cut at 2 MB and images refused over 1 MB.
+- A company that set its own logo or website keeps it. A live check on 40 US and Canadian boards found 37 right logos and no wrong ones.
+
 ## Running cost
 
 | Item | Beta | Growth |
 |---|---:|---:|
 | Feeds: public, free | $0 | $0 |
 | Sync and discovery: inside the existing hourly run on the web app, under a minute an hour | $0 | $0 |
+| Logos: about 10 KB each in Supabase Storage (under 20 MB for 2,000 companies, inside the plan's 100 GB) | $0 | $0 |
 | **Adds** | **$0** | **$0** |
