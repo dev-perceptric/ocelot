@@ -4,7 +4,7 @@ import { Button, inputClass, PageNumbers } from "@/components/ui";
 import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { countryName, placeName } from "@/lib/places";
 import { regionName } from "@/lib/regions";
-import { liveCompanies, PAGE_SIZE, searchJobs } from "@/lib/queries";
+import { PAGE_SIZE, searchJobs } from "@/lib/queries";
 import { filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } from "@/lib/search";
 import { searchHref } from "@/lib/seo";
 import { categoryName, roleName } from "@/lib/taxonomy";
@@ -17,7 +17,7 @@ import { SaveSearch } from "./SaveSearch";
 const WHERE: Record<string, string> = { remote: "Remote", hybrid: "Hybrid", on_site: "On-site" };
 
 // Each active filter as a removable tag.
-export function chips(f: F, companies: { name: string; slug: string }[]) {
+export function chips(f: F) {
   const out: { label: string; without: Partial<F> }[] = [];
   f.where.forEach((w) => out.push({ label: WHERE[w], without: { where: f.where.filter((x) => x !== w) } }));
   if (f.country) out.push({ label: `Hiring in ${countryName(f.country)}`, without: { country: null } });
@@ -28,15 +28,14 @@ export function chips(f: F, companies: { name: string; slug: string }[]) {
   f.level.forEach((l) => out.push({ label: SENIORITY[l], without: { level: f.level.filter((x) => x !== l) } }));
   f.type.forEach((t) => out.push({ label: EMPLOYMENT[t], without: { type: f.type.filter((x) => x !== t) } }));
   if (f.pay) out.push({ label: "Shows pay", without: { pay: false } });
-  if (f.company) out.push({ label: companies.find((c) => c.slug === f.company)?.name ?? f.company, without: { company: null } });
   if (f.posted) out.push({ label: POSTED_LABEL[f.posted], without: { posted: null } });
   if (f.minPay) out.push({ label: payLabel(f.minPay), without: { minPay: null } });
   return out;
 }
 
 export async function JobResults({ filters: f, page, heading, footer }: { filters: F; page: number; heading: React.ReactNode; footer?: React.ReactNode }) {
-  const [{ jobs, total }, { user }, companies] = await Promise.all([searchJobs(f, page), currentUser(), liveCompanies()]);
-  const active = chips(f, companies);
+  const [{ jobs, total }, { user }] = await Promise.all([searchJobs(f, page), currentUser()]);
+  const active = chips(f);
   const from = (page - 1) * PAGE_SIZE + 1, to = Math.min(page * PAGE_SIZE, total);
 
   return (
@@ -50,7 +49,7 @@ export async function JobResults({ filters: f, page, heading, footer }: { filter
         <Button type="submit" className="h-12 sm:w-56">Find jobs</Button>
       </form>
 
-      <div className="mt-4"><FilterBar filters={f} companies={companies} /></div>
+      <div className="mt-4"><FilterBar filters={f} /></div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <p className="mr-2 text-meta text-muted" role="status">
