@@ -5,14 +5,14 @@ import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { countryName, placeName } from "@/lib/places";
 import { regionName } from "@/lib/regions";
 import { liveCompanies, PAGE_SIZE, searchJobs } from "@/lib/queries";
-import { filtersQuery, payLabel, POSTED_LABEL, type Filters as F } from "@/lib/search";
+import { filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } from "@/lib/search";
+import { searchHref } from "@/lib/seo";
 import { categoryName, roleName } from "@/lib/taxonomy";
 import { currentUser } from "@/lib/supabase/server";
 import { FilterBar, SortPicker } from "./Filters";
 import { SaveSearch } from "./SaveSearch";
 
 // Find jobs and every role and place page: the search box, the filter bar, the list and its pages.
-// `base` is the address the filters build on.
 
 const WHERE: Record<string, string> = { remote: "Remote", hybrid: "Hybrid", on_site: "On-site" };
 
@@ -34,7 +34,7 @@ export function chips(f: F, companies: { name: string; slug: string }[]) {
   return out;
 }
 
-export async function JobResults({ filters: f, page, base = "/jobs", heading }: { filters: F; page: number; base?: string; heading: React.ReactNode }) {
+export async function JobResults({ filters: f, page, heading, footer }: { filters: F; page: number; heading: React.ReactNode; footer?: React.ReactNode }) {
   const [{ jobs, total }, { user }, companies] = await Promise.all([searchJobs(f, page), currentUser(), liveCompanies()]);
   const active = chips(f, companies);
   const from = (page - 1) * PAGE_SIZE + 1, to = Math.min(page * PAGE_SIZE, total);
@@ -50,21 +50,21 @@ export async function JobResults({ filters: f, page, base = "/jobs", heading }: 
         <Button type="submit" className="h-12 sm:w-56">Find jobs</Button>
       </form>
 
-      <div className="mt-4"><FilterBar filters={f} companies={companies} base={base} /></div>
+      <div className="mt-4"><FilterBar filters={f} companies={companies} /></div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <p className="mr-2 text-meta text-muted" role="status">
           {total === 0 ? "0 jobs" : total <= PAGE_SIZE ? `${total.toLocaleString("en-US")} ${total === 1 ? "job" : "jobs"}` : `${from.toLocaleString("en-US")}–${to.toLocaleString("en-US")} of ${total.toLocaleString("en-US")} jobs`}
         </p>
         {active.map((c) => (
-          <Link key={c.label} href={`/jobs${filtersQuery({ ...f, ...c.without })}`} aria-label={`Remove filter ${c.label}`}
+          <Link key={c.label} href={searchHref({ ...f, ...c.without })} aria-label={`Remove filter ${c.label}`}
             className="inline-flex items-center gap-1 border border-border bg-surface px-2 py-1 text-meta hover:border-ink rounded-[var(--radius-control)]">
             {c.label} <span aria-hidden>×</span>
           </Link>
         ))}
-        {active.length > 1 ? <Link href={f.q ? `/jobs?q=${encodeURIComponent(f.q)}` : "/jobs"} className="text-meta underline">Clear all</Link> : null}
+        {active.length > 1 ? <Link href={searchHref(readFilters({ q: f.q }))} className="text-meta underline">Clear all</Link> : null}
         <div className="ml-auto flex items-center gap-2">
-          <SortPicker filters={f} base={base} />
+          <SortPicker filters={f} />
           <SaveSearch signedIn={Boolean(user)} search={filtersQuery(f)}
             defaultName={(f.q ? [f.q, ...active.map((c) => c.label)] : active.map((c) => c.label)).slice(0, 3).join(", ") || "New jobs"} />
         </div>
@@ -79,7 +79,8 @@ export async function JobResults({ filters: f, page, base = "/jobs", heading }: 
           {f.q || active.length ? <p className="mt-2 text-body text-muted">Try fewer filters or other words.</p> : null}
         </div>
       )}
-      <PageNumbers page={page} total={total} size={PAGE_SIZE} href={(n) => `${base}${filtersQuery(f, n)}`} />
+      <PageNumbers page={page} total={total} size={PAGE_SIZE} href={(n) => searchHref(f, n)} />
+      {footer}
     </div>
   );
 }

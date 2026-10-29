@@ -8,6 +8,7 @@ import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { CITIES, COUNTRIES, countryName, placeName } from "@/lib/places";
 import { REGIONS, regionName } from "@/lib/regions";
 import { filtersQuery, MIN_PAY, payLabel, POSTED, POSTED_LABEL, type Filters as F } from "@/lib/search";
+import { searchHref } from "@/lib/seo";
 import { CATEGORIES, categoryName, ROLES, roleName } from "@/lib/taxonomy";
 
 type Option = { value: string; label: string; group?: string };
@@ -97,8 +98,8 @@ function Filter({ label, summary, children, align, active = Boolean(summary) }: 
 const several = (labels: string[]) => (labels.length ? (labels.length > 1 ? `${labels[0]} +${labels.length - 1}` : labels[0]) : null);
 
 // The filter bar under the search box. Every change updates the address, so filters can be shared and the back
-// button works. `base` is where results live (/jobs, or a role and place page that keeps its own address).
-export function FilterBar({ filters: fromUrl, companies, base = "/jobs" }: { filters: F; companies: { name: string; slug: string }[]; base?: string }) {
+// button works. A search with a role and place page of its own goes there (/sales-jobs-in-texas).
+export function FilterBar({ filters: fromUrl, companies }: { filters: F; companies: { name: string; slug: string }[] }) {
   const router = useRouter();
   // Shown at once while the new results load, then follows the address (e.g. after removing a tag).
   const [filters, setFilters] = useState(fromUrl);
@@ -111,7 +112,7 @@ export function FilterBar({ filters: fromUrl, companies, base = "/jobs" }: { fil
   const go = (next: Partial<F>) => {
     const f = { ...filters, ...next };
     setFilters(f);
-    start(() => router.push(`${base}${filtersQuery(f)}`, { scroll: false }));
+    start(() => router.push(searchHref(f), { scroll: false }));
   };
   const toggle = (list: string[], v: string) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
 
@@ -173,14 +174,14 @@ export function FilterBar({ filters: fromUrl, companies, base = "/jobs" }: { fil
 }
 
 // Best match takes turns between companies; Newest is newest first.
-export function SortPicker({ filters, base = "/jobs" }: { filters: F; base?: string }) {
+export function SortPicker({ filters }: { filters: F }) {
   const router = useRouter();
   const [, start] = useTransition();
   return (
     <Filter label="Sort" summary={filters.sort === "new" ? "Newest" : "Best match"} active={false} align="end">
       {(close) => (
         <List label="Sort" options={[{ value: "best", label: "Best match" }, { value: "new", label: "Newest" }]} picked={[filters.sort]}
-          onPick={(v) => { close(); start(() => router.push(`${base}${filtersQuery({ ...filters, sort: v === "new" ? "new" : "best" })}`, { scroll: false })); }} />
+          onPick={(v) => { close(); start(() => router.push(searchHref({ ...filters, sort: v === "new" ? "new" : "best" }), { scroll: false })); }} />
       )}
     </Filter>
   );

@@ -956,4 +956,17 @@ select pg_temp.expect((select dupe_key from jobs where slug = 'dp-a') <> (select
 select pg_temp.act(null);
 select pg_temp.expect(shown_copy((select dupe_key from jobs where slug = 'dp-a')) = 'dp-a', 'visitors can ask which copy is shown');
 reset role;
+-- ---------- Role and place pages ----------
+select pg_temp.act(null);
+select pg_temp.expect((select jobs from seo_counts() where area = 'all' and place = 'all') = (select count(*) from search_jobs()), 'page counts match search: one copy of each live job');
+select pg_temp.expect((select jobs from seo_counts() where area = 'all' and place = 'region:US-TX') = (select count(*) from search_jobs(region => 'US-TX')) - (select coalesce(max(jobs), 0) from seo_counts() where area = 'all' and place = 'remote-in:US'),
+  'a state counts its offices; remote jobs open to the whole country are counted apart');
+select pg_temp.expect((select count(*) from sitemap_jobs()) = (select count(*) from search_jobs()), 'the sitemap lists each live job once');
+reset role;
+insert into jobs (org_id, slug, title, description, status, published_at, expires_at, apply_method, apply_url, eligible_countries, workplace)
+select o.id, v.slug, 'Sitemapword Rep', 'Sell.', 'published', now(), now() + interval '30 days', 'external', 'https://example.com', '{US}', 'remote'
+from (values ('sm-1'), ('sm-2')) v(slug) join orgs o on o.slug = 'region-co';
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from sitemap_jobs() where slug in ('sm-1', 'sm-2')) = 1, 'and leaves the other copy out');
+reset role;
 \echo 'All boundary tests passed.'
