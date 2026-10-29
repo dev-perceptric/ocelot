@@ -54,3 +54,6 @@ export function bucket(dueAt: string | null, tz: string, now = new Date()): "ove
 
 // Interviews stay listed for two hours after they start (the call may still be on).
 export const interviewCutoff = (now = Date.now()) => new Date(now - 2 * 3_600_000).toISOString();
+
+// The time n minutes ago, as an ISO string (for "recent" filters in queries).
+export const minutesAgo = (n: number, now = new Date()) => new Date(now.getTime() - n * 60_000).toISOString();

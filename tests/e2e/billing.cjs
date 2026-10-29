@@ -44,6 +44,7 @@ const one = (q) => sql(q).split("\n")[0];
 
 // Stand-in for the Stripe API: checkout sessions, payment intents (receipts) and refunds.
 const sessions = new Map();
+let refunds = 0;
 const stripe = http.createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
@@ -57,7 +58,7 @@ const stripe = http.createServer((req, res) => {
       return json({ id, url: `${FAKE}/pay/${id}` });
     }
     if (req.method === "GET" && req.url.startsWith("/v1/payment_intents/")) return json({ id: "pi_x", latest_charge: { receipt_url: "https://pay.stripe.com/receipts/test" } });
-    if (req.method === "POST" && req.url === "/v1/refunds") return json({ id: "re_1" });
+    if (req.method === "POST" && req.url === "/v1/refunds") { refunds++; return json({ id: "re_1" }); }
     if (req.method === "GET" && req.url.startsWith("/pay/")) { res.setHeader("Content-Type", "text/html"); return res.end("<h1>Stripe Checkout (stand-in)</h1>"); }
     res.statusCode = 404; json({ error: { message: "not here" } });
   });
@@ -129,6 +130,52 @@ const paidEvent = (id, s) => ({ id, type: "checkout.session.completed", data: { 
     await p.getByRole("button", { name: "Send for review" }).click();
     await p.waitForURL(/\?sent=1$/);
     ok(sql(`select status from jobs where id = '${j3}'`) === "pending_review", "with payments off, jobs go to review as before");
+
+    // Part 2: the company's billing page, buying ahead.
+    sql("select set_payments(true)");
+    await p.goto(`${APP}/employer/billing`);
+    ok(await p.isVisible("text=None left"), "billing shows the credits left");
+    ok(await p.locator("tr", { hasText: "Featured" }).getByRole("link", { name: "Receipt" }).isVisible(), "orders list their Stripe receipt");
+    await p.getByRole("button", { name: "Buy listing" }).click();
+    await p.waitForURL(/127\.0\.0\.1:4243\/pay\//);
+    const ahead = [...sessions.values()].at(-1);
+    ok(sql(`select job_id is null and package = 'standard' from orders where id = '${ahead.order}'`) === "t", "a listing can be bought ahead");
+    await p.goto(ahead.success);
+    ok(await p.isVisible("text=Payment received. Confirming with Stripe."), "back from Stripe, the page waits for the payment");
+    ok((await webhook(paidEvent("evt_ahead", ahead))).body.result === "credit added", "the webhook adds the credit");
+    await p.waitForSelector("text=1 Standard", { timeout: 15000 });
+    ok(true, "and the page shows it");
+
+    // Part 2: Ocelot's billing admin.
+    const ops = await (await b.newContext()).newPage();
+    ops.on("pageerror", (e) => errors.push(e.message));
+    await login(ops, "ops@ocelot.test", "Find a job");
+    sql("insert into platform_admins (user_id) select id from auth.users where email = 'ops@ocelot.test'");
+    await ops.goto(`${APP}/admin/billing`);
+    ok(await ops.isVisible("text=Paid this month: $148"), "admin sees what was paid this month");
+    ok(!(await ops.locator("tr", { hasText: "Featured" }).getByRole("button", { name: "Refund" }).count()), "a listing that went live has no refund");
+    await ops.locator("tr", { hasText: "Standard" }).getByRole("button", { name: "Refund" }).click();
+    await ops.locator("dialog[open]").getByRole("button", { name: "Refund" }).click();
+    await ops.waitForSelector("text=Refunded");
+    ok(refunds === 1 && sql(`select status from orders where id = '${ahead.order}'`) === "refunded", "a refund goes through Stripe and marks the order");
+    ok(sql(`select count(*) from entitlements where order_id = '${ahead.order}'`) === "0", "and removes its credit");
+
+    await ops.getByRole("button", { name: "Turn payments off" }).click();
+    await ops.locator("dialog[open]").getByRole("button", { name: "Turn off" }).click();
+    await ops.waitForSelector("text=Payments are off");
+    ok(sql("select payments_on from app_settings") === "f", "admin turns payments off");
+    await ops.getByRole("button", { name: "Turn payments on" }).click();
+    await ops.locator("dialog[open]").getByRole("button", { name: "Turn on" }).click();
+    await ops.waitForSelector("text=Payments are on");
+    ok(sql("select payments_on from app_settings") === "t", "and on");
+
+    await ops.goto(`${APP}/admin/companies/${org}`);
+    await ops.getByRole("button", { name: "Give founding credits" }).click();
+    await ops.locator("dialog[open]").getByLabel("How many (1 to 20)").fill("2");
+    await ops.locator("dialog[open]").getByRole("button", { name: "Give credits" }).click();
+    await ops.waitForSelector("text=Credits added");
+    ok(sql(`select count(*) from entitlements where org_id = '${org}' and package = 'founding' and job_id is null`) === "2", "admin gives founding credits");
+    ok(sql("select count(*) from audit_events where action like 'billing.%'") === "4", "every billing change is in the audit log");
   } finally {
     sql("select set_payments(false)");
     console.log("page errors:", errors);

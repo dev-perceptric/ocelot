@@ -16,6 +16,7 @@ export default async function EmployerLayout({ children }: { children: React.Rea
         { href: "/employer/applicants", label: "Applicants" },
         { href: "/employer/company", label: "Company" },
         { href: "/employer/team", label: "Team" },
+        { href: "/employer/billing", label: "Billing" },
         { href: "/app", label: "My search" },
       ]
     : [{ href: "/employer", label: "Overview" }, { href: "/app", label: "My search" }];

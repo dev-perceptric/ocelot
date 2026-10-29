@@ -25,7 +25,7 @@ Each ships as its own pull request.
 | Going live | Review passes and a credit is attached. Featured sets 7 days of promotion from the publish date |
 | Setup | Stripe account for the Singapore company, two Fly secrets (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) and the webhook address. Steps in `docs/setup.md` |
 
-### 2. Billing pages
+### 2. Billing pages (done)
 
 | Item | Detail |
 |---|---|
