@@ -3,7 +3,7 @@
 // Talks to Supabase over its REST API with the service role key, so it needs no packages.
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY (for email), EMAIL_FROM.
 
-import { createHmac } from "node:crypto";
+import { createHmac, randomBytes } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 // A task fails for good (no more retries) when trying again can't help.
@@ -68,7 +68,12 @@ export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocel
     if (now() - lastCron < cronEveryMs) return;
     lastCron = now();
     try {
-      const res = await fetchImpl(`${siteUrl.replace(/\/$/, "")}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${cronKey}` } });
+      // A one-time pass in the database proves this is the worker, whatever server key each app holds.
+      const pass = randomBytes(24).toString("hex");
+      const made = await rest("cron_passes", { method: "POST", body: JSON.stringify({ token: pass }), headers: { Prefer: "return=minimal" } });
+      const auth = made.ok ? pass : cronKey;
+      if (!made.ok) log.error(`cron pass not saved: ${made.status}`);
+      const res = await fetchImpl(`${siteUrl.replace(/\/$/, "")}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${auth}` } });
       const body = await res.text();
       if (res.ok) log.log(`hourly: ${body}`);
       else log.error(`hourly run failed: ${res.status} ${body.slice(0, 200)}`);
