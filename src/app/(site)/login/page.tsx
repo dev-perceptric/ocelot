@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui";
 import { afterSignIn, googleEnabled, safeNext } from "@/lib/auth";
@@ -41,6 +42,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className={google ? "" : "mt-8"}>
         <LoginForm next={next} />
       </div>
+      <p className="mt-8 text-meta text-muted">
+        By continuing, you agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy</Link> page.
+      </p>
     </div>
   );
 }

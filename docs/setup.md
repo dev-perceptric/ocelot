@@ -225,4 +225,11 @@ cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 (cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> node server.js) &
 node tests/e2e/team.cjs
 node tests/e2e/admin.cjs
+SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
+```
+
+Between runs, clear test data (companies first, so the "company needs an owner" rule doesn't block it):
+
+```
+psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
 ```

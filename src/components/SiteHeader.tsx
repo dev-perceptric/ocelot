@@ -27,6 +27,8 @@ export function SiteFooter() {
           <Link href="/jobs" className="hover:text-ink">Find jobs</Link>
           <Link href="/for-employers" className="hover:text-ink">For employers</Link>
           <Link href="/login" className="hover:text-ink">Log in</Link>
+          <Link href="/terms" className="hover:text-ink">Terms</Link>
+          <Link href="/privacy" className="hover:text-ink">Privacy</Link>
         </nav>
         <p>joinocelot.com</p>
       </div>
