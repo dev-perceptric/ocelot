@@ -5,17 +5,19 @@ import { countryName } from "@/lib/places";
 import { createAdmin } from "@/lib/supabase/server";
 import { Table, Tag, Td, Th } from "@/components/ui";
 import { when } from "../format";
-import { AddSource, SourceActions } from "./SourceParts";
+import { AddSource, LookFor, SourceActions } from "./SourceParts";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminSources() {
   await requireAdmin();
   const db = createAdmin();
-  const [{ data: sources }, { data: orgs }, { data: live }] = await Promise.all([
+  const [{ data: sources }, { data: orgs }, { data: live }, { count: names }, { count: unchecked }] = await Promise.all([
     db.from("job_sources").select("*, org:orgs(id, name)").order("created_at", { ascending: false }),
     db.from("orgs").select("id, name").order("name").limit(1000),
     db.from("jobs").select("source_id").eq("status", "published").not("source_id", "is", null),
+    db.from("board_candidates").select("slug", { count: "exact", head: true }).eq("skip", false),
+    db.from("board_candidates").select("slug", { count: "exact", head: true }).eq("skip", false).is("checked_at", null),
   ]);
   const count = new Map<string, number>();
   for (const j of live ?? []) count.set(j.source_id!, (count.get(j.source_id!) ?? 0) + 1);
@@ -24,8 +26,11 @@ export default async function AdminSources() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-title font-bold">Job boards</h1>
-        <AddSource orgs={orgs ?? []} />
+        <div className="flex flex-wrap gap-3"><LookFor /><AddSource orgs={orgs ?? []} /></div>
       </div>
+      <p className="text-body text-muted">
+        {sources?.length ?? 0} boards, {(live ?? []).length} live jobs. Ocelot checks {names ?? 0} company names for a job board once a week{unchecked ? ` (${unchecked} not checked yet)` : ""}, and every board every 6 hours.
+      </p>
       {sources?.length ? (
         <Table label="Job boards">
           <thead><tr><Th>Board</Th><Th>Company</Th><Th className="hidden md:table-cell">Imports</Th><Th>Live jobs</Th><Th className="hidden md:table-cell">Last sync</Th><Th><span className="sr-only">Actions</span></Th></tr></thead>

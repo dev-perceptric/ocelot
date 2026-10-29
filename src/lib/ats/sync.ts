@@ -1,6 +1,6 @@
 import "server-only";
 import { createAdmin } from "@/lib/supabase/server";
-import { detailUrl, feedUrl, parseDetail, parseFeed, type Provider } from "./boards";
+import { detailUrl, feedCompany, feedUrl, nextPageUrl, parseDetail, parseFeed, type Provider, type RawJob } from "./boards";
 import { htmlToText, importedSlug, toJob } from "./normalize";
 
 // Keeps one company's Ocelot jobs in step with its job board. New jobs go live, changed ones update, and jobs
@@ -12,18 +12,32 @@ export type SyncResult = { seen: number; imported: number; added: number; update
 const TEST_BASE = process.env.ATS_TEST_URL;
 const LIVE_DAYS = 30;
 
-async function getJson(url: string, fetchImpl: typeof fetch) {
+export async function getJson(url: string, fetchImpl: typeof fetch = fetch) {
   const res = await fetchImpl(url, { headers: { Accept: "application/json", "User-Agent": "Ocelot job sync (joinocelot.com)" }, signal: AbortSignal.timeout(20_000) });
   if (res.status === 404) throw new Error("This board wasn't found. Check the link.");
   if (!res.ok) throw new Error(`The board answered ${res.status}. Try again later.`);
   return res.json();
 }
 
+// Every job on a board, following its pages, plus the company name when the feed gives one.
+export async function loadBoard(provider: Provider, board: string, fetchImpl: typeof fetch = fetch): Promise<{ jobs: RawJob[]; company: string | null }> {
+  let url: string | null = feedUrl(provider, board, TEST_BASE);
+  const jobs: RawJob[] = [];
+  let company: string | null = null;
+  for (let page = 0; url && page < 10; page++) {
+    const json = await getJson(url, fetchImpl);
+    if (page === 0) company = feedCompany(provider, json);
+    jobs.push(...parseFeed(provider, json));
+    url = nextPageUrl(provider, board, json, TEST_BASE);
+  }
+  return { jobs, company };
+}
+
 export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): Promise<SyncResult> {
   const db = createAdmin();
   const provider = src.provider as Provider;
   try {
-    const raw = parseFeed(provider, await getJson(feedUrl(provider, src.board, TEST_BASE), fetchImpl));
+    const raw = (await loadBoard(provider, src.board, fetchImpl)).jobs;
     const picked = raw.flatMap((r) => { const t = toJob(r, src); return "job" in t ? [{ raw: r, job: t.job }] : []; });
 
     // SmartRecruiters lists jobs without their text: fetch it for the ones that came through.
@@ -58,10 +72,19 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
         if (error) throw error;
         updated++;
       } else {
+        const key = `${src.provider}:${src.board}:${job.external_id}`;
+        const slug = importedSlug(job.title, org?.name ?? "", key);
+        // A board that was deleted and added again takes back its old jobs (same board, same job, same address).
+        const { data: old } = await db.from("jobs").select("id, closed_by_company").eq("slug", slug).eq("org_id", src.org_id).is("source_id", null).maybeSingle();
+        if (old) {
+          const { error } = await db.from("jobs").update({ ...fields, source_id: src.id, ...(old.closed_by_company ? {} : { status: "published" }) }).eq("id", old.id);
+          if (error) throw error;
+          updated++;
+          continue;
+        }
         const { error } = await db.from("jobs").insert({
           ...fields, org_id: src.org_id, source: "ats", source_id: src.id, apply_method: "external",
-          slug: importedSlug(job.title, org?.name ?? "", `${src.provider}:${src.board}:${job.external_id}`),
-          status: "published", published_at: now.toISOString(),
+          slug, status: "published", published_at: now.toISOString(),
         });
         if (error) throw error;
         added++;
@@ -77,7 +100,8 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
     await db.from("job_sources").update({ last_synced_at: now.toISOString(), last_error: null, last_seen: raw.length, last_imported: picked.length }).eq("id", src.id);
     return { seen: raw.length, imported: picked.length, added, updated, closed };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    // Database errors arrive as plain objects with a message, not as Error.
+    const message = e instanceof Error ? e.message : typeof (e as { message?: unknown })?.message === "string" ? (e as { message: string }).message : String(e);
     await db.from("job_sources").update({ last_synced_at: new Date().toISOString(), last_error: message.slice(0, 300) }).eq("id", src.id);
     throw new Error(message);
   }

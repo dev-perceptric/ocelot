@@ -49,6 +49,7 @@ let board = { jobs: [job(1, "Senior SEO Specialist", "Singapore"), job(2, "Accou
 let status = 200;
 const server = http.createServer((req, res) => {
   res.setHeader("Content-Type", "application/json");
+  if (req.url === "/greenhouse/lumenasia") return res.end(JSON.stringify({ jobs: [{ ...job(9, "Growth Marketing Lead", "Remote - APAC"), company_name: "Lumen Asia" }, job(10, "Staff Engineer", "Singapore")] }));
   if (req.url !== "/greenhouse/acmeasia") { res.statusCode = 404; return res.end("{}"); }
   res.statusCode = status;
   res.end(status === 200 ? JSON.stringify(board) : "{}");
@@ -69,6 +70,10 @@ const server = http.createServer((req, res) => {
       await p.getByRole("button", { name: "Add job board" }).click();
       await p.locator("dialog[open]").getByLabel("Job board link").fill(link);
       if (company) await p.locator("dialog[open]").getByLabel("New company name").fill(company);
+      else {
+        await p.locator("dialog[open]").getByRole("combobox", { name: "Company" }).click();
+        await p.getByRole("option", { name: "Acme Asia" }).click();
+      }
       await p.locator("dialog[open]").getByRole("button", { name: "Add and import" }).click();
     };
 
@@ -121,11 +126,42 @@ const server = http.createServer((req, res) => {
     const r = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
     ok(r.sources === 1 && sql("select status from jobs where external_id = '1'") === "published", "the hourly run syncs boards every 6 hours, and returning jobs reopen");
 
+    // A board deleted and added again takes back its old jobs.
+    sql("update jobs set source_id = null, status = 'closed' where source = 'ats' and org_id = (select id from orgs where name = 'Acme Asia')");
+    sql("delete from job_sources where board = 'acmeasia'");
+    await add("boards.greenhouse.io/acmeasia", null);
+    await p.waitForSelector("text=Greenhouse board added. 2 of 2 jobs came in.");
+    ok(sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia')") === "3" && sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia') and status = 'published' and source_id is not null") === "2",
+      "a board added again takes back its old jobs");
+
+    // Discovery: a company on the list with a board is found and imported with no clicks.
+    sql("update board_candidates set checked_at = now()");
+    sql("insert into board_candidates (slug, name) values ('lumenasia', 'Lumen') on conflict (slug) do update set checked_at = null, source_id = null, skip = false, provider = null, board = null");
+    const d = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
+    ok(d.discovery === 1, "the hourly run finds a company's board by itself");
+    ok(sql("select provider || '/' || board || '|' || (select name from orgs where id = job_sources.org_id) from job_sources where board = 'lumenasia'") === "greenhouse/lumenasia|Lumen Asia", "adds it under the company's name from the board");
+    ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:VN,SG,TH,MY,ID,PH", "and imports its jobs that fit");
+    ok(sql("select provider || '/' || board from board_candidates where slug = 'lumenasia'") === "greenhouse/lumenasia" && sql("select checked_at is not null from board_candidates where slug = 'lumenasia'") === "t", "the board is remembered for next week's check");
+
     await p.goto(`${APP}/admin/sources`);
+    await p.getByRole("button", { name: "Actions for Greenhouse lumenasia" }).click();
+    await p.getByRole("menuitem", { name: "Delete" }).click();
+    await p.locator("dialog[open]").getByRole("button", { name: "Delete board" }).click();
+    await p.waitForSelector("text=Board deleted");
+    ok(sql("select skip from board_candidates where slug = 'lumenasia'") === "t", "a board Ocelot deletes isn't found again");
+
+    await p.getByRole("button", { name: "Look for a company" }).click();
+    await p.locator("dialog[open]").getByLabel("Company name").fill("Zeta Pay");
+    await p.locator("dialog[open]").getByRole("button", { name: "Look for it" }).click();
+    await p.waitForSelector("text=It's checked in the next hourly run");
+    ok(sql("select name || '|' || (checked_at is null) from board_candidates where slug = 'zetapay'") === "Zeta Pay|true", "Ocelot can add a company to look for");
+
     await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
     await p.getByRole("menuitem", { name: "Delete" }).click();
     await p.locator("dialog[open]").getByRole("button", { name: "Delete board" }).click();
     await p.waitForSelector("text=Board deleted");
+    await p.waitForSelector("text=Board deleted >> nth=-1");
+    await new Promise((r) => setTimeout(r, 500));
     ok(sql(`select count(*) from jobs where org_id = '${org}' and status = 'published'`) === "0" && sql("select count(*) from job_sources") === "0", "deleting a board closes its jobs");
   } finally {
     console.log("page errors:", errors);

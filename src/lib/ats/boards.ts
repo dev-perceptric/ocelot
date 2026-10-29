@@ -65,6 +65,25 @@ export function feedUrl(p: Provider, board: string, testBase?: string): string {
   }
 }
 
+// The next page of a feed, for boards that page (SmartRecruiters gives 100 at a time). null when there's no more.
+export function nextPageUrl(p: Provider, board: string, json: unknown, testBase?: string): string | null {
+  if (p !== "smartrecruiters") return null;
+  const o = obj(json);
+  const offset = Number(o.offset ?? 0), limit = Number(o.limit ?? 100), total = Number(o.totalFound ?? 0);
+  if (!(offset + limit < total) || offset + limit >= 1000) return null;
+  return `${feedUrl(p, board, testBase)}${testBase ? "?" : "&"}offset=${offset + limit}`;
+}
+
+// The company's name, when the feed says it.
+export function feedCompany(p: Provider, json: unknown): string | null {
+  const root = obj(json);
+  if (p === "greenhouse") return s(arr(root.jobs)[0]?.company_name);
+  if (p === "smartrecruiters") return s(obj(arr(root.content)[0]?.company).name);
+  if (p === "recruitee") return s(arr(root.offers)[0]?.company_name);
+  if (p === "workable") return s(root.name);
+  return null;
+}
+
 export function detailUrl(p: Provider, board: string, id: string, testBase?: string): string | null {
   if (p !== "smartrecruiters") return null;
   if (testBase) return `${testBase.replace(/\/$/, "")}/${p}/${board}/${id}`;

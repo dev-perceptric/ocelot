@@ -105,6 +105,26 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"board_candidates": {
+                  Row: {
+                    "board": string | null,"checked_at": string | null,"created_at": string,"name": string,"provider": string | null,"skip": boolean,"slug": string,"source_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"name": string,"provider"?: string | null,"skip"?: boolean,"slug": string,"source_id"?: string | null
+                  }
+                  Update: {
+                    "board"?: string | null,"checked_at"?: string | null,"created_at"?: string,"name"?: string,"provider"?: string | null,"skip"?: boolean,"slug"?: string,"source_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "board_candidates_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "job_sources"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"documents": {
                   Row: {
                     "created_at": string,"deleted_at": string | null,"id": string,"mime_type": string,"name": string,"size_bytes": number,"storage_path": string,"user_id": string
@@ -697,6 +717,23 @@ isOneToOne: false
               "checked_at": string,"email": string,"filters": Json,"id": string,"name": string,"query": string,"user_id": string
             }[]
                            },
+"due_candidates":
+{ Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
+              "board": string | null,
+"checked_at": string | null,
+"created_at": string,
+"name": string,
+"provider": string | null,
+"skip": boolean,
+"slug": string,
+"source_id": string | null
+            }[]
+                          SetofOptions: {
+        from: "*"
+        to: "board_candidates"
+        isOneToOne: false
+        isSetofReturn: true
+      } },
 "due_digests":
 { Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
               "email": string,"user_id": string
