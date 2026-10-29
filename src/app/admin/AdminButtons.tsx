@@ -1,0 +1,61 @@
+"use client";
+
+import { useTransition } from "react";
+import { askConfirm, askText } from "@/components/Dialog";
+import { toast } from "@/components/Toast";
+import { Button } from "@/components/ui";
+import * as A from "./actions";
+
+type Result = { ok: boolean; message?: string };
+
+function Act({ label, variant = "outline", run, okText }: { label: string; variant?: "outline" | "danger" | "secondary"; run: () => Promise<Result | null>; okText: string }) {
+  const [pending, start] = useTransition();
+  return (
+    <Button variant={variant} disabled={pending} aria-busy={pending}
+      onClick={() => start(async () => { const r = await run(); if (r) toast(r.ok ? okText : r.message ?? "That didn't work."); })}>
+      {label}
+    </Button>
+  );
+}
+
+export function CompanyActions({ id, name, verified, trusted, suspended }: { id: string; name: string; verified: boolean; trusted: boolean; suspended: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      {verified ? (
+        <Act label="Remove Company verified" okText="Label removed" run={async () =>
+          (await askConfirm({ title: `Remove Company verified from ${name}?`, confirm: "Remove label", danger: true })) ? A.unverifyCompany(id) : null} />
+      ) : (
+        <Act label="Mark Company verified" okText="Marked Company verified" run={async () => {
+          const note = await askText({ title: `Verify ${name}`, label: "What did you check?", confirm: "Mark verified" });
+          return note ? A.verifyCompany(id, note) : null;
+        }} />
+      )}
+      <Act label={trusted ? "Stop trusting" : "Mark trusted"} okText={trusted ? "No longer trusted" : "Marked trusted"} run={() => A.setTrusted(id, !trusted)} />
+      {suspended ? (
+        <Act label="Lift suspension" okText="Suspension lifted" run={async () =>
+          (await askConfirm({ title: `Lift the suspension on ${name}?`, body: "Its live jobs show on Ocelot again.", confirm: "Lift suspension" })) ? A.unsuspendCompany(id) : null} />
+      ) : (
+        <Act label="Suspend company" variant="danger" okText="Company suspended" run={async () => {
+          const reason = await askText({ title: `Suspend ${name}`, label: "Reason (kept in the audit log)", confirm: "Suspend company" });
+          return reason ? A.suspendCompany(id, reason) : null;
+        }} />
+      )}
+    </div>
+  );
+}
+
+export function PersonActions({ id, email, banned }: { id: string; email: string; banned: boolean }) {
+  return banned ? (
+    <Act label="Lift suspension" okText="They can sign in again" run={async () =>
+      (await askConfirm({ title: `Let ${email} sign in again?`, confirm: "Lift suspension" })) ? A.unsuspendPerson(id) : null} />
+  ) : (
+    <Act label="Suspend sign-in" variant="danger" okText="Sign-in suspended" run={async () => {
+      const reason = await askText({ title: `Suspend ${email}`, label: "Reason (kept in the audit log)", confirm: "Suspend sign-in" });
+      return reason ? A.suspendPerson(id, reason) : null;
+    }} />
+  );
+}
+
+export function RetryTask({ id }: { id: number }) {
+  return <Act label="Retry" okText="Queued again" run={() => A.retryTask(id)} />;
+}

@@ -301,4 +301,25 @@ select pg_temp.expect((select revoked_at is not null from org_invites where emai
 reset role;
 delete from orgs where slug = 'beta';
 select pg_temp.expect(not exists (select 1 from org_members m where not exists (select 1 from orgs o where o.id = m.org_id)), 'deleting a company removes its members');
+-- ---------- Milestone 1, part E: suspending a company ----------
+reset role;
+insert into jobs (org_id, slug, title, status, published_at) values (:'acme', 'acme-live', 'Live role', 'published', now());
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from jobs where slug = 'acme-live') = 1, 'a live job is public');
+reset role;
+update orgs set suspended_at = now(), suspended_reason = 'Fee scam reports' where id = :'acme';
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from jobs where org_id = :'acme') = 0, 'a suspended company''s jobs leave public pages');
+select pg_temp.expect((select count(*) from orgs where id = :'acme') = 0, 'a suspended company leaves public pages');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+reset role;
+select id as live_job from jobs where slug = 'acme-live' \gset
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.fails(format($$insert into applications (job_id, org_id, candidate_id) values (%L, %L, auth.uid())$$, :'live_job', :'acme'), 'nobody can apply to a suspended company');
+select pg_temp.act('00000000-0000-0000-0000-0000000000f1');
+select pg_temp.expect((select count(*) from jobs where org_id = :'acme') > 0, 'members of a suspended company still see their own jobs');
+select pg_temp.fails($$update orgs set suspended_at = null$$, 'a member cannot lift a suspension');
+select pg_temp.fails($$select admin_counts()$$, 'people cannot read admin numbers');
+reset role;
+select pg_temp.expect((select (admin_counts()->>'companies')::int) >= 1, 'admin numbers work for the server');
 \echo 'All boundary tests passed.'
