@@ -79,7 +79,14 @@ export function readPlaces(raw: Pick<RawJob, "places" | "countries" | "remote" |
 
 // ---------- Roles and levels ----------
 
-const NOT_OUR_ROLES = /\b(engineer|engineering|developer|scientist|designer|architect|counsel|lawyer|legal|accountant|recruiter|recruiting|sourcer|talent acquisition|people partner|data analyst|software|devops|security|machine learning)\b/i;
+// Jobs outside marketing, sales and customer success, even when the title has one of our words in it.
+const NOT_OUR_ROLES = new RegExp([
+  "engineer", "engineering", "developer", "scientist", "designer", "architect", "software", "devops", "security", "machine learning", "data analyst",
+  "counsel", "lawyer", "legal", "accountant", "accounting", "finance", "tax", "treasury", "audit", "risk", "compliance", "aml", "kyc", "cdd", "fraud",
+  "recruiter", "recruiting", "sourcer", "talent", "people", "hr", "human resources", "payroll", "employer brand", "employee experience",
+  "product manager", "product owner", "project manager", "executive assistant", "assistant to",
+  "it support", "it operations", "av support", "desktop support", "help ?desk analyst",
+].map((w) => `\\b${w}\\b`).join("|"), "i");
 const ROLE_RULES: [RegExp, string, "marketing" | "sales" | "customer_success"][] = [
   [/\b(head|director|vp|vice president|chief)\b.*\bmarketing\b|\bcmo\b/i, "marketing_lead", "marketing"],
   [/\b(head|director|vp|vice president|chief)\b.*\b(sales|revenue)\b|\bcro\b/i, "sales_lead", "sales"],
@@ -94,7 +101,6 @@ const ROLE_RULES: [RegExp, string, "marketing" | "sales" | "customer_success"][]
   [/\blifecycle\b|\bcrm market|\bemail market|\bretention market/i, "lifecycle", "marketing"],
   [/\bcontent\b|\bcopywrit|\bwriter\b|\beditor\b/i, "content", "marketing"],
   [/\bbrand\b|\bcommunications\b|\bpublic relations\b|\bpr manager\b/i, "brand", "marketing"],
-  [/\bgrowth\b/i, "growth", "marketing"],
   [/\bsdr\b|\bbdr\b|\bsales development\b|\bbusiness development rep/i, "sdr", "sales"],
   [/\baccount executive\b|\bae\b/i, "account_executive", "sales"],
   [/\baccount manag/i, "account_manager", "sales"],
@@ -102,6 +108,7 @@ const ROLE_RULES: [RegExp, string, "marketing" | "sales" | "customer_success"][]
   [/\bcustomer success manager\b|\bcsm\b/i, "cs_manager", "customer_success"],
   [/\bonboarding\b|\bimplementation\b/i, "onboarding", "customer_success"],
   [/\bsupport\b|\bcustomer service\b|\bcustomer care\b|\bhelp ?desk\b/i, "support", "customer_success"],
+  [/\bgrowth\b/i, "growth", "marketing"],
 ];
 const CATEGORY_RULES: [RegExp, "marketing" | "sales" | "customer_success"][] = [
   [/\bmarketing\b|\bmarketer\b/i, "marketing"],
@@ -121,7 +128,7 @@ export function guessSeniority(title: string, experience: string | null): string
   if (/\bintern(ship)?\b/.test(t)) return "intern";
   if (/\b(chief|vp|vice president|cmo|cro)\b/.test(t)) return "executive";
   if (/\b(head|director)\b/.test(t)) return "director";
-  if (/\b(lead|principal|staff)\b/.test(t)) return "lead";
+  if (/\b(lead|principal|staff)\b(?!\s*gen)/.test(t)) return "lead";
   if (/\b(senior|sr\.?)\b/.test(t)) return "senior";
   if (/\b(junior|jr\.?|associate|graduate|entry)\b/.test(t)) return "entry";
   const e = (experience ?? "").toLowerCase();

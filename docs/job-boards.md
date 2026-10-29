@@ -1,6 +1,13 @@
 # Job board sync
 
-Ocelot pulls jobs from companies' public job boards so Find jobs fills up without each company posting by hand. Ocelot adds a board once in Admin → Job boards; the hourly run keeps it in step every 6 hours.
+Ocelot pulls jobs from companies' public job boards so Find jobs fills up without each company posting by hand. It runs by itself:
+
+1. **Finding boards.** A list of company names (about 425 companies hiring in Southeast Asia to start, plus every company that joins Ocelot) is checked once a week against every board type. A board with jobs that pass the filters is added under the company's name and synced at once. The worker's hourly run checks up to 120 names, for at most 30 seconds.
+2. **Syncing boards.** Every board is synced every 6 hours.
+
+When this was built (October 2026), a test run from the starting list found 70 boards and 651 live jobs within four hourly runs, with no errors.
+
+Admin → Job boards shows every board, its live jobs and last error, and has Sync now, Pause and Delete. "Look for a company" adds a name to the list; "Add job board" adds a board by its link. A board Ocelot deletes is never found again.
 
 ## Boards
 
@@ -28,5 +35,5 @@ All are public feeds made for career pages. No keys.
 | Item | Beta | Growth |
 |---|---:|---:|
 | Feeds: public, free | $0 | $0 |
-| Sync: inside the existing hourly run on the web app, a few seconds per board | $0 | $0 |
+| Sync and discovery: inside the existing hourly run on the web app, under a minute an hour | $0 | $0 |
 | **Adds** | **$0** | **$0** |

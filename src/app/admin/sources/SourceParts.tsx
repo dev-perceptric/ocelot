@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { askConfirm, Modal } from "@/components/Dialog";
+import { askConfirm, askText, Modal } from "@/components/Dialog";
 import { keepValues } from "@/components/forms";
 import { Menu } from "@/components/Menu";
 import { Select } from "@/components/Select";
@@ -66,5 +66,15 @@ export function SourceActions({ id, name, active }: { id: string; name: string; 
         } },
       ]} />
     </div>
+  );
+}
+
+export function LookFor() {
+  const [pending, start] = useTransition();
+  return (
+    <Button variant="outline" disabled={pending} aria-busy={pending} onClick={async () => {
+      const name = await askText({ title: "Look for a company's job board", label: "Company name", confirm: "Look for it" });
+      if (name) start(async () => { const r = await A.lookForCompany(name); toast(r.ok ? "Added. It's checked in the next hourly run." : r.message ?? "That didn't work."); });
+    }}>Look for a company</Button>
   );
 }

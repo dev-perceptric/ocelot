@@ -226,10 +226,24 @@ export async function setSourceActive(id: string, active: boolean): Promise<Resu
 export async function deleteSource(id: string): Promise<Result> {
   const { user } = await requireAdmin();
   const db = createAdmin();
+  // Discovery won't add it back.
+  await db.from("board_candidates").update({ skip: true }).eq("source_id", id);
   const { error: e1 } = await db.from("jobs").update({ status: "closed" }).eq("source_id", id).eq("status", "published");
   if (e1) return { ok: false, message: e1.message };
   const { error } = await db.from("job_sources").delete().eq("id", id);
   if (error) return { ok: false, message: error.message };
   await audit(user.id, "board.delete", { table: "job_sources", id });
   return done(["/admin/sources", "/jobs"]);
+}
+
+// Adds a company name to the list discovery checks every week.
+export async function lookForCompany(name: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const clean = name.trim();
+  const slug = slugify(clean).replace(/-/g, "");
+  if (!clean || !slug) return { ok: false, message: "Type a company name." };
+  const { error } = await createAdmin().from("board_candidates").upsert({ slug, name: clean.slice(0, 120), checked_at: null, skip: false }, { onConflict: "slug" });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "board.look_for", { table: "board_candidates", id: null }, { name: clean, slug });
+  return done(["/admin/sources"]);
 }

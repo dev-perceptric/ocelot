@@ -809,4 +809,22 @@ select pg_temp.fails(format($$update jobs set title = 'Changed' where id = %L$$,
 update jobs set status = 'closed' where id = :'gh1';
 select pg_temp.expect((select status = 'closed' and closed_by_company from jobs where id = :'gh1'), 'but can close it');
 reset role;
+-- ---------- Job board discovery ----------
+reset role;
+select pg_temp.expect((select count(*) from board_candidates) > 400, 'the list of companies to look for is filled in');
+insert into orgs (name, slug) values ('Lumen Labs', 'lumen-labs');
+select pg_temp.expect((select name from board_candidates where slug = 'lumenlabs') = 'Lumen Labs', 'a new company on Ocelot is looked for too');
+update board_candidates set checked_at = now();
+select pg_temp.expect(not exists (select 1 from due_candidates()), 'names checked this week wait');
+update board_candidates set checked_at = now() - interval '8 days' where slug in ('stripe', 'lumenlabs');
+select pg_temp.expect((select array_agg(slug order by slug) from due_candidates()) = '{lumenlabs,stripe}', 'and are checked again after a week');
+update board_candidates set skip = true where slug = 'lumenlabs';
+update board_candidates set source_id = :'src' where slug = 'stripe';
+select pg_temp.expect(not exists (select 1 from due_candidates()), 'boards already added, or deleted by Ocelot, are not looked for');
+select pg_temp.fails($$insert into board_candidates (slug, name) values ('Bad Slug!', 'x')$$, 'names on the list are plain board names');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from board_candidates) = 0, 'companies cannot see the list');
+select pg_temp.fails($$insert into board_candidates (slug, name) values ('sneaky', 'Sneaky')$$, 'or add to it');
+select pg_temp.fails($$select * from due_candidates()$$, 'or run it');
+reset role;
 \echo 'All boundary tests passed.'

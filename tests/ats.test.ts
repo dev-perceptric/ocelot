@@ -69,6 +69,15 @@ test("roles and levels from titles", () => {
   assert.deepEqual(guessRole("Support Engineer"), { role: null, category: null });
   assert.deepEqual(guessRole("Growth Engineer"), { role: null, category: null });
   assert.deepEqual(guessRole("Contract Talent Acquisition Sourcer, Sales (APJ)"), { role: null, category: null });
+  assert.deepEqual(guessRole("Senior Product Manager, AI Risk & Onboarding"), { role: null, category: null });
+  assert.deepEqual(guessRole("AV Support Specialist"), { role: null, category: null });
+  for (const t of ["Executive Assistant to CRO (SG Base)", "Senior Employer Brand & Employee Experience Specialist", "People Help Desk Analyst", "IT Operations Support Lead", "Team Lead - CDD Risk, Onboarding", "Associate Project Manager (Analytics), Customer Experience Group"]) {
+    assert.deepEqual(guessRole(t), { role: null, category: null }, t);
+  }
+  assert.deepEqual(guessRole("Sales Development (Lead Generation) - SME & Growth, KL"), { role: "sdr", category: "sales" });
+  assert.deepEqual(guessRole("Go-To-Market Partnerships Manager, SME & Growth"), { role: "partnerships", category: "sales" });
+  assert.equal(guessSeniority("Sales Development (Lead Generation)", null), "mid");
+  assert.deepEqual(guessRole("Product Marketing Manager"), { role: "product_marketing", category: "marketing" });
   assert.equal(guessSeniority("Senior SEO Specialist", null), "senior");
   assert.equal(guessSeniority("Marketing Intern", null), "intern");
   assert.equal(guessSeniority("Head of Sales", null), "director");
@@ -106,4 +115,13 @@ test("imported job addresses are stable and valid", () => {
   assert.notEqual(long, importedSlug("x ".repeat(80) + "Lead", "A Very Long Company Name That Goes On And On", "k2"));
   assert.match(long, /^[a-z0-9]+(-[a-z0-9]+)*$/);
   assert.ok(long.length <= 100);
+});
+
+test("company names and further pages come from the feed", async () => {
+  const { feedCompany, nextPageUrl } = await import("../src/lib/ats/boards.ts");
+  assert.equal(feedCompany("greenhouse", fixture("greenhouse")), "Stripe");
+  assert.equal(feedCompany("lever", fixture("lever")), null);
+  assert.equal(nextPageUrl("smartrecruiters", "acme", { offset: 0, limit: 100, totalFound: 250 }), "https://api.smartrecruiters.com/v1/companies/acme/postings?limit=100&offset=100");
+  assert.equal(nextPageUrl("smartrecruiters", "acme", { offset: 200, limit: 100, totalFound: 250 }), null);
+  assert.equal(nextPageUrl("greenhouse", "acme", {}), null);
 });
