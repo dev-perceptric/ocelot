@@ -413,14 +413,14 @@ isOneToOne: false
                   ]
                 },"orgs": {
                   Row: {
-                    "about": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"suspended_at": string | null,"suspended_reason": string | null,"trusted": boolean,"website": string | null
+                    "about": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_checked_at": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"suspended_at": string | null,"suspended_reason": string | null,"trusted": boolean,"website": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Update: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Relationships: [
                     
@@ -751,6 +751,11 @@ isOneToOne: false
 "due_digests":
 { Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
               "email": string,"user_id": string
+            }[]
+                           },
+"due_logos":
+{ Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
+              "board": string,"name": string,"org_id": string,"provider": string
             }[]
                            },
 "due_reminders":

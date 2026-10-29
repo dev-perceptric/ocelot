@@ -3,6 +3,7 @@ import { runAlerts, runDigests, runReminders } from "@/lib/cron";
 import { checkCronToken } from "@/lib/cronToken";
 import { runSources } from "@/lib/ats/sync";
 import { runDiscovery } from "@/lib/ats/discover";
+import { runLogos } from "@/lib/ats/logo";
 import { createAdmin } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +11,8 @@ export const dynamic = "force-dynamic";
 // One board run at a time on this machine; a run that's still going makes the next call skip boards.
 let boardsBusy = false;
 
-// The worker calls this every hour with its key. Emails are queued before answering. Job boards (sync, then
-// discovery) run after the answer, for up to about 4 minutes, so the worker's call stays short.
+// The worker calls this every hour with its key. Emails are queued before answering. Job boards (sync,
+// discovery, then logos) run after the answer, for up to about 6 minutes, so the worker's call stays short.
 export async function POST(req: NextRequest) {
   // The worker's one-time pass from the database, or the older key made from the server secret.
   const header = req.headers.get("authorization") ?? "";
@@ -35,8 +36,10 @@ export async function POST(req: NextRequest) {
       try {
         const synced = await runSources().catch((e) => { console.error("cron sources failed", e); return -1; });
         const found = await runDiscovery().catch((e) => { console.error("cron discovery failed", e); return -1; });
-        console.log(`boards: ${synced} synced, ${found} found`);
-        await db.from("app_settings").update({ last_cron_result: `${JSON.stringify(out)}; boards: ${synced} synced, ${found} found` }).eq("id", true);
+        const logos = await runLogos().catch((e) => { console.error("cron logos failed", e); return -1; });
+        const done = `boards: ${synced} synced, ${found} found, ${logos} logos`;
+        console.log(done);
+        await db.from("app_settings").update({ last_cron_result: `${JSON.stringify(out)}; ${done}` }).eq("id", true);
       } finally {
         boardsBusy = false;
       }

@@ -853,4 +853,20 @@ select pg_temp.fails($$insert into cron_passes (token) values (repeat('d', 48))$
 select pg_temp.fails($$select take_cron_pass(repeat('d', 48))$$, 'or use them');
 select pg_temp.fails($$update app_settings set last_cron_at = now() where id$$, 'or change the run record');
 reset role;
+-- ---------- Company logos ----------
+reset role;
+update orgs set logo_url = null, logo_checked_at = null where id = :'gamma';
+select pg_temp.expect(exists (select 1 from due_logos() where org_id = :'gamma' and board = 'gamma'), 'a company with a job board and no logo gets one looked for');
+update orgs set logo_checked_at = now() - interval '1 day' where id = :'gamma';
+select pg_temp.expect(not exists (select 1 from due_logos() where org_id = :'gamma'), 'then waits 30 days');
+update orgs set logo_checked_at = now() - interval '31 days' where id = :'gamma';
+select pg_temp.expect(exists (select 1 from due_logos() where org_id = :'gamma'), 'and is looked at again after');
+update orgs set logo_url = 'https://example.com/own.png' where id = :'gamma';
+select pg_temp.expect(not exists (select 1 from due_logos() where org_id = :'gamma'), 'a company with its own logo is never touched');
+update orgs set logo_url = null, logo_checked_at = null where id = :'zeta';
+select pg_temp.expect(not exists (select 1 from due_logos() where org_id = :'zeta'), 'companies with no job board are left alone');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.fails($$select * from due_logos()$$, 'companies cannot run the logo list');
+select pg_temp.fails(format($$update orgs set logo_checked_at = now() where id = %L$$, :'gamma'), 'or change when it was looked at');
+reset role;
 \echo 'All boundary tests passed.'
