@@ -162,14 +162,14 @@ export async function saveLogo(org: { org_id: string; name: string; provider: st
   return !!data?.length;
 }
 
-// One hourly run: up to 100 companies, eight at a time, for at most 2 minutes.
-export async function runLogos(fetchImpl: typeof fetch = fetch, budgetMs = 120_000): Promise<number> {
-  const { data: due, error } = await createAdmin().rpc("due_logos", { p_limit: 100 });
+// One hourly run: every company due (up to 1,000), twelve at a time, for at most 8 minutes.
+export async function runLogos(fetchImpl: typeof fetch = fetch, budgetMs = 480_000): Promise<number> {
+  const { data: due, error } = await createAdmin().rpc("due_logos", { p_limit: 1000 });
   if (error) throw error;
   const queue = [...(due ?? [])];
   const stopAt = Date.now() + budgetMs;
   let saved = 0;
-  await Promise.all(Array.from({ length: 8 }, async () => {
+  await Promise.all(Array.from({ length: 12 }, async () => {
     while (queue.length && Date.now() < stopAt) {
       const o = queue.shift()!;
       if (await saveLogo(o, fetchImpl)) saved++;

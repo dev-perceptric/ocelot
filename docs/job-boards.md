@@ -34,7 +34,7 @@ All are public feeds made for career pages. No keys.
 
 ## Logos
 
-- Each hourly run, after sync and discovery, looks for logos for up to 100 companies that have a job board and no logo (`due_logos`, migration 024). A company is looked at again after 30 days if nothing was found.
+- Each hourly run, after sync and discovery, looks for logos for every company that has a job board and no logo (up to 1,000, for at most 8 minutes) (`due_logos`, migration 024). A company is looked at again after 30 days if nothing was found.
 - The website comes from the job board page: where the board sends people (careers.toasttab.com gives toasttab.com) or the company site it links to. With neither, Ocelot tries <name>.com, .io, .ai and .co and keeps one only when the page title names the company.
 - The logo is the site's square phone icon or its largest icon (PNG, JPEG or WebP, 32 pixels or more), then Google's public icon service for that site. It's saved in the `logos` bucket, so pages never load it from the company's site.
 - Only https addresses with real public names are opened, each redirect is checked, and pages are cut at 2 MB and images refused over 1 MB.

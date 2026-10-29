@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 let boardsBusy = false;
 
 // The worker calls this every hour with its key. Emails are queued before answering. Job boards (sync,
-// discovery, then logos) run after the answer, for up to about 6 minutes, so the worker's call stays short.
+// discovery, then logos) run after the answer, for up to about 12 minutes, so the worker's call stays short.
 export async function POST(req: NextRequest) {
   // The worker's one-time pass from the database, or the older key made from the server secret.
   const header = req.headers.get("authorization") ?? "";
