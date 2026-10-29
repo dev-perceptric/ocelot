@@ -782,4 +782,31 @@ update notification_prefs set digest_sent_at = '2030-01-07 08:31+07' where user_
 select pg_temp.expect(not exists (select 1 from due_digests(1000, '2030-01-07 09:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'once a week');
 update notification_prefs set weekly_digest = false, digest_sent_at = null where user_id = '00000000-0000-0000-0000-00000000000d';
 select pg_temp.expect(not exists (select 1 from due_digests(1000, '2030-01-07 08:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'never when turned off');
+-- ---------- Job board sync ----------
+reset role;
+insert into job_sources (org_id, provider, board) values (:'gamma', 'greenhouse', 'gamma') returning id as src \gset
+select pg_temp.fails($$insert into job_sources (org_id, provider, board) values (gen_random_uuid(), 'greenhouse', 'bad board/../x')$$, 'a board name is a plain name');
+select pg_temp.fails(format($$insert into job_sources (org_id, provider, board) values (%L, 'greenhouse', 'gamma')$$, :'gamma'), 'each board is added once');
+insert into jobs (org_id, slug, title, description, status, published_at, expires_at, source, source_id, external_id, apply_method, apply_url, eligible_countries, workplace)
+  values (:'gamma', 'gamma-gh-1', 'Growth Marketer', 'Imported.', 'published', now(), now() + interval '30 days', 'ats', :'src', '101', 'external', 'https://boards.greenhouse.io/gamma/jobs/101', '{VN}', 'remote')
+  returning id as gh1 \gset
+select pg_temp.fails(format($$insert into jobs (org_id, slug, title, source, source_id, external_id, apply_method, apply_url) values (%L, 'gamma-gh-dup', 'Dup', 'ats', %L, '101', 'external', 'https://x.test')$$, :'gamma', :'src'), 'a board job is imported once');
+select pg_temp.fails(format($$insert into jobs (org_id, slug, title, source, apply_method) values (%L, 'gamma-gh-2', 'No id', 'ats', 'external')$$, :'gamma'), 'an imported job keeps its board id');
+select pg_temp.fails(format($$insert into jobs (org_id, slug, title, source, source_id, external_id, apply_method) values (%L, 'gamma-gh-3', 'On Ocelot', 'ats', %L, '103', 'ocelot')$$, :'gamma', :'src'), 'imported jobs apply on the company site');
+select pg_temp.expect(exists (select 1 from due_sources() where id = :'src'), 'a new source syncs right away');
+update job_sources set last_synced_at = now() - interval '1 hour' where id = :'src';
+select pg_temp.expect(not exists (select 1 from due_sources() where id = :'src'), 'then waits 6 hours');
+update job_sources set last_synced_at = now() - interval '7 hours' where id = :'src';
+select pg_temp.expect(exists (select 1 from due_sources() where id = :'src'), 'and syncs again after');
+update job_sources set active = false where id = :'src';
+select pg_temp.expect(not exists (select 1 from due_sources() where id = :'src'), 'a paused source never syncs');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from job_sources) = 0, 'companies cannot see the sources list');
+select pg_temp.fails(format($$insert into job_sources (org_id, provider, board) values (%L, 'lever', 'gamma')$$, :'gamma'), 'or add sources');
+select pg_temp.fails($$select * from due_sources()$$, 'or run the sync list');
+select pg_temp.fails(format($$update jobs set title = 'Changed' where id = %L$$, :'gh1'), 'the company cannot edit an imported job');
+update jobs set status = 'closed' where id = :'gh1';
+select pg_temp.expect((select status = 'closed' and closed_by_company from jobs where id = :'gh1'), 'but can close it');
+reset role;
 \echo 'All boundary tests passed.'

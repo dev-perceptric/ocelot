@@ -229,7 +229,7 @@ npx supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,rea
 # copy PUBLISHABLE_KEY and SECRET_KEY from the output
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable> NEXT_PUBLIC_SITE_URL=http://localhost:3100 npm run build
 cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
-(cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> STRIPE_SECRET_KEY=sk_test_local STRIPE_WEBHOOK_SECRET=whsec_local STRIPE_API_URL=http://127.0.0.1:4243 node server.js) &
+(cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> STRIPE_SECRET_KEY=sk_test_local STRIPE_WEBHOOK_SECRET=whsec_local STRIPE_API_URL=http://127.0.0.1:4243 ATS_TEST_URL=http://127.0.0.1:4244 node server.js) &
 node tests/e2e/team.cjs
 node tests/e2e/admin.cjs
 node tests/e2e/jobs.cjs
@@ -242,13 +242,14 @@ node tests/e2e/apply.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
 node tests/e2e/billing.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/alerts.cjs
+SUPABASE_SECRET=<secret> node tests/e2e/boards.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
 
-`billing.cjs` runs its own stand-in for the Stripe API on port 4243; the three STRIPE_ values above are local test values, never real keys.
+`billing.cjs` runs its own stand-in for the Stripe API on port 4243 and `boards.cjs` a stand-in job board on port 4244; the STRIPE_ and ATS_ values above are local test values, never real keys.
 
 Between runs, clear test data (companies first, so the "company needs an owner" rule doesn't block it):
 
 ```
-psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from entitlements; delete from orders; delete from stripe_events; delete from saved_searches; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
+psql postgres://postgres:postgres@127.0.0.1:54322/postgres -c "delete from reports; delete from applications; delete from entitlements; delete from orders; delete from stripe_events; delete from saved_searches; delete from job_sources; delete from orgs; delete from auth.users; delete from jobs_queue; delete from audit_events;"
 ```

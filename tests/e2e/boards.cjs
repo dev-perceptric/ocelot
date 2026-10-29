@@ -1,0 +1,135 @@
+// End-to-end on a real local Supabase: job board sync. A stand-in Greenhouse board on port 4244
+// (ATS_TEST_URL=http://127.0.0.1:4244 on the app). Needs SUPABASE_SECRET for the hourly key. Run like tests/e2e/team.cjs (see "End-to-end tests" in docs/setup.md).
+const { chromium } = require("playwright");
+const { execSync } = require("child_process");
+const APP = "http://localhost:3100", MAIL = "http://127.0.0.1:54324";
+const sql = (q) => execSync(`psql postgres://postgres:postgres@127.0.0.1:54322/postgres -tAc "${q.replace(/"/g, '\\"')}"`).toString().trim();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const ok = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`); if (!cond) process.exitCode = 1; };
+
+async function code(email, after) {
+  for (let i = 0; i < 30; i++) {
+    const list = await (await fetch(`${MAIL}/api/v1/search?query=${encodeURIComponent("to:" + email)}`)).json();
+    const m = (list.messages ?? []).find((x) => new Date(x.Created) > after);
+    if (m) {
+      const full = await (await fetch(`${MAIL}/api/v1/message/${m.ID}`)).json();
+      const c = (full.Text || full.HTML).match(/\b(\d{6})\b/);
+      if (c) return c[1];
+    }
+    await sleep(500);
+  }
+  throw new Error("no code email for " + email);
+}
+async function login(page, email, intent) {
+  await page.goto(`${APP}/login`);
+  const at = new Date(Date.now() - 1000);
+  await page.fill("#email", email);
+  await page.click("button[type=submit]");
+  await page.waitForSelector("#code");
+  await page.fill("#code", await code(email, at));
+  await page.click("button[type=submit]");
+  await page.waitForURL((u) => !u.pathname.startsWith("/login"));
+  if (page.url().includes("/welcome")) {
+    await page.getByText(intent).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.waitForURL((u) => !u.pathname.startsWith("/welcome"));
+  }
+}
+
+
+const http = require("http");
+const crypto = require("crypto");
+const SECRET = process.env.SUPABASE_SECRET;
+const one = (q) => sql(q).split("\n")[0];
+
+// A stand-in Greenhouse board. The test changes `board` between syncs.
+const job = (id, title, location) => ({ id, title, absolute_url: `https://boards.greenhouse.io/acmeasia/jobs/${id}`, location: { name: location }, offices: [],
+  content: `&lt;p&gt;Join ${title} at Acme Asia.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Own the plan&lt;/li&gt;&lt;/ul&gt;`, updated_at: "2026-10-01T00:00:00Z" });
+let board = { jobs: [job(1, "Senior SEO Specialist", "Singapore"), job(2, "Account Executive", "Ho Chi Minh City, Vietnam"), job(3, "Backend Engineer", "Singapore"), job(4, "Marketing Manager", "Dublin")] };
+let status = 200;
+const server = http.createServer((req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  if (req.url !== "/greenhouse/acmeasia") { res.statusCode = 404; return res.end("{}"); }
+  res.statusCode = status;
+  res.end(status === 200 ? JSON.stringify(board) : "{}");
+});
+
+(async () => {
+  if (!SECRET) throw new Error("Set SUPABASE_SECRET (the local secret key)");
+  await new Promise((r) => server.listen(4244, "127.0.0.1", r));
+  const b = await chromium.launch();
+  const errors = [];
+  const p = await (await b.newContext()).newPage();
+  p.on("pageerror", (e) => errors.push(e.message));
+  try {
+    await login(p, "ops2@ocelot.test", "Find a job");
+    sql("insert into platform_admins (user_id) select id from auth.users where email = 'ops2@ocelot.test'");
+    const add = async (link, company) => {
+      await p.goto(`${APP}/admin/sources`);
+      await p.getByRole("button", { name: "Add job board" }).click();
+      await p.locator("dialog[open]").getByLabel("Job board link").fill(link);
+      if (company) await p.locator("dialog[open]").getByLabel("New company name").fill(company);
+      await p.locator("dialog[open]").getByRole("button", { name: "Add and import" }).click();
+    };
+
+    await add("https://example.com/careers", "Nobody");
+    await p.waitForSelector("text=Paste a job board link");
+    ok(true, "a link that isn't a job board is refused");
+
+    await add("https://boards.greenhouse.io/acmeasia", "Acme Asia");
+    await p.waitForSelector("text=Greenhouse board added. 2 of 4 jobs came in.");
+    ok(true, "adding a board imports its jobs straight away");
+    const org = one("select id from orgs where name = 'Acme Asia'");
+    ok(sql(`select string_agg(title || ':' || array_to_string(eligible_countries, ',') || ':' || workplace || ':' || apply_method, '|' order by title) from jobs where org_id = '${org}' and status = 'published'`)
+      === "Account Executive:VN:on_site:external|Senior SEO Specialist:SG:on_site:external", "only our roles in our countries come in, applying on the company site");
+    ok(sql(`select description from jobs where title = 'Senior SEO Specialist'`) === "Join Senior SEO Specialist at Acme Asia.\n\n• Own the plan", "the description is clean text");
+    ok(sql(`select role || '|' || seniority from jobs where title = 'Senior SEO Specialist'`) === "seo|senior", "role and level are read from the title");
+
+    await p.goto(`${APP}/jobs?country=VN`);
+    ok(await p.isVisible("text=Account Executive"), "imported jobs show in search");
+    const slug = sql("select slug from jobs where title = 'Account Executive'");
+    await p.goto(`${APP}/jobs/${slug}`);
+    ok((await p.getByRole("link", { name: "Apply on company site" }).getAttribute("href")) === "https://boards.greenhouse.io/acmeasia/jobs/2", "Apply goes to the company's board");
+
+    await add("boards.greenhouse.io/acmeasia", "Again");
+    await p.waitForSelector("text=This board is already added.");
+    ok(true, "a board is added once");
+
+    // The board changes: one job leaves, one is renamed.
+    board = { jobs: [{ ...job(2, "Senior Account Executive", "Ho Chi Minh City, Vietnam") }, job(3, "Backend Engineer", "Singapore")] };
+    await p.goto(`${APP}/admin/sources`);
+    await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
+    await p.getByRole("menuitem", { name: "Sync now" }).click();
+    await p.waitForSelector("text=Synced: 1 of 2 jobs: 0 new, 1 closed");
+    ok(sql("select status from jobs where external_id = '1'") === "closed", "a job that left the board closes");
+    ok(sql("select title from jobs where external_id = '2'") === "Senior Account Executive", "changes on the board come through");
+
+    // A broken board changes nothing.
+    status = 500;
+    await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
+    await p.getByRole("menuitem", { name: "Sync now" }).click();
+    await p.waitForSelector("text=The board answered 500");
+    ok(sql("select status from jobs where external_id = '2'") === "published", "a board that fails to load changes nothing");
+    await p.reload();
+    ok(await p.isVisible("td >> text=The board answered 500. Try again later."), "and the error shows on the list");
+
+    // The hourly run picks it up again; a job that comes back reopens.
+    status = 200;
+    board = { jobs: [job(1, "Senior SEO Specialist", "Singapore"), job(2, "Senior Account Executive", "Ho Chi Minh City, Vietnam")] };
+    sql("update job_sources set last_synced_at = now() - interval '7 hours'");
+    const key = crypto.createHmac("sha256", SECRET).update("ocelot-cron-v1").digest("hex");
+    const r = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
+    ok(r.sources === 1 && sql("select status from jobs where external_id = '1'") === "published", "the hourly run syncs boards every 6 hours, and returning jobs reopen");
+
+    await p.goto(`${APP}/admin/sources`);
+    await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
+    await p.getByRole("menuitem", { name: "Delete" }).click();
+    await p.locator("dialog[open]").getByRole("button", { name: "Delete board" }).click();
+    await p.waitForSelector("text=Board deleted");
+    ok(sql(`select count(*) from jobs where org_id = '${org}' and status = 'published'`) === "0" && sql("select count(*) from job_sources") === "0", "deleting a board closes its jobs");
+  } finally {
+    console.log("page errors:", errors);
+    await b.close();
+    server.close();
+  }
+})().catch((e) => { console.error("CRASH", e.message); process.exit(1); });
