@@ -7,14 +7,14 @@ export type Database = {
           Tables: {
             "app_settings": {
                   Row: {
-                    "id": boolean,"payments_on": boolean,"updated_at": string
+                    "id": boolean,"last_cron_at": string | null,"last_cron_result": string | null,"payments_on": boolean,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: boolean,"payments_on"?: boolean,"updated_at"?: string
+                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"payments_on"?: boolean,"updated_at"?: string
                   }
                   Update: {
-                    "id"?: boolean,"payments_on"?: boolean,"updated_at"?: string
+                    "id"?: boolean,"last_cron_at"?: string | null,"last_cron_result"?: string | null,"payments_on"?: boolean,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -124,6 +124,20 @@ isOneToOne: false
       referencedRelation: "job_sources"
       referencedColumns: ["id"]
     }
+                  ]
+                },"cron_passes": {
+                  Row: {
+                    "created_at": string,"token": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"token": string
+                  }
+                  Update: {
+                    "created_at"?: string,"token"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"documents": {
                   Row: {
@@ -893,6 +907,9 @@ isOneToOne: false
                            },
 "show_trgm":
 { Args: { "": string }; Returns: (string)[]
+                           },
+"take_cron_pass":
+{ Args: { "p_token": string }; Returns: boolean
                            },
 "team_members":
 { Args: { "p_org": string }; Returns: {

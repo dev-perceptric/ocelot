@@ -840,4 +840,17 @@ select pg_temp.expect((select salary_hope_currency = 'CAD' and country_code = 'C
 select pg_temp.fails($$update profiles set salary_hope_currency = 'XYZ' where id = auth.uid()$$, 'unknown currencies are still refused');
 reset role;
 select pg_temp.expect((select count(*) from job_sources where countries <> '{US,CA}') = 0, 'every job board now looks for US and Canadian jobs');
+-- ---------- The hourly run's pass ----------
+reset role;
+insert into cron_passes (token) values (repeat('a', 48));
+insert into cron_passes (token, created_at) values (repeat('b', 48), now() - interval '10 minutes');
+select pg_temp.expect(take_cron_pass(repeat('a', 48)), 'a fresh pass works');
+select pg_temp.expect(not take_cron_pass(repeat('a', 48)), 'once');
+select pg_temp.expect(not take_cron_pass(repeat('b', 48)), 'an old pass does not');
+select pg_temp.expect(not take_cron_pass(repeat('c', 48)), 'nor a made-up one');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.fails($$insert into cron_passes (token) values (repeat('d', 48))$$, 'people cannot make passes');
+select pg_temp.fails($$select take_cron_pass(repeat('d', 48))$$, 'or use them');
+select pg_temp.fails($$update app_settings set last_cron_at = now() where id$$, 'or change the run record');
+reset role;
 \echo 'All boundary tests passed.'

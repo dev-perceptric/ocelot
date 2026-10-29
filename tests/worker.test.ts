@@ -88,8 +88,10 @@ test("the hourly run calls the app with the cron key, once an hour", async () =>
   const { cronToken } = await import("../src/lib/cronToken.ts");
   const calls: { url: string; auth?: string }[] = [];
   let clock = 10_000_000;
+  let passOk = false;
   const fetchImpl = async (url: string, init: { headers?: Record<string, string> }) => {
     calls.push({ url, auth: init.headers?.Authorization });
+    if (url.endsWith("/rest/v1/cron_passes")) return new Response("", { status: passOk ? 201 : 500 });
     if (url.endsWith("/rpc/claim_queue")) return new Response("[]");
     if (url.endsWith("/rpc/expire_jobs")) return new Response("0");
     return new Response("{}");
@@ -98,11 +100,13 @@ test("the hourly run calls the app with the cron key, once an hour", async () =>
   const cronCalls = () => calls.filter((c) => c.url === "https://app.test/api/cron");
   await worker.tick();
   assert.equal(cronCalls().length, 1);
-  assert.equal(cronCalls()[0].auth, `Bearer ${cronToken("service-key")}`);
+  assert.equal(cronCalls()[0].auth, `Bearer ${cronToken("service-key")}`, "without a saved pass, the older key");
   clock += 59 * 60_000;
   await worker.tick();
   assert.equal(cronCalls().length, 1, "not again within the hour");
   clock += 2 * 60_000;
+  passOk = true;
   await worker.tick();
   assert.equal(cronCalls().length, 2);
+  assert.match(cronCalls()[1].auth ?? "", /^Bearer [0-9a-f]{48}$/, "with a saved pass, the pass");
 });
