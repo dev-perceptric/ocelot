@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useState, type DragEvent } from "react";
 import { Menu } from "@/components/Menu";
 import { toast } from "@/components/Toast";
-import { Table, Tag, Td, Th } from "@/components/ui";
+import { CompanyLogo, Table, Tag, Td, Th } from "@/components/ui";
 import { CLOSED_STAGES, OPEN_STAGES, positionBetween, STAGE_LABEL, STAGE_TONE, STAGES, type Stage } from "@/lib/tracker";
 import { setStage } from "./actions";
 
-export type Card = { id: string; title: string; company: string; stage: Stage; position: number; next: string; updated_at: string };
+export type Card = { id: string; title: string; company: string; logo: string | null; stage: Stage; position: number; next: string; updated_at: string };
 
 const byPosition = (a: Card, b: Card) => a.position - b.position || b.updated_at.localeCompare(a.updated_at);
 
@@ -44,7 +44,13 @@ export function Board({ cards: initial, view, closed }: { cards: Card[]; view: "
         <tbody>
           {[...shown].sort((a, b) => stages.indexOf(a.stage) - stages.indexOf(b.stage) || byPosition(a, b)).map((c) => (
             <tr key={c.id}>
-              <Td><Link href={`/app/tracker/${c.id}`} className="font-bold hover:underline">{c.title}</Link>{c.company ? <span className="ml-2 text-meta text-muted">{c.company}</span> : null}</Td>
+              <Td>
+                <span className="flex items-center gap-2">
+                  {c.logo ? <CompanyLogo name={c.company} src={c.logo} size={20} /> : null}
+                  <Link href={`/app/tracker/${c.id}`} className="font-bold hover:underline">{c.title}</Link>
+                  {c.company ? <span className="text-meta text-muted">{c.company}</span> : null}
+                </span>
+              </Td>
               <Td><Tag tone={STAGE_TONE[c.stage]}>{STAGE_LABEL[c.stage]}</Tag></Td>
               <Td className="text-meta">{c.next}</Td>
               <Td>{menu(c)}</Td>
@@ -88,7 +94,9 @@ export function Board({ cards: initial, view, closed }: { cards: Card[]; view: "
               >
                 <div className="min-w-0">
                   <Link href={`/app/tracker/${c.id}`} className="block break-words text-body font-bold hover:underline">{c.title}</Link>
-                  {c.company ? <p className="text-meta">{c.company}</p> : null}
+                  {c.company ? (
+                    <p className="flex items-center gap-2 text-meta">{c.logo ? <CompanyLogo name={c.company} src={c.logo} size={18} /> : null}{c.company}</p>
+                  ) : null}
                   <p className="mt-1 text-meta text-muted">{c.next}</p>
                 </div>
                 {menu(c)}

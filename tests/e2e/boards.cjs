@@ -60,13 +60,16 @@ function png(side) {
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", head), chunk("IDAT", zlib.deflateSync(rows)), chunk("IEND", Buffer.alloc(0))]);
 }
 const ICON = png(180);
+const BOARD_LOGO = png(120);
 // Web pages the logo check opens, at /web/<host>/<path>: Lumen Asia's board sends people to its careers site,
-// whose home page names a square icon.
+// whose home page names a square icon. Acme Asia has no website to find, only the logo on its board.
 const WEB = {
   "/web/job-boards.greenhouse.io/lumenasia": { status: 302, location: "https://careers.lumenasia.com/jobs" },
   "/web/careers.lumenasia.com/jobs": { html: "<title>Careers</title>" },
   "/web/lumenasia.com/": { html: '<title>Lumen Asia</title><link rel="icon" href="/favicon.svg"><link rel="apple-touch-icon" sizes="180x180" href="/touch.png">' },
   "/web/lumenasia.com/touch.png": { png: ICON },
+  "/web/job-boards.greenhouse.io/acmeasia": { html: '<img src="https://recruiting.cdn.greenhouse.io/logos/acme.png" alt="Acme Asia Logo" class="logo"/><img src="/img/greenhouse-logo.svg" class="footer-logo">' },
+  "/web/recruiting.cdn.greenhouse.io/logos/acme.png": { png: BOARD_LOGO },
 };
 const server = http.createServer((req, res) => {
   if (req.url.startsWith("/web/")) {
@@ -182,7 +185,8 @@ const server = http.createServer((req, res) => {
     const img = await fetch(logo);
     ok(img.ok && img.headers.get("content-type") === "image/png" && Buffer.from(await img.arrayBuffer()).equals(ICON), "saved in Ocelot's storage as the site's square icon");
     ok(one("select website from orgs where name = 'Lumen Asia'") === "https://lumenasia.com", "and the website is filled in");
-    ok(await until(() => sql("select logo_checked_at is not null and logo_url is null from orgs where name = 'Acme Asia'") === "t"), "a company with no website found keeps its letters");
+    ok(await until(() => sql("select logo_url is not null and website is null from orgs where name = 'Acme Asia'") === "t"), "a company with no website found gets the logo from its job board");
+    ok(Buffer.from(await (await fetch(one("select logo_url from orgs where name = 'Acme Asia'"))).arrayBuffer()).equals(BOARD_LOGO), "the board's logo, saved in Ocelot's storage");
     await p.goto(`${APP}/companies/${one("select slug from orgs where name = 'Lumen Asia'")}`);
     ok(await p.locator(`img[src="${logo}"]`).count() > 0, "the logo shows on the company page");
 

@@ -35,10 +35,15 @@ All are public feeds made for career pages. No keys.
 ## Logos
 
 - Each hourly run, after sync and discovery, looks for logos for every company that has a job board and no logo (up to 1,000, for at most 8 minutes) (`due_logos`, migration 024). A company is looked at again after 30 days if nothing was found.
-- The website comes from the job board page: where the board sends people (careers.toasttab.com gives toasttab.com) or the company site it links to. With neither, Ocelot tries <name>.com, .io, .ai and .co and keeps one only when the page title names the company.
-- The logo is the site's square phone icon or its largest icon (PNG, JPEG or WebP, 32 pixels or more), then Google's public icon service for that site. It's saved in the `logos` bucket, so pages never load it from the company's site.
+- Logos are tried in this order until one is found:
+  1. The company's website, known from where its jobs link to (a careers page on its own site), where its board sends people, the site its board links to, or a website in its name ("Honeycomb.io"). The logo is the site's phone icon, drawn (SVG) icon or largest icon, then the icons Google and DuckDuckGo keep for it. A site that turns robots away still gets those.
+  2. The logo the company uploaded to its job board (Greenhouse, Lever, Ashby). "Your logo here" placeholders are skipped.
+  3. A guess at its website (<name>.com, .io, .ai, .co, .app, .ca, also without words like "Labs" or "AI") whose page title names the company.
+  4. <name>.com when that site turns robots away: the icon Google keeps for it.
+- Pictures are PNG, JPEG, WebP or SVG. An SVG is kept only when it has no scripts, events, embedded pages or outside links. An .ico gives its largest PNG.
+- Logos show in their own shape (as tall as the spot, as wide as they are), with no frame. Tracker cards show the logo when the company is on Ocelot.
 - Only https addresses with real public names are opened, each redirect is checked, and pages are cut at 2 MB and images refused over 1 MB.
-- A company that set its own logo or website keeps it. A live check on 40 US and Canadian boards found 37 right logos and no wrong ones.
+- A company that set its own logo or website keeps it. A live check on the 42 live companies that had no logo found 41, all right; the one left is a wrongly imported board.
 
 ## Running cost
 

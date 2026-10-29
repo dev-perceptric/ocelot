@@ -160,9 +160,10 @@ export function Pagination({ page, hasNext, href }: { page: number; hasNext: boo
 // A company logo, or its initials on canvas when there's no logo yet.
 export function CompanyLogo({ name, src, size = 48 }: { name: string; src?: string | null; size?: number }) {
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
+  // A logo keeps its own shape: as tall as `size`, as wide as it is (up to three times that), with no frame.
   return src ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt="" width={size} height={size} className="shrink-0 border border-border bg-surface object-contain rounded-[var(--radius-control)]" style={{ width: size, height: size }} />
+    <img src={src} alt="" height={size} className="shrink-0 object-contain" style={{ height: size, width: "auto", maxWidth: size * 3 }} />
   ) : (
     <span aria-hidden className="flex shrink-0 items-center justify-center border border-border bg-canvas font-bold rounded-[var(--radius-control)]" style={{ width: size, height: size, fontSize: size * 0.36 }}>
       {initials}
