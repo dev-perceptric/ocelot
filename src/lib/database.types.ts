@@ -333,14 +333,14 @@ isOneToOne: false
                   ]
                 },"orgs": {
                   Row: {
-                    "about": string | null,"business_verified_at": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"trusted": boolean,"website": string | null
+                    "about": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"suspended_at": string | null,"suspended_reason": string | null,"trusted": boolean,"website": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Update: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Relationships: [
                     
@@ -562,6 +562,9 @@ isOneToOne: false
             "accept_invite":
 { Args: { "p_token": string }; Returns: string
                            },
+"admin_counts":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "check_places":
 { Args: { "p_cities": (string)[],"p_countries": (string)[] }; Returns: undefined
                            },
@@ -620,6 +623,9 @@ isOneToOne: false
                            },
 "my_email":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"org_suspended":
+{ Args: { "p_org": string }; Returns: boolean
                            },
 "pgp_armor_headers":
 { Args: { "": string }; Returns: Record<string, unknown>[]
