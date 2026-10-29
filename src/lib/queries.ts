@@ -2,27 +2,38 @@ import "server-only";
 import { supabaseReady } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Job, Org } from "@/lib/jobs";
+import type { Filters } from "@/lib/search";
 
-export type JobWithOrg = Job & { org: Pick<Org, "name" | "slug"> };
+export type JobWithOrg = Job & { org: Pick<Org, "name" | "slug" | "logo_url"> };
 
-const JOB_FIELDS = "*, org:orgs(name, slug)";
+export const PAGE_SIZE = 20;
 
-// Live jobs, newest first. Row level security already limits visitors to published jobs; the status filter
-// keeps employers from seeing their own drafts in the public list.
-export async function listJobs({ q, workplace, category, limit = 50 }: {
-  q?: string; workplace?: string; category?: string; limit?: number;
-} = {}): Promise<JobWithOrg[]> {
-  if (!supabaseReady) return [];
+// Job search through search_jobs (supabase/migrations/009_search.sql): only live jobs from companies that
+// aren't suspended, promoted first. A database hiccup shows an empty list instead of an error page.
+export async function searchJobs(f: Partial<Filters> = {}, page = 1, size = PAGE_SIZE): Promise<{ jobs: JobWithOrg[]; total: number }> {
+  if (!supabaseReady) return { jobs: [], total: 0 };
   const supabase = await createClient();
-  let query = supabase.from("jobs").select(JOB_FIELDS).eq("status", "published")
-    .order("published_at", { ascending: false }).limit(limit);
-  if (q?.trim()) query = query.textSearch("search", q.trim(), { type: "websearch", config: "simple" });
-  if (workplace) query = query.eq("workplace", workplace);
-  if (category) query = query.eq("category", category);
-  // A database hiccup shows an empty list instead of an error page on the home page and sitemap.
-  const { data, error } = await query;
-  if (error) console.error("listJobs", error);
-  return (data ?? []) as JobWithOrg[];
+  const from = (page - 1) * size;
+  const { data, error, count } = await supabase
+    .rpc("search_jobs", {
+      q: f.q || undefined,
+      workplaces: f.where?.length ? f.where : undefined,
+      country: f.country ?? undefined,
+      city: f.city ?? undefined,
+      category: f.category ?? undefined,
+      role: f.role ?? undefined,
+      seniorities: f.level?.length ? f.level : undefined,
+      types: f.type?.length ? f.type : undefined,
+      pay_only: f.pay ?? false,
+    }, { count: "exact" })
+    .select("*, org:orgs(name, slug, logo_url)")
+    .range(from, from + size - 1);
+  if (error) console.error("searchJobs", error);
+  return { jobs: (data ?? []) as unknown as JobWithOrg[], total: count ?? 0 };
+}
+
+export async function listJobs({ limit = 50 }: { limit?: number } = {}): Promise<JobWithOrg[]> {
+  return (await searchJobs({}, 1, limit)).jobs;
 }
 
 export async function getJob(slug: string): Promise<(Job & { org: Org; questions: string[] }) | null> {

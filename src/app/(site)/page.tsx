@@ -32,7 +32,7 @@ export default async function Home() {
             <Link href="/jobs" className="font-bold underline">See all jobs</Link>
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {jobs.map((job) => <JobCard key={job.id} job={job} company={job.org?.name ?? ""} />)}
+            {jobs.map((job) => <JobCard key={job.id} job={job} company={job.org?.name ?? ""} logo={job.org?.logo_url} />)}
           </div>
         </section>
       ) : null}

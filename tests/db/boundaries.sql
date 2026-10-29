@@ -401,4 +401,30 @@ insert into jobs (org_id, slug, title, created_by, role, seniority, employment_t
   values (:'gamma', 'gamma-cs', 'CSM', auth.uid(), 'cs_manager', 'mid', 'full_time', 'remote', '{VN}', repeat('Keep customers happy and growing. ', 8));
 select pg_temp.fails($$update jobs set status = 'pending_review' where slug = 'gamma-cs'$$, 'a suspended company cannot send jobs for review');
 reset role;
+-- ---------- Milestone 2, part 2: search ----------
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000a3', 'tam@delta.test');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a3');
+select create_org('Delta Analytics', 'delta') as delta \gset
+reset role;
+insert into jobs (org_id, slug, title, role, category, seniority, employment_type, workplace, office_places, eligible_countries, salary_min, salary_currency, salary_period, description, status, published_at, featured_until) values
+  (:'delta', 'd-seo', 'SEO Specialist', 'seo', 'marketing', 'mid', 'full_time', 'remote', '{}', '{VN,SG}', 1200, 'USD', 'month', 'Technical SEO and content for SaaS.', 'published', now() - interval '3 days', null),
+  (:'delta', 'd-ae', 'Account Executive', 'account_executive', 'sales', 'senior', 'full_time', 'hybrid', '{hanoi}', '{VN}', null, null, null, 'Close deals with enterprise buyers.', 'published', now() - interval '1 day', null),
+  (:'delta', 'd-csm', 'Customer Success Manager', 'cs_manager', 'customer_success', 'mid', 'contract', 'on_site', '{singapore-city}', '{SG}', null, null, null, 'Onboard and grow accounts.', 'published', now() - interval '5 days', now() + interval '3 days'),
+  (:'delta', 'd-draft', 'Secret SEO Draft', 'seo', 'marketing', 'mid', 'full_time', 'remote', '{}', '{VN}', null, null, null, 'Not live.', 'draft', null, null);
+select pg_temp.act(null);
+select pg_temp.expect((select array_agg(slug order by ord) from (select slug, row_number() over () as ord from search_jobs() where org_id = :'delta') s) = '{d-csm,d-ae,d-seo}', 'promoted first, then newest; drafts never show');
+select pg_temp.expect((select array_agg(slug) from search_jobs(q => 'seo') where org_id = :'delta') = '{d-seo}', 'keywords match titles and descriptions');
+select pg_temp.expect((select count(*) from search_jobs(q => 'delta analytics') where org_id = :'delta') = 3, 'keywords match the company name');
+select pg_temp.expect((select count(*) from search_jobs(q => '100%_') where org_id = :'delta') = 0, 'search text is not treated as a pattern');
+select pg_temp.expect((select array_agg(slug) from search_jobs(workplaces => '{remote,hybrid}', country => 'VN') where org_id = :'delta') @> '{d-seo,d-ae}'
+  and (select count(*) from search_jobs(workplaces => '{remote,hybrid}', country => 'VN') where org_id = :'delta') = 2, 'workplace and country filters');
+select pg_temp.expect((select array_agg(slug) from search_jobs(city => 'hanoi') where org_id = :'delta') = '{d-ae}', 'city filter');
+select pg_temp.expect((select array_agg(slug) from search_jobs(category => 'customer_success', types => '{contract}') where org_id = :'delta') = '{d-csm}', 'category and type filters');
+select pg_temp.expect((select array_agg(slug) from search_jobs(pay_only => true) where org_id = :'delta') = '{d-seo}', 'pay shown filter');
+reset role;
+update orgs set suspended_at = now() where id = :'delta';
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from search_jobs() where org_id = :'delta') = 0, 'a suspended company''s jobs leave search');
+reset role;
 \echo 'All boundary tests passed.'

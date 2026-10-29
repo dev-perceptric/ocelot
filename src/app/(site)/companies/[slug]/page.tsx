@@ -39,7 +39,7 @@ export default async function CompanyPage({ params }: Props) {
       {org.about ? <p className="mt-6 max-w-[70ch] whitespace-pre-line font-[family-name:var(--font-editorial)] text-lede">{org.about}</p> : null}
       <h2 className="mt-12 text-card font-bold">{jobs.length === 1 ? "1 open job" : `${jobs.length} open jobs`}</h2>
       <div className="mt-4 grid gap-4">
-        {jobs.map((job) => <JobCard key={job.id} job={job} company={org.name} />)}
+        {jobs.map((job) => <JobCard key={job.id} job={job} company={org.name} logo={org.logo_url} />)}
       </div>
     </div>
   );
