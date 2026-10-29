@@ -1,12 +1,13 @@
 import { interviewCutoff } from "@/lib/when";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ButtonLink, Tag, ToolIntro } from "@/components/ui";
+import { ButtonLink, CompanyLogo, Tag, ToolIntro } from "@/components/ui";
 import { currentUser } from "@/lib/supabase/server";
 import { OPEN_STAGES, STAGE_LABEL, STAGE_TONE, type Stage } from "@/lib/tracker";
 import { AddJob } from "./tracker/AddJob";
 import { InterviewList, TaskList, type Interview, type Task } from "./tasks/TaskParts";
 import { myTimeZone } from "@/lib/myTz";
+import { trackerLogos } from "@/lib/logos";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function MySearch() {
   const nextInterviews: Interview[] = (interviews ?? []).map((x) => ({ ...x, item_title: (x.item as { title: string } | null)?.title ?? null }));
   const count = (s: Stage) => items.filter((i) => i.stage === s).length;
   const open = items.filter((i) => (OPEN_STAGES as readonly string[]).includes(i.stage));
+  const logos = await trackerLogos(supabase, open.slice(0, 8).map((i) => i.id));
 
   return (
     <>
@@ -67,7 +69,10 @@ export default async function MySearch() {
         <ul className="mt-3 divide-y divide-border border border-border bg-surface rounded-[var(--radius-card)]">
           {open.slice(0, 8).map((i) => (
             <li key={i.id} className="flex items-center justify-between gap-4 p-4">
-              <Link href={`/app/tracker/${i.id}`} className="min-w-0 hover:underline"><span className="font-bold">{i.title}</span>{i.company ? <span className="ml-2 text-meta text-muted">{i.company}</span> : null}</Link>
+              <span className="flex min-w-0 items-center gap-3">
+                {logos.get(i.id) ? <CompanyLogo name={i.company} src={logos.get(i.id)} size={24} /> : null}
+                <Link href={`/app/tracker/${i.id}`} className="min-w-0 hover:underline"><span className="font-bold">{i.title}</span>{i.company ? <span className="ml-2 text-meta text-muted">{i.company}</span> : null}</Link>
+              </span>
               <Tag tone={STAGE_TONE[i.stage as Stage]}>{STAGE_LABEL[i.stage as Stage]}</Tag>
             </li>
           ))}

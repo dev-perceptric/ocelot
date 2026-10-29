@@ -7,6 +7,7 @@ import { currentUser } from "@/lib/supabase/server";
 import { type Stage } from "@/lib/tracker";
 import { nextStep } from "@/lib/nextStep";
 import { myTimeZone } from "@/lib/myTz";
+import { trackerLogos } from "@/lib/logos";
 import { AddJob } from "./AddJob";
 import { Board, type Card } from "./Board";
 
@@ -35,8 +36,9 @@ export default async function Tracker({ searchParams }: { searchParams: Promise<
   if (!data?.length) {
     return <ToolIntro title="Your next move starts here." line="Save a job or add one you found elsewhere." action={<AddJob />} />;
   }
+  const logos = await trackerLogos(supabase, data.map((r) => r.id));
   const cards: Card[] = data.map((r) => ({
-    id: r.id, title: r.title, company: r.company, stage: r.stage as Stage, position: r.position, updated_at: r.updated_at,
+    id: r.id, title: r.title, company: r.company, logo: logos.get(r.id) ?? null, stage: r.stage as Stage, position: r.position, updated_at: r.updated_at,
     next: nextStep({ stage: r.stage as Stage, applied_at: r.applied_at, created_at: r.created_at, task: firstTask.get(r.id), interview: firstInterview.get(r.id) }, tz),
   }));
   const tab = (href: string, label: string, on: boolean) => (
