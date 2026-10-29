@@ -5,12 +5,14 @@ import { roleName } from "@/lib/taxonomy";
 
 // The job as candidates see it. Used by the public job page, the employer's preview and admin review,
 // so all three always match.
-export function JobView({ job, org, questions, mode = "public", aside }: {
+export function JobView({ job, org, questions, mode = "public", aside, apply, save }: {
   job: Job;
   org: Pick<Org, "name" | "slug" | "logo_url" | "business_verified_at" | "email_verified_domain">;
   questions: string[];
   mode?: "public" | "preview";
   aside?: React.ReactNode; // extra controls under the apply box (e.g. Report)
+  apply?: React.ReactNode; // the public page's own apply button ("Did you apply?" follows it)
+  save?: React.ReactNode; // the public page's Save job button
 }) {
   const live = job.status === "published";
   const closed = job.status === "closed" || job.status === "expired";
@@ -58,7 +60,7 @@ export function JobView({ job, org, questions, mode = "public", aside }: {
         ) : job.apply_method === "external" ? (
           <>
             {mode === "public" && live && job.apply_url ? (
-              <ButtonLink href={job.apply_url} target="_blank" rel="noopener nofollow">Apply on company site</ButtonLink>
+              apply ?? <ButtonLink href={job.apply_url} target="_blank" rel="noopener nofollow">Apply on company site</ButtonLink>
             ) : (
               <span className="inline-flex min-h-11 items-center justify-center bg-brand px-5 font-bold rounded-[var(--radius-control)]">Apply on company site</span>
             )}
@@ -67,6 +69,7 @@ export function JobView({ job, org, questions, mode = "public", aside }: {
         ) : (
           <p className="text-body">Applications on Ocelot open soon.</p>
         )}
+        {mode === "public" && save ? save : null}
         {job.published_at ? <p className="text-meta text-muted">Posted {postedAgo(job.published_at).toLowerCase()}</p> : null}
         {aside}
       </aside>
