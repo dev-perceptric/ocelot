@@ -32,6 +32,7 @@ export default async function SettingsPage() {
         <div className="mt-2">
           <NotificationSwitches values={{
             application_updates: prefs?.application_updates ?? true,
+            ...(mine?.length ? { new_applicants: prefs?.new_applicants ?? true } : {}),
             job_alerts: prefs?.job_alerts ?? true,
             weekly_digest: prefs?.weekly_digest ?? false,
             product_news: prefs?.product_news ?? false,

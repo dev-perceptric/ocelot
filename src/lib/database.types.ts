@@ -233,14 +233,14 @@ isOneToOne: false
                   ]
                 },"notification_prefs": {
                   Row: {
-                    "application_updates": boolean,"job_alerts": boolean,"product_news": boolean,"updated_at": string,"user_id": string,"weekly_digest": boolean
+                    "application_updates": boolean,"job_alerts": boolean,"new_applicants": boolean,"product_news": boolean,"updated_at": string,"user_id": string,"weekly_digest": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "application_updates"?: boolean,"job_alerts"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id": string,"weekly_digest"?: boolean
+                    "application_updates"?: boolean,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id": string,"weekly_digest"?: boolean
                   }
                   Update: {
-                    "application_updates"?: boolean,"job_alerts"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id"?: string,"weekly_digest"?: boolean
+                    "application_updates"?: boolean,"job_alerts"?: boolean,"new_applicants"?: boolean,"product_news"?: boolean,"updated_at"?: string,"user_id"?: string,"weekly_digest"?: boolean
                   }
                   Relationships: [
                     

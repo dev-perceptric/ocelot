@@ -33,12 +33,14 @@ export function EmailForm({ current }: { current: string }) {
 
 const LABELS: Record<Pref, string> = {
   application_updates: "Updates on applications I send",
+  new_applicants: "New applicants to my company's jobs",
   job_alerts: "Alerts for searches I save",
   weekly_digest: "Weekly jobs digest",
   product_news: "News about Ocelot",
 };
 
-export function NotificationSwitches({ values }: { values: Record<Pref, boolean> }) {
+// Shows a switch for each choice passed in (New applicants only for people on a company team).
+export function NotificationSwitches({ values }: { values: Partial<Record<Pref, boolean>> }) {
   const [on, setOn] = useState(values);
   const flip = async (key: Pref, next: boolean) => {
     setOn((v) => ({ ...v, [key]: next }));
@@ -51,8 +53,8 @@ export function NotificationSwitches({ values }: { values: Record<Pref, boolean>
   };
   return (
     <div className="flex max-w-[560px] flex-col divide-y divide-border">
-      {(Object.keys(LABELS) as Pref[]).map((k) => (
-        <Switch key={k} id={`pref-${k}`} label={LABELS[k]} checked={on[k]} onChange={(v) => flip(k, v)} />
+      {(Object.keys(LABELS) as Pref[]).filter((k) => k in on).map((k) => (
+        <Switch key={k} id={`pref-${k}`} label={LABELS[k]} checked={Boolean(on[k])} onChange={(v) => flip(k, v)} />
       ))}
     </div>
   );

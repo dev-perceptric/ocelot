@@ -87,6 +87,7 @@ const PDF = { name: "Mai Nguyen CV.pdf", mimeType: "application/pdf", buffer: Bu
   ok(sql(`select full_name from profiles where id = '${uid}'`) === "Mai Nguyen", "the name is saved to the profile");
   ok(sql(`select stage from tracker_items where user_id = '${uid}'`) === "applied", "the card is Applied");
   ok(sql("select count(*) from jobs_queue where payload->>'kind' = 'application_sent' and payload->>'to' = 'mai@mail.test'") === "1", "a receipt email is queued");
+  ok(sql("select count(*) from jobs_queue where payload->>'kind' = 'new_applicant' and payload->>'to' = 'boss@delta.test' and payload->>'subject' = 'New applicant for Marketing Manager: Mai Nguyen'") === "1", "the company gets a new applicant email");
 
   await p.goto(`${APP}/jobs/delta-marketing`);
   ok(await p.getByRole("link", { name: /^Applied \d+ \w+$/ }).isVisible(), "the job page shows it was applied to");

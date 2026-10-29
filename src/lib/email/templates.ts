@@ -1,6 +1,6 @@
 // Every email Ocelot sends, one function each. Add new ones here and to /admin/emails.
 
-import { layout, type Email } from "./layout.ts";
+import { layout, optionalFooter, type Email } from "./layout.ts";
 
 const ROLE: Record<string, string> = { owner: "an owner", admin: "an admin", member: "a member" };
 
@@ -105,6 +105,62 @@ export function applicationSent(o: { job: string; company: string; cardUrl: stri
         { p: `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
         { button: { label: "View in My search", url: o.cardUrl } },
       ],
+    }),
+  };
+}
+
+export function newApplicant(o: { company: string; job: string; name: string; url: string; siteUrl: string }): Email {
+  return {
+    subject: `New applicant for ${o.job}: ${o.name}`,
+    pref: "new_applicants",
+    ...layout({
+      title: `${o.name} applied`,
+      preview: `${o.name} applied for ${o.job} at ${o.company}.`,
+      blocks: [
+        { p: `${o.name} applied for ${o.job} at ${o.company}.` },
+        { button: { label: "View applicant", url: o.url } },
+      ],
+      footer: optionalFooter(o.siteUrl),
+    }),
+  };
+}
+
+// The hiring stages a candidate hears about. Reviewing stays inside the company.
+export const STAGE_EMAIL = ["interviewing", "offer", "hired", "rejected"] as const;
+export type StageEmail = (typeof STAGE_EMAIL)[number];
+
+export function stageUpdate(o: { company: string; job: string; stage: StageEmail; cardUrl: string; siteUrl: string }): Email {
+  const copy: Record<StageEmail, { subject: string; title: string; p: string }> = {
+    interviewing: {
+      subject: `${o.company} would like to interview you`,
+      title: "Invited to interview",
+      p: `${o.company} moved your application for ${o.job} to interviews. Watch your email and phone for their message about times.`,
+    },
+    offer: {
+      subject: `Offer stage at ${o.company}`,
+      title: "Offer stage",
+      p: `${o.company} moved your application for ${o.job} to the offer stage.`,
+    },
+    hired: {
+      subject: `Hired at ${o.company}`,
+      title: "Congratulations",
+      p: `${o.company} marked you as hired for ${o.job}.`,
+    },
+    rejected: {
+      subject: `Update on your application to ${o.company}`,
+      title: "Application update",
+      p: `${o.company} has decided not to move forward with your application for ${o.job}. Thank you for applying through Ocelot.`,
+    },
+  };
+  const c = copy[o.stage];
+  return {
+    subject: c.subject,
+    pref: "application_updates",
+    ...layout({
+      title: c.title,
+      preview: c.p,
+      blocks: [{ p: c.p }, { button: { label: "View in My search", url: o.cardUrl } }],
+      footer: optionalFooter(o.siteUrl),
     }),
   };
 }

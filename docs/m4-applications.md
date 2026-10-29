@@ -34,13 +34,15 @@ Each ships as its own pull request.
 | `/employer/applicants/[id]` | The snapshot, answers and note, the résumé through a short signed link, the stage picker, hiring notes from the team, and history |
 | Candidate side | The card's "Updates from the company" shows Interviewing, Offer, Hired and Not moving forward. Reviewing stays internal |
 
-### 3. Emails
+### 3. Emails (done)
 
 | Email | To | Can be turned off |
 |---|---|---|
 | Application sent (receipt) | Candidate | No |
 | New applicant | Company members | Yes, per person ("New applicants" in settings) |
 | Stage update: Interviewing, Offer, Hired, Not moving forward | Candidate | Yes ("Application updates") |
+
+Stage emails wait 10 minutes and the worker sends one only if the applicant is still at that stage, so a mis-click that's moved back never reaches the candidate. Moving to Reviewing sends nothing.
 
 ## Running cost
 
