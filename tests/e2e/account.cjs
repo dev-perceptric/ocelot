@@ -70,7 +70,7 @@ async function deleteMe(page, typed) {
   sql(`insert into tracker_items (user_id, title, company, notes) values ('${camId}', 'Growth Lead', 'Elsewhere', 'private note')`);
   const up = await fetch(`${API}/storage/v1/object/resumes/${camId}/cv.pdf`, { method: "POST", headers: { apikey: SECRET, Authorization: `Bearer ${SECRET}`, "Content-Type": "application/pdf" }, body: "%PDF-1.4 test" });
   ok(up.ok, "résumé file uploaded");
-  const doc = sql(`insert into documents (user_id, name, storage_path, mime_type, size_bytes) values ('${camId}', 'cv.pdf', 'resumes/${camId}/cv.pdf', 'application/pdf', 13) returning id`).split("\n")[0];
+  const doc = sql(`insert into documents (user_id, name, storage_path, mime_type, size_bytes) values ('${camId}', 'cv.pdf', '${camId}/cv.pdf', 'application/pdf', 13) returning id`).split("\n")[0];
   const job = sql(`insert into jobs (org_id, slug, title, status, published_at) values ('${acme}', 'acme-cs', 'CS Manager', 'published', now()) returning id`).split("\n")[0];
   sql(`insert into applications (job_id, org_id, candidate_id, snapshot, resume_id) values ('${job}', '${acme}', '${camId}', '{"name":"Cam Pham","email":"cam@mail.test"}', '${doc}')`);
 

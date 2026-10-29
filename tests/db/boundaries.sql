@@ -482,4 +482,34 @@ select pg_temp.expect((select count(*) from tasks) = 0 and (select count(*) from
 select pg_temp.fails(format($$insert into tasks (user_id, item_id, title) values (auth.uid(), %L, 'Sneaky')$$, :'brand_card'), 'nobody can add a task to someone else''s card');
 select pg_temp.fails(format($$insert into interviews (user_id, item_id, starts_at) values (auth.uid(), %L, now())$$, :'brand_card'), 'nobody can add an interview to someone else''s card');
 reset role;
+-- ---------- Milestone 3, part 3: résumés ----------
+-- The server adds résumé rows after checking the file; people can't add their own.
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.fails($$insert into documents (user_id, name, storage_path, mime_type, size_bytes) values (auth.uid(), 'CV', auth.uid() || '/a.pdf', 'application/pdf', 100)$$, 'people cannot add a résumé without the server''s check');
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-00000000000e', 'eve@mail.test');
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-00000000000d', 'Dee CV 2026', '00000000-0000-0000-0000-00000000000d/a.pdf', 'application/pdf', 1000) returning id as dee_cv \gset
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-00000000000e', 'Eve CV', '00000000-0000-0000-0000-00000000000e/b.pdf', 'application/pdf', 1000) returning id as eve_cv \gset
+select pg_temp.fails($$insert into documents (user_id, name, storage_path, mime_type, size_bytes) values ('00000000-0000-0000-0000-00000000000d', 'Not mine', '00000000-0000-0000-0000-00000000000e/c.pdf', 'application/pdf', 1000)$$, 'a résumé row must point inside its owner''s folder');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+update documents set name = 'Dee CV marketing' where id = :'dee_cv';
+select pg_temp.expect((select name from documents where id = :'dee_cv') = 'Dee CV marketing', 'people can rename their résumés');
+select pg_temp.fails(format($$update documents set storage_path = '00000000-0000-0000-0000-00000000000e/b.pdf' where id = %L$$, :'dee_cv'), 'and nothing else about them');
+select pg_temp.expect((select count(*) from documents) = 1, 'people see only their own résumés');
+update tracker_items set resume_id = :'dee_cv' where id = :'brand_card';
+select pg_temp.expect((select resume_id from tracker_items where id = :'brand_card') = :'dee_cv', 'a card can show which résumé was used');
+select pg_temp.fails(format($$update tracker_items set resume_id = %L where id = %L$$, :'eve_cv', :'brand_card'), 'a card cannot point at someone else''s résumé');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from documents) = 0, 'employers cannot see résumés that weren''t sent to them');
+delete from documents;
+select pg_temp.act('00000000-0000-0000-0000-00000000000e');
+delete from documents where id = :'dee_cv';
+select pg_temp.expect((select count(*) from documents) = 1, 'and another candidate sees only their own');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+delete from documents where id = :'dee_cv';
+select pg_temp.expect((select resume_id is null from tracker_items where id = :'brand_card'), 'deleting a résumé clears it from cards');
+reset role;
+select pg_temp.expect((select count(*) from documents where user_id = '00000000-0000-0000-0000-00000000000e') = 1, 'nobody else can delete a résumé');
 \echo 'All boundary tests passed.'

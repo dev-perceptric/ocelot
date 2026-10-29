@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Tag } from "@/components/ui";
 import { currentUser } from "@/lib/supabase/server";
 import { cleanContacts, STAGE_LABEL, STAGE_TONE, type Stage } from "@/lib/tracker";
+import { CardResume } from "../../resumes/ResumeParts";
 import { CardDanger, Contacts, Details, Notes, StagePicker } from "./CardParts";
 import { AddInterview, AddTask, InterviewList, TaskList } from "../../tasks/TaskParts";
 import { myTimeZone } from "@/lib/myTz";
@@ -27,13 +28,14 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
   const { data: c } = await supabase.from("tracker_items").select("*, job:jobs(slug, status)").eq("id", id).maybeSingle();
   if (!c) notFound();
   const tz = await myTimeZone(supabase, user.id);
-  const [{ data: events }, { data: updates }, { data: tasks }, { data: interviews }] = await Promise.all([
+  const [{ data: events }, { data: updates }, { data: tasks }, { data: interviews }, { data: resumes }] = await Promise.all([
     supabase.from("tracker_events").select("kind, detail, created_at").eq("item_id", id).order("created_at", { ascending: false }).limit(50),
     c.application_id
       ? supabase.from("application_events").select("kind, to_stage, created_at").eq("application_id", c.application_id).order("created_at", { ascending: false })
       : Promise.resolve({ data: [] as { kind: string; to_stage: string | null; created_at: string }[] }),
     supabase.from("tasks").select("id, title, due_at, done_at, item_id").eq("item_id", id),
     supabase.from("interviews").select("id, item_id, starts_at, title, meeting_url, notes").eq("item_id", id),
+    supabase.from("documents").select("id, name").eq("user_id", user.id).order("created_at", { ascending: false }),
   ]);
   const job = c.job as { slug: string; status: string } | null;
   const stage = c.stage as Stage;
@@ -78,6 +80,10 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
         </div>
       </section>
       <section><Notes id={c.id} initial={c.notes} /></section>
+      <section className="border-t border-border pt-6">
+        {resumes?.length ? <div className="max-w-[360px]"><CardResume itemId={c.id} value={c.resume_id} resumes={resumes} /></div>
+          : <Link href="/app/resumes" className="text-body font-bold underline">Upload a résumé</Link>}
+      </section>
       <section className="border-t border-border pt-6"><h2 className="mb-4 text-card font-bold">Details</h2><Details id={c.id} values={{ title: c.title, company: c.company, url: c.url ?? "", location: c.location ?? "", salary: c.salary ?? "" }} /></section>
       <section className="border-t border-border pt-6"><h2 className="mb-4 text-card font-bold">Contacts</h2><Contacts id={c.id} initial={cleanContacts(c.contacts)} /></section>
       <section className="border-t border-border pt-6">
