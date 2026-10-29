@@ -29,7 +29,6 @@ export async function searchJobs(f: Partial<Filters> = {}, page = 1, size = PAGE
       posted_days: f.posted ?? undefined,
       min_pay: f.minPay ?? undefined,
       sort: f.sort ?? "best",
-      company: f.company ?? undefined,
     }, { count: "exact" })
     .select("*, org:orgs(name, slug, logo_url)")
     .range(from, from + size - 1);

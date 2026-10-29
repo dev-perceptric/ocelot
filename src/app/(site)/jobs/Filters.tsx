@@ -99,7 +99,7 @@ const several = (labels: string[]) => (labels.length ? (labels.length > 1 ? `${l
 
 // The filter bar under the search box. Every change updates the address, so filters can be shared and the back
 // button works. A search with a role and place page of its own goes there (/sales-jobs-in-texas).
-export function FilterBar({ filters: fromUrl, companies }: { filters: F; companies: { name: string; slug: string }[] }) {
+export function FilterBar({ filters: fromUrl }: { filters: F }) {
   const router = useRouter();
   // Shown at once while the new results load, then follows the address (e.g. after removing a tag).
   const [filters, setFilters] = useState(fromUrl);
@@ -119,7 +119,6 @@ export function FilterBar({ filters: fromUrl, companies }: { filters: F; compani
   const place = filters.city ? `city:${filters.city}` : filters.region ? `region:${filters.region}` : filters.country ? `country:${filters.country}` : "";
   const area = filters.role ? `r:${filters.role}` : filters.category ? `c:${filters.category}` : "";
   const pay = filters.minPay ? String(filters.minPay) : filters.pay ? "shown" : "";
-  const companyName = companies.find((c) => c.slug === filters.company)?.name ?? filters.company;
 
   return (
     <div role="group" aria-label="Filters" aria-busy={loading} className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
@@ -161,12 +160,6 @@ export function FilterBar({ filters: fromUrl, companies }: { filters: F; compani
         {(close) => (
           <List label="Posted" options={[{ value: "", label: "Any time" }, ...POSTED.map((d) => ({ value: String(d), label: POSTED_LABEL[d] }))]}
             picked={[filters.posted ? String(filters.posted) : ""]} onPick={(v) => { go({ posted: v ? Number(v) : null }); close(); }} />
-        )}
-      </Filter>
-      <Filter label="Company" summary={filters.company ? companyName : null}>
-        {(close) => (
-          <List label="Company" options={[{ value: "", label: "Any company" }, ...companies.map((c) => ({ value: c.slug, label: c.name }))]}
-            picked={[filters.company ?? ""]} onPick={(v) => { go({ company: v || null }); close(); }} />
         )}
       </Filter>
     </div>

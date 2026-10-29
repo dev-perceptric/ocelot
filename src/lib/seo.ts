@@ -59,7 +59,7 @@ export function parseSeoPath(slug: string): Filters | null {
 // The clean address for a search, when it is one of these pages: an area, a place, remote, or a mix of them, and
 // nothing else. Remote pages don't take a city.
 export function seoPath(f: Filters): string | null {
-  if (f.q || f.level.length || f.type.length || f.pay || f.posted || f.minPay || f.company || f.sort !== "best") return null;
+  if (f.q || f.level.length || f.type.length || f.pay || f.posted || f.minPay || f.sort !== "best") return null;
   const remote = f.where.length === 1 && f.where[0] === "remote";
   if (f.where.length && !remote) return null;
   const area = f.role ? AREAS.find((a) => a.role === f.role) : f.category ? AREAS.find((a) => !a.role && a.category === f.category) : null;
