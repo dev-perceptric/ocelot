@@ -150,7 +150,7 @@ Each in `tests/db/boundaries.sql`, run in CI:
 | 4 | D. Email pipeline (done) | 1–2 days |
 | 5 | C. Companies and teams (done) | 3–4 days |
 | 6 | E. Admin (done) | 2 days |
-| 7 | F. Privacy, backups, monitoring | 2 days |
+| 7 | F. Privacy, backups, monitoring (delete, export, Terms and Privacy drafts done; backups, PostHog, Sentry, uptime later) | 2 days |
 | | **Total** | **13–17 working days** |
 
 ## Done when

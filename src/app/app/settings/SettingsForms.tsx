@@ -2,9 +2,11 @@
 
 import { keepValues } from "@/components/forms";
 import { useActionState, useState } from "react";
+import { Modal } from "@/components/Dialog";
 import { Switch } from "@/components/Switch";
 import { toast } from "@/components/Toast";
 import { Button, Field, inputClass } from "@/components/ui";
+import { deleteAccount, type DeleteState } from "./account";
 import { changeEmail, setPref, type EmailState, type Pref } from "./actions";
 
 export function EmailForm({ current }: { current: string }) {
@@ -53,5 +55,31 @@ export function NotificationSwitches({ values }: { values: Record<Pref, boolean>
         <Switch key={k} id={`pref-${k}`} label={LABELS[k]} checked={on[k]} onChange={(v) => flip(k, v)} />
       ))}
     </div>
+  );
+}
+
+export function DeleteAccount({ email, companies }: { email: string; companies: string[] }) {
+  const [open, setOpen] = useState(false);
+  const [state, action, pending] = useActionState<DeleteState, FormData>(deleteAccount, {});
+  return (
+    <>
+      <Button variant="danger" onClick={() => setOpen(true)}>Delete account</Button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Delete your account?" footer={
+        <>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button type="submit" form="delete-account" variant="danger" disabled={pending} aria-busy={pending}>{pending ? "Deleting" : "Delete account"}</Button>
+        </>
+      }>
+        <form id="delete-account" onSubmit={keepValues(action)} className="flex flex-col gap-4" noValidate>
+          <p>This removes your profile, tracker, notes, tasks, résumés and settings. It can&apos;t be undone.</p>
+          <p>Companies keep applications you already sent, without your name, contact details or résumé.</p>
+          {companies.length ? <p>Companies where you&apos;re the only member are deleted too: {companies.join(", ")}.</p> : null}
+          <Field label={`Type ${email} to confirm`} htmlFor="delete-confirm" error={state.error}>
+            <input id="delete-confirm" name="confirm" autoComplete="off" className={inputClass}
+              aria-invalid={Boolean(state.error)} aria-describedby={state.error ? "delete-confirm-error" : undefined} />
+          </Field>
+        </form>
+      </Modal>
+    </>
   );
 }
