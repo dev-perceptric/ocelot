@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { currentUser } from "@/lib/supabase/server";
-import { validTimeZone } from "@/lib/profile";
+import { DEFAULT_TZ, validTimeZone } from "@/lib/profile";
 import { zonedToUtc } from "@/lib/when";
 
 type Result = { ok: boolean; message?: string };
@@ -21,7 +21,7 @@ async function me() {
   const { supabase, user } = await currentUser();
   if (!user) return null;
   const { data } = await supabase.from("profiles").select("time_zone").eq("id", user.id).single();
-  const tz = data?.time_zone && validTimeZone(data.time_zone) ? data.time_zone : "Asia/Ho_Chi_Minh";
+  const tz = data?.time_zone && validTimeZone(data.time_zone) ? data.time_zone : DEFAULT_TZ;
   return { supabase, user, tz };
 }
 

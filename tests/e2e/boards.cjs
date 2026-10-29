@@ -41,15 +41,17 @@ const http = require("http");
 const crypto = require("crypto");
 const SECRET = process.env.SUPABASE_SECRET;
 const one = (q) => sql(q).split("\n")[0];
+// Board work runs after the hourly call answers: wait for its result.
+const until = async (check, ms = 20000) => { for (const end = Date.now() + ms; Date.now() < end; await sleep(300)) if (check()) return true; return check(); };
 
 // A stand-in Greenhouse board. The test changes `board` between syncs.
 const job = (id, title, location) => ({ id, title, absolute_url: `https://boards.greenhouse.io/acmeasia/jobs/${id}`, location: { name: location }, offices: [],
   content: `&lt;p&gt;Join ${title} at Acme Asia.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Own the plan&lt;/li&gt;&lt;/ul&gt;`, updated_at: "2026-10-01T00:00:00Z" });
-let board = { jobs: [job(1, "Senior SEO Specialist", "Singapore"), job(2, "Account Executive", "Ho Chi Minh City, Vietnam"), job(3, "Backend Engineer", "Singapore"), job(4, "Marketing Manager", "Dublin")] };
+let board = { jobs: [job(1, "Senior SEO Specialist", "New York, NY"), job(2, "Account Executive", "Toronto, ON"), job(3, "Backend Engineer", "San Francisco, CA"), job(4, "Marketing Manager", "Dublin")] };
 let status = 200;
 const server = http.createServer((req, res) => {
   res.setHeader("Content-Type", "application/json");
-  if (req.url === "/greenhouse/lumenasia") return res.end(JSON.stringify({ jobs: [{ ...job(9, "Growth Marketing Lead", "Remote - APAC"), company_name: "Lumen Asia" }, job(10, "Staff Engineer", "Singapore")] }));
+  if (req.url === "/greenhouse/lumenasia") return res.end(JSON.stringify({ jobs: [{ ...job(9, "Growth Marketing Lead", "Remote - North America"), company_name: "Lumen Asia" }, job(10, "Staff Engineer", "Austin, TX")] }));
   if (req.url !== "/greenhouse/acmeasia") { res.statusCode = 404; return res.end("{}"); }
   res.statusCode = status;
   res.end(status === 200 ? JSON.stringify(board) : "{}");
@@ -63,6 +65,8 @@ const server = http.createServer((req, res) => {
   const p = await (await b.newContext()).newPage();
   p.on("pageerror", (e) => errors.push(e.message));
   try {
+    // Only this test's boards are looked for.
+    sql("update board_candidates set checked_at = now()");
     await login(p, "ops2@ocelot.test", "Find a job");
     sql("insert into platform_admins (user_id) select id from auth.users where email = 'ops2@ocelot.test'");
     const add = async (link, company) => {
@@ -86,11 +90,11 @@ const server = http.createServer((req, res) => {
     ok(true, "adding a board imports its jobs straight away");
     const org = one("select id from orgs where name = 'Acme Asia'");
     ok(sql(`select string_agg(title || ':' || array_to_string(eligible_countries, ',') || ':' || workplace || ':' || apply_method, '|' order by title) from jobs where org_id = '${org}' and status = 'published'`)
-      === "Account Executive:VN:on_site:external|Senior SEO Specialist:SG:on_site:external", "only our roles in our countries come in, applying on the company site");
+      === "Account Executive:CA:on_site:external|Senior SEO Specialist:US:on_site:external", "only our roles in the US and Canada come in, applying on the company site");
     ok(sql(`select description from jobs where title = 'Senior SEO Specialist'`) === "Join Senior SEO Specialist at Acme Asia.\n\n• Own the plan", "the description is clean text");
     ok(sql(`select role || '|' || seniority from jobs where title = 'Senior SEO Specialist'`) === "seo|senior", "role and level are read from the title");
 
-    await p.goto(`${APP}/jobs?country=VN`);
+    await p.goto(`${APP}/jobs?country=CA`);
     ok(await p.isVisible("text=Account Executive"), "imported jobs show in search");
     const slug = sql("select slug from jobs where title = 'Account Executive'");
     await p.goto(`${APP}/jobs/${slug}`);
@@ -101,7 +105,7 @@ const server = http.createServer((req, res) => {
     ok(true, "a board is added once");
 
     // The board changes: one job leaves, one is renamed.
-    board = { jobs: [{ ...job(2, "Senior Account Executive", "Ho Chi Minh City, Vietnam") }, job(3, "Backend Engineer", "Singapore")] };
+    board = { jobs: [{ ...job(2, "Senior Account Executive", "Toronto, ON") }, job(3, "Backend Engineer", "San Francisco, CA")] };
     await p.goto(`${APP}/admin/sources`);
     await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
     await p.getByRole("menuitem", { name: "Sync now" }).click();
@@ -120,11 +124,12 @@ const server = http.createServer((req, res) => {
 
     // The hourly run picks it up again; a job that comes back reopens.
     status = 200;
-    board = { jobs: [job(1, "Senior SEO Specialist", "Singapore"), job(2, "Senior Account Executive", "Ho Chi Minh City, Vietnam")] };
+    board = { jobs: [job(1, "Senior SEO Specialist", "New York, NY"), job(2, "Senior Account Executive", "Toronto, ON")] };
     sql("update job_sources set last_synced_at = now() - interval '7 hours'");
     const key = crypto.createHmac("sha256", SECRET).update("ocelot-cron-v1").digest("hex");
     const r = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
-    ok(r.sources === 1 && sql("select status from jobs where external_id = '1'") === "published", "the hourly run syncs boards every 6 hours, and returning jobs reopen");
+    ok(r.boards === "started", "the hourly call answers at once and boards run after");
+    ok(await until(() => sql("select status from jobs where external_id = '1'") === "published"), "the hourly run syncs boards every 6 hours, and returning jobs reopen");
 
     // A board deleted and added again takes back its old jobs.
     sql("update jobs set source_id = null, status = 'closed' where source = 'ats' and org_id = (select id from orgs where name = 'Acme Asia')");
@@ -137,10 +142,12 @@ const server = http.createServer((req, res) => {
     // Discovery: a company on the list with a board is found and imported with no clicks.
     sql("update board_candidates set checked_at = now()");
     sql("insert into board_candidates (slug, name) values ('lumenasia', 'Lumen') on conflict (slug) do update set checked_at = null, source_id = null, skip = false, provider = null, board = null");
+    await sleep(2000); // let the last board run finish
     const d = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
-    ok(d.discovery === 1, "the hourly run finds a company's board by itself");
+    ok(d.boards === "started" && await until(() => sql("select count(*) from job_sources where board = 'lumenasia'") === "1"), "the hourly run finds a company's board by itself");
+    await until(() => sql("select count(*) from jobs where source_id = (select id from job_sources where board = 'lumenasia')") !== "0");
     ok(sql("select provider || '/' || board || '|' || (select name from orgs where id = job_sources.org_id) from job_sources where board = 'lumenasia'") === "greenhouse/lumenasia|Lumen Asia", "adds it under the company's name from the board");
-    ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:VN,SG,TH,MY,ID,PH", "and imports its jobs that fit");
+    ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:US,CA", "and imports its jobs that fit");
     ok(sql("select provider || '/' || board from board_candidates where slug = 'lumenasia'") === "greenhouse/lumenasia" && sql("select checked_at is not null from board_candidates where slug = 'lumenasia'") === "t", "the board is remembered for next week's check");
 
     await p.goto(`${APP}/admin/sources`);

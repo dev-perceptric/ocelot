@@ -38,7 +38,14 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
   const provider = src.provider as Provider;
   try {
     const raw = (await loadBoard(provider, src.board, fetchImpl)).jobs;
-    const picked = raw.flatMap((r) => { const t = toJob(r, src); return "job" in t ? [{ raw: r, job: t.job }] : []; });
+    // Some boards list one job once per location under the same id: keep the first.
+    const ids = new Set<string>();
+    const picked = raw.flatMap((r) => {
+      const t = toJob(r, src);
+      if (!("job" in t) || ids.has(t.job.external_id)) return [];
+      ids.add(t.job.external_id);
+      return [{ raw: r, job: t.job }];
+    });
 
     // SmartRecruiters lists jobs without their text: fetch it for the ones that came through.
     for (const p of picked.slice(0, 60)) {
@@ -108,7 +115,7 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
 }
 
 export async function runSources(): Promise<number> {
-  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 5 });
+  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 30 });
   if (error) throw error;
   let ok = 0;
   for (const s of due ?? []) {

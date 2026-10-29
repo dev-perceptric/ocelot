@@ -8,7 +8,7 @@ import { loadBoard, syncSource } from "./sync";
 // Looks for companies' job boards by itself. Each name on the list is tried on every board type (or its known
 // board) once a week; a board with jobs that pass the default filters becomes a source and syncs at once.
 
-const DEFAULT = { countries: ["VN", "SG", "TH", "MY", "ID", "PH"], niche_only: true };
+const DEFAULT = { countries: ["US", "CA"], niche_only: true };
 const ORDER: Provider[] = ["greenhouse", "lever", "ashby", "smartrecruiters", "recruitee", "workable"];
 
 type Candidate = { slug: string; name: string; provider: string | null; board: string | null };
@@ -59,9 +59,9 @@ async function check(c: Candidate, fetchImpl: typeof fetch): Promise<boolean> {
   return true;
 }
 
-// One hourly run: up to 120 names, eight at a time, stopping after 30 seconds so the run stays short.
-export async function runDiscovery(fetchImpl: typeof fetch = fetch, budgetMs = 30_000): Promise<number> {
-  const { data: due, error } = await createAdmin().rpc("due_candidates", { p_limit: 120 });
+// One hourly run: up to 400 names, eight at a time, for at most 3 minutes (it runs after the hourly call answers).
+export async function runDiscovery(fetchImpl: typeof fetch = fetch, budgetMs = 180_000): Promise<number> {
+  const { data: due, error } = await createAdmin().rpc("due_candidates", { p_limit: 400 });
   if (error) throw error;
   const queue = [...(due ?? [])];
   const stopAt = Date.now() + budgetMs;

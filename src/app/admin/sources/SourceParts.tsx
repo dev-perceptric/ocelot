@@ -10,7 +10,7 @@ import { Button, Checkbox, Field, inputClass } from "@/components/ui";
 import { COUNTRIES } from "@/lib/places";
 import * as A from "../actions";
 
-const SEA = ["VN", "SG", "TH", "MY", "ID", "PH"];
+const NORTH_AMERICA = ["US", "CA"];
 
 export function AddSource({ orgs }: { orgs: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
@@ -43,7 +43,7 @@ export function AddSource({ orgs }: { orgs: { id: string; name: string }[] }) {
             </Field>
           ) : null}
           <Field label="Countries" htmlFor="board-countries">
-            <Select id="board-countries" name="countries" multiple defaultValue={SEA} options={COUNTRIES.map((c) => ({ value: c.country_code, label: c.name }))} />
+            <Select id="board-countries" name="countries" multiple defaultValue={NORTH_AMERICA} options={COUNTRIES.map((c) => ({ value: c.country_code, label: c.name }))} />
           </Field>
           <Checkbox id="board-niche" name="niche_only" defaultChecked label="Only marketing, sales and customer success roles" />
           {state.error ? <p className="text-meta text-danger" role="alert">{state.error}</p> : null}

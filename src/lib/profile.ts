@@ -3,6 +3,9 @@
 import { CITIES, COUNTRIES } from "./places.ts";
 import { CURRENCIES, LANGUAGES, PERIODS, WORKPLACES } from "./taxonomy.ts";
 
+// New accounts and anything without a time zone use New York time (Ocelot targets the US and Canada first).
+export const DEFAULT_TZ = "America/New_York";
+
 export type FormLike = { get(name: string): unknown; getAll(name: string): unknown[] };
 
 export type ProfileInput = {
@@ -100,7 +103,7 @@ export function readProfile(f: FormLike): { data?: ProfileInput; errors: Profile
     else links.push({ kind: "website", url: u.toString() });
   }
 
-  const time_zone = text(f, "time_zone") || "Asia/Ho_Chi_Minh";
+  const time_zone = text(f, "time_zone") || DEFAULT_TZ;
   if (!validTimeZone(time_zone)) errors.time_zone = "Choose a time zone from the list.";
 
   if (Object.keys(errors).length) return { errors };

@@ -1,9 +1,11 @@
-// Countries and cities. Mirrors the places table (supabase/migrations/003_lists_and_profiles.sql);
-// tests/lists.test.ts fails if the two drift apart. No imports, so tests can load it directly.
+// Countries and cities, in the order forms show them (United States and Canada first). Mirrors the places table
+// (supabase/migrations/003_lists_and_profiles.sql and 022_us_canada.sql); tests/lists.test.ts fails if the two drift apart. No imports, so tests can load it directly.
 
 export type Place = { slug: string; kind: "country" | "city"; name: string; country_code: string };
 
 export const PLACES: Place[] = [
+  { slug: "united-states", kind: "country", name: "United States", country_code: "US" },
+  { slug: "canada", kind: "country", name: "Canada", country_code: "CA" },
   { slug: "vietnam", kind: "country", name: "Vietnam", country_code: "VN" },
   { slug: "singapore", kind: "country", name: "Singapore", country_code: "SG" },
   { slug: "thailand", kind: "country", name: "Thailand", country_code: "TH" },
@@ -27,8 +29,37 @@ export const PLACES: Place[] = [
   { slug: "germany", kind: "country", name: "Germany", country_code: "DE" },
   { slug: "netherlands", kind: "country", name: "Netherlands", country_code: "NL" },
   { slug: "france", kind: "country", name: "France", country_code: "FR" },
-  { slug: "united-states", kind: "country", name: "United States", country_code: "US" },
-  { slug: "canada", kind: "country", name: "Canada", country_code: "CA" },
+  { slug: "new-york", kind: "city", name: "New York", country_code: "US" },
+  { slug: "san-francisco", kind: "city", name: "San Francisco", country_code: "US" },
+  { slug: "los-angeles", kind: "city", name: "Los Angeles", country_code: "US" },
+  { slug: "seattle", kind: "city", name: "Seattle", country_code: "US" },
+  { slug: "austin", kind: "city", name: "Austin", country_code: "US" },
+  { slug: "boston", kind: "city", name: "Boston", country_code: "US" },
+  { slug: "chicago", kind: "city", name: "Chicago", country_code: "US" },
+  { slug: "denver", kind: "city", name: "Denver", country_code: "US" },
+  { slug: "atlanta", kind: "city", name: "Atlanta", country_code: "US" },
+  { slug: "miami", kind: "city", name: "Miami", country_code: "US" },
+  { slug: "washington-dc", kind: "city", name: "Washington, DC", country_code: "US" },
+  { slug: "dallas", kind: "city", name: "Dallas", country_code: "US" },
+  { slug: "houston", kind: "city", name: "Houston", country_code: "US" },
+  { slug: "san-diego", kind: "city", name: "San Diego", country_code: "US" },
+  { slug: "san-jose", kind: "city", name: "San Jose", country_code: "US" },
+  { slug: "phoenix", kind: "city", name: "Phoenix", country_code: "US" },
+  { slug: "philadelphia", kind: "city", name: "Philadelphia", country_code: "US" },
+  { slug: "portland", kind: "city", name: "Portland", country_code: "US" },
+  { slug: "salt-lake-city", kind: "city", name: "Salt Lake City", country_code: "US" },
+  { slug: "minneapolis", kind: "city", name: "Minneapolis", country_code: "US" },
+  { slug: "nashville", kind: "city", name: "Nashville", country_code: "US" },
+  { slug: "raleigh", kind: "city", name: "Raleigh", country_code: "US" },
+  { slug: "pittsburgh", kind: "city", name: "Pittsburgh", country_code: "US" },
+  { slug: "detroit", kind: "city", name: "Detroit", country_code: "US" },
+  { slug: "toronto", kind: "city", name: "Toronto", country_code: "CA" },
+  { slug: "vancouver", kind: "city", name: "Vancouver", country_code: "CA" },
+  { slug: "montreal", kind: "city", name: "Montreal", country_code: "CA" },
+  { slug: "calgary", kind: "city", name: "Calgary", country_code: "CA" },
+  { slug: "ottawa", kind: "city", name: "Ottawa", country_code: "CA" },
+  { slug: "waterloo", kind: "city", name: "Waterloo", country_code: "CA" },
+  { slug: "edmonton", kind: "city", name: "Edmonton", country_code: "CA" },
   { slug: "ho-chi-minh-city", kind: "city", name: "Ho Chi Minh City", country_code: "VN" },
   { slug: "hanoi", kind: "city", name: "Hanoi", country_code: "VN" },
   { slug: "da-nang", kind: "city", name: "Da Nang", country_code: "VN" },

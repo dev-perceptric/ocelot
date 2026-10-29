@@ -55,8 +55,19 @@ test("places: cities, countries, remote and regions", () => {
   assert.deepEqual(r(["Ho Chi Minh City, Vietnam"]).cities, ["ho-chi-minh-city"]);
   assert.deepEqual(r(["HCMC"]).countries, ["VN"]);
   assert.deepEqual(r(["Singapore"]).countries, ["SG"]);
-  assert.deepEqual(r(["Remote - APAC"]), { countries: [], cities: [], remote: true, hybrid: false, region: true });
-  assert.deepEqual(r(["SF, NYC, CHI, ATL, SEA"]).countries, [], "SEA here is Seattle, not Southeast Asia");
+  const apac = r(["Remote - APAC"]);
+  assert.deepEqual([apac.countries, apac.remote, Array.isArray(apac.region) && apac.region.includes("VN")], [[], true, true]);
+  assert.deepEqual(r(["New York, NY"]).cities, ["new-york"]);
+  assert.deepEqual(r(["SF, NYC, CHI, ATL, SEA"]).cities.sort(), ["new-york", "san-francisco"]);
+  assert.deepEqual(r(["Lehi, UT"]).countries, ["US"], "a state code means the US even for a city we don't list");
+  assert.deepEqual(r(["San Jose, CA"]).countries, ["US"], "CA after a city is California");
+  assert.deepEqual(r(["Toronto, ON"]).countries, ["CA"]);
+  assert.deepEqual(r(["Kitchener, Ontario"]).countries, ["CA"]);
+  assert.deepEqual(r(["Remote - US"]).countries, ["US"]);
+  assert.deepEqual(r(["Washington, DC"]).cities, ["washington-dc"]);
+  assert.deepEqual(r(["Remote - North America"]).region, ["US", "CA"]);
+  assert.equal(r(["Remote - Worldwide"]).region, "*");
+  assert.deepEqual(r(["SF, NYC, CHI, ATL, SEA"]).countries, ["US"], "SEA here is Seattle, not Southeast Asia");
   assert.deepEqual(r([], ["sg"]).countries, ["SG"]);
 });
 
@@ -75,6 +86,8 @@ test("roles and levels from titles", () => {
     assert.deepEqual(guessRole(t), { role: null, category: null }, t);
   }
   assert.deepEqual(guessRole("Sales Development (Lead Generation) - SME & Growth, KL"), { role: "sdr", category: "sales" });
+  assert.deepEqual(guessRole("Seasonal Retail Sales Associate, Ladera Ranch, #489"), { role: null, category: null });
+  assert.deepEqual(guessRole("Store Manager, SoHo"), { role: null, category: null });
   assert.deepEqual(guessRole("Go-To-Market Partnerships Manager, SME & Growth"), { role: "partnerships", category: "sales" });
   assert.equal(guessSeniority("Sales Development (Lead Generation)", null), "mid");
   assert.deepEqual(guessRole("Product Marketing Manager"), { role: "product_marketing", category: "marketing" });
@@ -104,6 +117,23 @@ test("only our roles in our countries come in", () => {
   assert.ok("job" in paid && paid.job.salary_currency === "MYR" && paid.job.salary_period === "month");
   const real = parseFeed("lever", fixture("lever")).map((j) => toJob(j, { ...SEA, niche_only: false }));
   assert.ok(real.some((r) => "job" in r && r.job.workplace === "hybrid" && r.job.eligible_countries.includes("SG")));
+});
+
+test("US and Canada: cities, states, remote and regions", () => {
+  const NA = { countries: ["US", "CA"], niche_only: true };
+  const base = { externalId: "1", applyUrl: "https://x.test/apply", postingUrl: "https://x.test", countries: [], remote: null, hybrid: null, employment: "Full-time", experience: null, html: "<p>Hi</p>", text: null, salary: null };
+  const ny = toJob({ ...base, title: "Account Executive", places: ["New York, NY"] }, NA);
+  assert.ok("job" in ny && ny.job.office_places.join() === "new-york" && ny.job.eligible_countries.join() === "US");
+  const remoteUs = toJob({ ...base, title: "Content Marketing Manager", places: ["Remote - US"] }, NA);
+  assert.ok("job" in remoteUs && remoteUs.job.workplace === "remote" && remoteUs.job.eligible_countries.join() === "US");
+  const na = toJob({ ...base, title: "Customer Success Manager", places: ["Remote, North America"] }, NA);
+  assert.ok("job" in na && na.job.eligible_countries.join() === "US,CA");
+  assert.deepEqual(toJob({ ...base, title: "Customer Success Manager", places: ["Remote - APAC"] }, NA), { skip: "place" }, "APAC isn't the US or Canada");
+  assert.deepEqual(toJob({ ...base, title: "SDR", places: ["Singapore"] }, NA), { skip: "place" });
+  const toronto = toJob({ ...base, title: "SDR", places: ["Toronto, ON"] }, NA);
+  assert.ok("job" in toronto && toronto.job.eligible_countries.join() === "CA" && toronto.job.office_places.join() === "toronto");
+  const lehi = toJob({ ...base, title: "SDR", places: ["Lehi, UT"] }, NA);
+  assert.ok("job" in lehi && lehi.job.eligible_countries.join() === "US" && lehi.job.office_places.length === 0);
 });
 
 test("imported job addresses are stable and valid", () => {

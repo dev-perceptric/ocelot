@@ -25,7 +25,7 @@ test("a full profile reads cleanly", () => {
 test("only a name is needed", () => {
   const { data, errors } = readProfile(form([["full_name", "Linh"]]));
   assert.deepEqual(errors, {});
-  assert.equal(data?.time_zone, "Asia/Ho_Chi_Minh");
+  assert.equal(data?.time_zone, "America/New_York");
   assert.equal(data?.salary_hope_currency, null);
 });
 

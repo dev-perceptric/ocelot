@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { currentUser } from "@/lib/supabase/server";
 import { ProfileForm } from "./ProfileForm";
+import { DEFAULT_TZ } from "@/lib/profile";
 
 export const metadata: Metadata = { title: "Profile" };
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function ProfilePage() {
             salary_hope_period: p?.salary_hope_period ?? null,
             linkedin: link("linkedin"),
             website: link("website"),
-            time_zone: p?.time_zone ?? "Asia/Ho_Chi_Minh",
+            time_zone: p?.time_zone ?? DEFAULT_TZ,
           }}
         />
       </div>
