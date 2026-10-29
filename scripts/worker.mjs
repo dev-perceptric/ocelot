@@ -29,6 +29,17 @@ export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocel
   // One handler per task kind. Throw to retry later (backs off, stops after 5 tries); throw FinalError to stop now.
   const handlers = {
     async email(p) {
+      // Stage emails wait a few minutes. If the company moved the applicant again meanwhile, this one is out of date.
+      if (p.only_if_stage) {
+        const { application_id, stage } = p.only_if_stage;
+        const res = await rest(`applications?id=eq.${encodeURIComponent(application_id)}&select=hiring_stage`);
+        if (!res.ok) throw new Error(`stage check ${res.status}`);
+        const [row] = await res.json();
+        if (row?.hiring_stage !== stage) {
+          await logEmail({ user_id: p.user_id ?? null, to_email: p.to, kind: p.kind ?? "email", status: "skipped", error: "stage changed before sending" });
+          return;
+        }
+      }
       if (!resendKey) throw new Error("RESEND_API_KEY is not set");
       const res = await fetchImpl("https://api.resend.com/emails", {
         method: "POST",

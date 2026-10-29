@@ -95,7 +95,7 @@ Each milestone ends with tests on its access rules.
 | 1 | Foundation (`docs/m1-foundation.md`) | Shared parts, email code and Google sign-in, profile, company settings and invites, email pipeline, admin, delete and export, backups, monitoring, places and categories | A user can sign up, make a company and invite a teammate. Tests prove one org can't read another |
 | 2 | Marketplace (`docs/m2-marketplace.md`, done) | Job form, preview, review queue, job and company pages, search and filters, report button | An employer publishes a reviewed job and it shows in search |
 | 3 | My search (`docs/m3-my-search.md`, done) | Tracker board and list, add external job by URL, notes, tasks, interviews, résumé upload | A candidate tracks Ocelot jobs and outside jobs together |
-| 4 | Applications (`docs/m4-applications.md`) | Apply on Ocelot, screening answers, snapshot, applicant pipeline, emails | The full loop works end to end |
+| 4 | Applications (`docs/m4-applications.md`, done) | Apply on Ocelot, screening answers, snapshot, applicant pipeline, emails | The full loop works end to end |
 | 5 | Billing and alerts | Stripe Checkout, webhook, credits, saved-search alerts, weekly digest | A paid job goes live only after payment and review |
 | 6 | Private beta | Founding employers, 50–100 live jobs, fixes | The loop runs with real people |
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { emailStageChange } from "@/lib/email/applications";
 import { isSettable } from "@/lib/hiring";
 import { myOrgs } from "@/lib/org";
 
@@ -23,6 +24,11 @@ export async function moveApplicants(ids: string[], stage: string): Promise<Resu
     .in("id", clean).eq("org_id", current.id).neq("hiring_stage", "withdrawn").neq("hiring_stage", stage).select("id");
   refresh(clean.length === 1 ? clean[0] : undefined);
   if (error) return { ok: false, message: "That didn't move. Try again." };
+  try {
+    await emailStageChange((data ?? []).map((a) => a.id), stage);
+  } catch (e) {
+    console.error("stage emails not queued", e);
+  }
   return { ok: true, moved: data?.length ?? 0 };
 }
 

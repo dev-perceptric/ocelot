@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EMAIL_COLORS } from "../src/lib/email/colors.ts";
 import { esc, layout, optionalFooter } from "../src/lib/email/layout.ts";
-import { applicationSent, inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
+import { applicationSent, newApplicant, stageUpdate, STAGE_EMAIL, inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
 import { oneClickUrl, sign, signingKey, unsubscribeUrl, verify } from "../src/lib/email/unsubscribe.ts";
 
 test("email colors match the brand tokens", () => {
@@ -25,8 +25,11 @@ test("templates fill every value and escape what people typed", () => {
     jobPublished({ company: "Acme", title: "SDR", jobUrl: "https://joinocelot.com/jobs/sdr", manageUrl: "https://joinocelot.com/employer/jobs", until: "28 November" }),
     jobSentBack({ title: "SDR", note: "Add pay <please>", editUrl: "https://joinocelot.com/employer/jobs/1" }),
     applicationSent({ job: "SDR", company: "Acme", cardUrl: "https://joinocelot.com/app/tracker/1" }),
+    newApplicant({ company: "Acme", job: "SDR", name: "Mai", url: "https://joinocelot.com/employer/applicants/1", siteUrl: "https://joinocelot.com" }),
+    ...STAGE_EMAIL.map((stage) => stageUpdate({ company: "Acme", job: "SDR", stage, cardUrl: "https://joinocelot.com/app/tracker/1", siteUrl: "https://joinocelot.com" })),
   ]) {
-    assert.ok(!/undefined|null|\{\{|\$\{/.test(m.html + m.text), "no empty or unfilled values");
+    // {{unsubscribe}} is filled in when the email is queued (src/lib/email/send.ts).
+    assert.ok(!/undefined|null|\{\{|\$\{/.test((m.html + m.text).replaceAll("{{unsubscribe}}", "")), "no empty or unfilled values");
   }
 });
 
@@ -52,4 +55,15 @@ test("unsubscribe links only work for the person and email kind they were made f
   assert.ok(!verify(key, u, "everything", t), "unknown kind");
   assert.match(unsubscribeUrl("https://joinocelot.com", key, u, "weekly_digest"), /^https:\/\/joinocelot.com\/unsubscribe\?u=.+&p=weekly_digest&t=/);
   assert.match(oneClickUrl("https://joinocelot.com", key, u, "weekly_digest"), /^https:\/\/joinocelot.com\/api\/unsubscribe\?/);
+});
+
+test("applicant and stage emails can be turned off and carry the unsubscribe link", () => {
+  const a = newApplicant({ company: "Acme", job: "SDR", name: "Mai <b>", url: "https://joinocelot.com/employer/applicants/1", siteUrl: "https://joinocelot.com" });
+  assert.equal(a.pref, "new_applicants");
+  assert.ok(a.html.includes("{{unsubscribe}}") && a.html.includes("Mai &lt;b&gt;"));
+  for (const stage of STAGE_EMAIL) {
+    const e = stageUpdate({ company: "Acme", job: "SDR", stage, cardUrl: "https://joinocelot.com/app/tracker/1", siteUrl: "https://joinocelot.com" });
+    assert.equal(e.pref, "application_updates");
+    assert.ok(e.html.includes("{{unsubscribe}}"));
+  }
 });

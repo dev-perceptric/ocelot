@@ -20,7 +20,7 @@ export async function changeEmail(_: EmailState, form: FormData): Promise<EmailS
   return { sentTo: email };
 }
 
-const PREFS = ["application_updates", "job_alerts", "weekly_digest", "product_news"] as const;
+const PREFS = ["application_updates", "new_applicants", "job_alerts", "weekly_digest", "product_news"] as const;
 export type Pref = (typeof PREFS)[number];
 
 export async function setPref(key: Pref, on: boolean): Promise<{ ok: boolean }> {

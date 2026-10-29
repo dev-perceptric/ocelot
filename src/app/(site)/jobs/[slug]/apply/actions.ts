@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { SITE_URL } from "@/lib/env";
+import { emailNewApplicant } from "@/lib/email/applications";
 import { queueEmail } from "@/lib/email/send";
 import { applicationSent } from "@/lib/email/templates";
 import { currentUser } from "@/lib/supabase/server";
@@ -51,8 +52,10 @@ export async function applyToJob(_: ApplyState, form: FormData): Promise<ApplySt
   const company = (job.org as unknown as { name: string } | null)?.name ?? "the company";
   try {
     if (user.email) await queueEmail({ to: user.email, userId: user.id, kind: "application_sent", email: applicationSent({ job: job.title, company, cardUrl }) });
+    await emailNewApplicant(appId);
   } catch (e) {
-    console.error("receipt email not queued", e);
+    // The application is saved either way; a missed email shows in the email log.
+    console.error("application emails not queued", e);
   }
   redirect(card ? `/app/tracker/${card.id}` : "/app/tracker");
 }

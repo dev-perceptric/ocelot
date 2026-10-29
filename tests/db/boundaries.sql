@@ -617,5 +617,12 @@ select pg_temp.fails(format($$insert into application_notes (application_id, aut
 select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
 delete from application_notes where id = :'hanh_note';
 select pg_temp.expect((select count(*) from application_notes where id = :'hanh_note') = 0, 'the author can delete their note');
+-- Part 3: each person turns new applicant emails on or off for themselves only.
+insert into notification_prefs (user_id, new_applicants) values (auth.uid(), false)
+  on conflict (user_id) do update set new_applicants = false;
+select pg_temp.expect((select new_applicants from notification_prefs where user_id = auth.uid()) = false, 'a member can turn off new applicant emails');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a4');
+update notification_prefs set new_applicants = true;
 reset role;
+select pg_temp.expect((select new_applicants from notification_prefs where user_id = '00000000-0000-0000-0000-0000000000a2') = false, 'nobody changes a teammate''s email choices');
 \echo 'All boundary tests passed.'

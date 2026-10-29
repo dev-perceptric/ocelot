@@ -8,7 +8,7 @@ export type Email = {
   html: string;
   text: string;
   // Essential emails (invites, application updates) always send. Others need the person's choice to be on.
-  pref: null | "application_updates" | "job_alerts" | "weekly_digest" | "product_news";
+  pref: null | "application_updates" | "new_applicants" | "job_alerts" | "weekly_digest" | "product_news";
 };
 
 export const esc = (s: string) =>

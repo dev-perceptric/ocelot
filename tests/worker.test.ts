@@ -6,13 +6,14 @@ import { makeWorker } from "../scripts/worker.mjs";
 type Call = { url: string; body: unknown };
 
 // A fake Supabase and Resend: records every call and answers Resend with the given status.
-function fake(resendStatus: number, tasks: unknown[]) {
+function fake(resendStatus: number, tasks: unknown[], stage = "interviewing") {
   const calls: Call[] = [];
   const fetchImpl = async (url: string, init: { body?: string }) => {
     const body = init.body ? JSON.parse(init.body) : null;
     calls.push({ url, body });
     if (url.endsWith("/rpc/claim_queue")) return new Response(JSON.stringify(tasks));
     if (url.endsWith("/rpc/expire_jobs")) return new Response("0");
+    if (url.includes("/applications?")) return new Response(JSON.stringify([{ hiring_stage: stage }]));
     if (url.includes("api.resend.com")) return new Response(JSON.stringify(resendStatus === 200 ? { id: "re_1" } : { message: "nope" }), { status: resendStatus });
     return new Response("", { status: 201 });
   };
@@ -64,4 +65,21 @@ test("an unknown task kind stops right away", async () => {
   const f = fake(200, [{ ...task, kind: "mystery" }]);
   await f.worker.tick();
   assert.equal((f.finish()[0] as { p_final: boolean }).p_final, true);
+});
+
+const stageTask = { ...task, payload: { ...task.payload, kind: "stage_interviewing", only_if_stage: { application_id: "app-1", stage: "interviewing" } } };
+
+test("a stage email sends when the stage is still the same", async () => {
+  const f = fake(200, [stageTask], "interviewing");
+  await f.worker.tick();
+  assert.ok(f.calls.some((c) => c.url.includes("api.resend.com")));
+  assert.equal((f.logs()[0] as { status: string }).status, "sent");
+});
+
+test("a stage email is dropped when the company moved the applicant again", async () => {
+  const f = fake(200, [stageTask], "rejected");
+  await f.worker.tick();
+  assert.ok(!f.calls.some((c) => c.url.includes("api.resend.com")));
+  assert.equal((f.logs()[0] as { status: string }).status, "skipped");
+  assert.deepEqual(f.finish(), [{ p_id: 7 }]);
 });

@@ -85,6 +85,7 @@ const one = (q) => sql(q).split("\n")[0];
   await boss.getByRole("menuitem", { name: "Move to Reviewing" }).click();
   await boss.waitForSelector("text=Moved 2 applicants to Reviewing");
   ok(sql(`select count(*) from applications where job_id = '${seo}' and hiring_stage = 'reviewing'`) === "2", "several applicants move at once");
+  ok(sql("select count(*) from jobs_queue where payload->>'kind' like 'stage_%'") === "0", "Reviewing sends the candidate nothing");
   await boss.getByRole("link", { name: "Reviewing 2" }).click();
   await boss.waitForURL(/tab=reviewing/);
   ok(await boss.isVisible("text=Kim Ho") && await boss.isVisible("text=Long Vu"), "the Reviewing tab lists them");
@@ -113,6 +114,8 @@ const one = (q) => sql(q).split("\n")[0];
   await boss.getByRole("option", { name: "Interviewing" }).click();
   await boss.waitForSelector("text=Moved to Interviewing");
   ok(sql(`select hiring_stage from applications where id = '${kimApp}'`) === "interviewing", "the stage picker moves them");
+  ok(sql(`select count(*) from jobs_queue where payload->>'kind' = 'stage_interviewing' and payload->>'to' = 'kim@mail.test'
+    and run_at > now() + interval '9 minutes' and payload->'only_if_stage'->>'application_id' = '${kimApp}'`) === "1", "an interview email waits 10 minutes, then sends only if the stage still holds");
 
   await boss.getByLabel("New note").fill("Great portfolio. Ask about link building.");
   await boss.getByRole("button", { name: "Add note" }).click();
@@ -145,6 +148,15 @@ const one = (q) => sql(q).split("\n")[0];
   await boss.getByRole("menuitem", { name: "Move to Offer" }).click();
   await boss.waitForSelector("text=Moved 1 applicant to Offer");
   ok(sql(`select hiring_stage from applications where id = '${kimApp}'`) === "withdrawn", "moving several skips withdrawn ones");
+  ok(sql("select count(*) from jobs_queue where payload->>'kind' = 'stage_offer' and payload->>'to' = 'long@mail.test'") === "1", "moving several emails each one moved");
+
+  // New applicant emails can be turned off by company members; candidates don't see that switch.
+  await boss.goto(`${APP}/app/settings`);
+  await boss.getByLabel("New applicants to my company's jobs").click();
+  await boss.waitForSelector("text=Saved");
+  ok(sql(`select new_applicants from notification_prefs where user_id = '${bossId}'`) === "f", "a company member can turn off new applicant emails");
+  await kim.goto(`${APP}/app/settings`);
+  ok(!(await kim.getByLabel("New applicants to my company's jobs").count()), "candidates don't see that switch");
 
   await boss.goto(`${APP}/employer/jobs/${seo}`);
   ok(await boss.getByRole("link", { name: "2 applicants" }).isVisible(), "the job page links to its applicants");
