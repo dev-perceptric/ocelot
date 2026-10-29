@@ -35,6 +35,7 @@ const LABELS: Record<Pref, string> = {
   application_updates: "Updates on applications I send",
   new_applicants: "New applicants to my company's jobs",
   job_alerts: "Alerts for searches I save",
+  task_reminders: "Reminders the morning a task is due",
   weekly_digest: "Weekly jobs digest",
   product_news: "News about Ocelot",
 };

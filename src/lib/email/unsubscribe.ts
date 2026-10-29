@@ -3,7 +3,7 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-export const PREFS = ["application_updates", "new_applicants", "job_alerts", "weekly_digest", "product_news"] as const;
+export const PREFS = ["application_updates", "new_applicants", "job_alerts", "task_reminders", "weekly_digest", "product_news"] as const;
 export type Pref = (typeof PREFS)[number];
 
 // The signing key comes from a server secret, so nothing new has to be set up.

@@ -8,13 +8,13 @@ export type Email = {
   html: string;
   text: string;
   // Essential emails (invites, application updates) always send. Others need the person's choice to be on.
-  pref: null | "application_updates" | "new_applicants" | "job_alerts" | "weekly_digest" | "product_news";
+  pref: null | "application_updates" | "new_applicants" | "job_alerts" | "task_reminders" | "weekly_digest" | "product_news";
 };
 
 export const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
-type Block = { p: string } | { button: { label: string; url: string } } | { small: string };
+type Block = { p: string } | { button: { label: string; url: string } } | { small: string } | { list: { title: string; line?: string; url: string }[] };
 
 // For emails people can turn off: the footer links to settings and to a signed unsubscribe link,
 // whose address is filled in when the email is queued (src/lib/email/send.ts).
@@ -25,6 +25,7 @@ export function layout(o: { title: string; preview: string; blocks: Block[]; foo
     .map((b) => {
       if ("p" in b) return `<p style="margin:0 0 16px;font-size:16px;line-height:24px;">${esc(b.p)}</p>`;
       if ("small" in b) return `<p style="margin:0 0 16px;font-size:14px;line-height:20px;color:${C.muted};">${esc(b.small)}</p>`;
+      if ("list" in b) return b.list.map((i) => `<p style="margin:0 0 16px;font-size:16px;line-height:24px;"><a href="${esc(i.url)}" style="color:${C.ink};font-weight:700;">${esc(i.title)}</a>${i.line ? `<br><span style="font-size:14px;color:${C.muted};">${esc(i.line)}</span>` : ""}</p>`).join("\n");
       return `<p style="margin:8px 0 24px;"><a href="${esc(b.button.url)}" style="display:inline-block;background:${C.brand};color:${C.ink};font-weight:700;font-size:16px;text-decoration:none;padding:14px 24px;border-radius:4px;">${esc(b.button.label)}</a></p>`;
     })
     .join("\n");
@@ -55,7 +56,7 @@ ${body}
   const text = [
     o.title,
     "",
-    ...o.blocks.map((b) => ("p" in b ? b.p : "small" in b ? b.small : `${b.button.label}: ${b.button.url}`)),
+    ...o.blocks.map((b) => ("p" in b ? b.p : "small" in b ? b.small : "list" in b ? b.list.map((i) => `${i.title}${i.line ? `, ${i.line}` : ""}: ${i.url}`).join("\n") : `${b.button.label}: ${b.button.url}`)),
     "",
     "Ocelot, joinocelot.com",
     o.footer?.settingsUrl ? `Choose which emails you get: ${o.footer.settingsUrl}` : "",

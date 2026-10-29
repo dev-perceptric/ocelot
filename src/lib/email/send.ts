@@ -19,7 +19,7 @@ export async function queueEmail(o: {
   if (email.pref) {
     if (!o.userId) throw new Error(`${o.kind} needs a userId: it can be turned off`);
     const { data: prefs } = await db.from("notification_prefs").select("*").eq("user_id", o.userId).maybeSingle();
-    const defaults = { application_updates: true, new_applicants: true, job_alerts: true, weekly_digest: false, product_news: false };
+    const defaults = { application_updates: true, new_applicants: true, job_alerts: true, task_reminders: true, weekly_digest: false, product_news: false };
     if (!(prefs?.[email.pref] ?? defaults[email.pref])) {
       await db.from("email_log").insert({ user_id: o.userId, to_email: o.to, kind: o.kind, status: "skipped" });
       return "skipped";

@@ -26,3 +26,13 @@ test("filters write back to a short address", () => {
   assert.equal(filtersQuery(f, 3), "?where=remote%2Chybrid&country=SG&category=sales&page=3");
   assert.equal(filtersQuery(readFilters({})), "");
 });
+
+test("saved filters go in and come back the same, and stale values drop out", async () => {
+  const { fromSaved, toSaved, readFilters } = await import("../src/lib/search.ts");
+  const f = readFilters({ q: "seo, content", where: "remote,hybrid", country: "VN", level: "mid", pay: "1" });
+  const saved = JSON.parse(JSON.stringify(toSaved(f)));
+  assert.equal("q" in saved, false);
+  assert.deepEqual(fromSaved("seo, content", saved), f);
+  assert.deepEqual(fromSaved("", { where: ["moon"], country: "XX", level: "mid" }).where, []);
+  assert.equal(fromSaved("", "nonsense").country, null);
+});

@@ -733,4 +733,53 @@ update jobs set title = 'Growth Lead' where id = :'z6';
 select pg_temp.expect((select status from jobs where id = :'z6') = 'pending_review', 'a job that went live before payments were on is never charged for edits');
 reset role;
 select set_payments(false);
+-- ---------- Milestone 5, part 3: alerts, digest and reminders ----------
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+insert into saved_searches (user_id, name, filters, frequency) values (auth.uid(), 'Jobs in Vietnam', '{"country":"VN"}', 'weekly') returning id as dee_search \gset
+select pg_temp.fails($$insert into saved_searches (user_id, name, filters) values (auth.uid(), '  ', '{}')$$, 'a saved search needs a name');
+select pg_temp.fails($$insert into saved_searches (user_id, name, filters) values (auth.uid(), 'Bad', '[1]')$$, 'filters are an object');
+select pg_temp.fails($$insert into saved_searches (user_id, name, filters) values ('00000000-0000-0000-0000-0000000000a2', 'Planted', '{}')$$, 'nobody saves searches for someone else');
+select pg_temp.fails(format($$select * from alert_jobs(%L)$$, :'dee_search'), 'people cannot run alert queries');
+select pg_temp.fails($$select * from due_alerts()$$, 'or list who gets alerts');
+select pg_temp.fails($$select * from due_reminders()$$, 'or list task reminders');
+select pg_temp.fails($$select * from due_digests()$$, 'or list digest readers');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+select pg_temp.expect((select count(*) from saved_searches) = 0, 'saved searches are private');
+
+reset role;
+update saved_searches set checked_at = now() - interval '8 days' where id = :'dee_search';
+select pg_temp.expect(exists (select 1 from due_alerts() where id = :'dee_search'), 'a weekly search checked 8 days ago is due');
+update saved_searches set checked_at = now() - interval '2 days' where id = :'dee_search';
+select pg_temp.expect(not exists (select 1 from due_alerts() where id = :'dee_search'), 'a weekly search checked 2 days ago waits');
+update saved_searches set checked_at = now() - interval '8 days' where id = :'dee_search';
+select pg_temp.expect((select count(*) from alert_jobs(:'dee_search')) >= 1, 'it finds jobs published since it was checked');
+select pg_temp.expect(not exists (select 1 from alert_jobs(:'dee_search') j where not ('VN' = any(j.eligible_countries)) or j.status <> 'published'),
+  'only live jobs that match its filters');
+update orgs set suspended_at = now() where id = :'zeta';
+select pg_temp.expect(not exists (select 1 from alert_jobs(:'dee_search') j where j.org_id = :'zeta'), 'alerts leave out suspended companies');
+update orgs set suspended_at = null where id = :'zeta';
+update saved_searches set checked_at = now() + interval '1 minute' where id = :'dee_search';
+select pg_temp.expect((select count(*) from alert_jobs(:'dee_search')) = 0, 'nothing new since the last check, nothing to send');
+update saved_searches set frequency = 'daily', checked_at = now() - interval '1 hour' where id = :'dee_search';
+select pg_temp.expect(not exists (select 1 from due_alerts() where id = :'dee_search'), 'a daily search checked an hour ago waits');
+update saved_searches set frequency = 'off', checked_at = now() - interval '30 days' where id = :'dee_search';
+select pg_temp.expect(not exists (select 1 from due_alerts() where id = :'dee_search'), 'a search set to off never sends');
+
+-- Reminders: the morning a task is due, in the person's own time zone. 7 January 2030 is a Monday.
+insert into tasks (user_id, title, due_at) values ('00000000-0000-0000-0000-00000000000d', 'Call Minh', '2030-01-07 10:00+07') returning id as call_task \gset
+select pg_temp.expect(not exists (select 1 from due_reminders(500, '2030-01-07 07:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'no reminder before 8:00');
+select pg_temp.expect((select tasks->0->>'title' from due_reminders(500, '2030-01-07 08:05+07') where user_id = '00000000-0000-0000-0000-00000000000d') = 'Call Minh', 'a reminder from 8:00 on the day');
+select pg_temp.expect(not exists (select 1 from due_reminders(500, '2030-01-06 09:00+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'not the day before');
+update tasks set reminded_at = now() where id = :'call_task';
+select pg_temp.expect(not exists (select 1 from due_reminders(500, '2030-01-07 09:00+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'each task is reminded once');
+
+-- The digest: Mondays from 8:00 in the person's time zone, once a week, only for people who turned it on.
+insert into notification_prefs (user_id, weekly_digest) values ('00000000-0000-0000-0000-00000000000d', true)
+  on conflict (user_id) do update set weekly_digest = true, digest_sent_at = null;
+select pg_temp.expect(exists (select 1 from due_digests(1000, '2030-01-07 08:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'the digest goes Monday morning');
+select pg_temp.expect(not exists (select 1 from due_digests(1000, '2030-01-08 09:00+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'not on Tuesday');
+update notification_prefs set digest_sent_at = '2030-01-07 08:31+07' where user_id = '00000000-0000-0000-0000-00000000000d';
+select pg_temp.expect(not exists (select 1 from due_digests(1000, '2030-01-07 09:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'once a week');
+update notification_prefs set weekly_digest = false, digest_sent_at = null where user_id = '00000000-0000-0000-0000-00000000000d';
+select pg_temp.expect(not exists (select 1 from due_digests(1000, '2030-01-07 08:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'never when turned off');
 \echo 'All boundary tests passed.'

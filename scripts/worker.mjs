@@ -1,13 +1,17 @@
 // The Ocelot worker. Every minute: close jobs past their end date, then run due tasks from jobs_queue.
+// Every hour: ask the app to queue alerts, reminders and digests (POST /api/cron with a key made from the service role secret).
 // Talks to Supabase over its REST API with the service role key, so it needs no packages.
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY (for email), EMAIL_FROM.
 
+import { createHmac } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
 // A task fails for good (no more retries) when trying again can't help.
 export class FinalError extends Error {}
 
-export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocelot.com>", fetchImpl = fetch, log = console }) {
+export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocelot.com>", siteUrl = "https://joinocelot.com", cronEveryMs = 3_600_000, fetchImpl = fetch, log = console, now = () => Date.now() }) {
+  let lastCron = 0;
+  const cronKey = createHmac("sha256", key).update("ocelot-cron-v1").digest("hex");
   const rest = (path, init = {}) =>
     fetchImpl(`${url}/rest/v1/${path}`, {
       ...init,
@@ -60,9 +64,23 @@ export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocel
     },
   };
 
+  async function cron() {
+    if (now() - lastCron < cronEveryMs) return;
+    lastCron = now();
+    try {
+      const res = await fetchImpl(`${siteUrl.replace(/\/$/, "")}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${cronKey}` } });
+      const body = await res.text();
+      if (res.ok) log.log(`hourly: ${body}`);
+      else log.error(`hourly run failed: ${res.status} ${body.slice(0, 200)}`);
+    } catch (err) {
+      log.error("hourly run failed:", err.message);
+    }
+  }
+
   async function tick() {
     const expired = await rpc("expire_jobs");
     if (expired) log.log(`expired ${expired} job(s)`);
+    await cron();
 
     const tasks = (await rpc("claim_queue", { p_limit: 10 })) ?? [];
     for (const t of tasks) {
@@ -90,7 +108,7 @@ async function main() {
     console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     process.exit(1);
   }
-  const worker = makeWorker({ url, key, resendKey: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM });
+  const worker = makeWorker({ url, key, resendKey: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM, siteUrl: process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL });
   const tickMs = Number(process.env.TICK_MS ?? 60_000);
 
   let stopping = false;
