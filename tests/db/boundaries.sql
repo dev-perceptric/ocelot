@@ -873,7 +873,7 @@ reset role;
 reset role;
 insert into orgs (name, slug) values ('Mix One', 'mix-one'), ('Mix Two', 'mix-two'), ('Mix Three', 'mix-three');
 insert into jobs (org_id, slug, title, description, status, published_at, expires_at, apply_method, apply_url, eligible_countries, workplace, salary_min, salary_max, salary_currency, salary_period)
-select o.id, v.slug, 'Mixword Seller', 'Sell things.', 'published', now() - v.age, now() + interval '30 days', 'external', 'https://example.com/apply', '{US}', 'remote', v.lo, v.hi, v.cur, v.per
+select o.id, v.slug, 'Mixword Seller ' || v.slug, 'Sell things.', 'published', now() - v.age, now() + interval '30 days', 'external', 'https://example.com/apply', '{US}', 'remote', v.lo, v.hi, v.cur, v.per
 from (values ('mix-one', 'm1a', interval '1 hour', null::int, null::int, null, null), ('mix-one', 'm1b', interval '2 hours', null, null, null, null),
              ('mix-one', 'm1c', interval '3 hours', null, null, null, null), ('mix-two', 'm2a', interval '10 days', 100000, 120000, 'USD', 'year'),
              ('mix-two', 'm2b', interval '12 days', null, null, null, null)) v(org, slug, age, lo, hi, cur, per)
@@ -929,5 +929,31 @@ select pg_temp.expect(exists (select 1 from due_sources() where provider = 'work
 select pg_temp.expect((select max_imported_jobs from app_settings) = 15000, 'imported jobs are capped');
 select pg_temp.fails($$insert into job_sources (org_id, provider, board) select id, 'myspace', 'acme' from orgs where slug = 'region-co'$$, 'unknown board kinds are refused');
 select pg_temp.fails($$insert into board_candidates (slug, name, found_by) values ('odd', 'Odd', 'rumor')$$, 'a list entry says where it came from');
+reset role;
+-- ---------- Duplicate jobs ----------
+reset role;
+insert into orgs (name, slug) values ('Dupe Co', 'dupe-co'), ('Dupe Co, Inc.', 'dupe-co-inc'), ('Other Dupe', 'other-dupe');
+insert into job_sources (org_id, provider, board) select id, 'lever', 'dupeco' from orgs where slug = 'dupe-co-inc';
+insert into jobs (org_id, slug, title, description, status, published_at, expires_at, apply_method, apply_url, eligible_countries, workplace, office_places, source, source_id, external_id)
+select o.id, v.slug, v.title, v.descr, 'published', now() - v.age, now() + interval '30 days', 'external', 'https://example.com', '{US}', v.w, v.p::text[], v.src,
+  case when v.src = 'ats' then (select id from job_sources where board = 'dupeco') end, case when v.src = 'ats' then v.slug end
+from (values
+  ('dupe-co', 'dp-a', 'Dupeword Account Executive - Remote, US', 'Short.', interval '3 hours', 'remote', '{}', 'employer'),
+  ('dupe-co-inc', 'dp-b', 'Dupeword Account Executive', 'A much longer description of the same job.', interval '1 hour', 'remote', '{}', 'ats'),
+  ('dupe-co', 'dp-c', 'Dupeword Account Executive - Enterprise', 'Other job.', interval '2 hours', 'remote', '{}', 'employer'),
+  ('dupe-co', 'dp-d', 'Dupeword Account Executive', 'Office job.', interval '2 hours', 'on_site', '{austin}', 'employer'),
+  ('other-dupe', 'dp-e', 'Dupeword Account Executive - Remote, US', 'Another company.', interval '2 hours', 'remote', '{}', 'employer')) v(org, slug, title, descr, age, w, p, src)
+join orgs o on o.slug = v.org;
+select pg_temp.expect((select dupe_key from jobs where slug = 'dp-a') = (select dupe_key from jobs where slug = 'dp-b'), 'the same job at the same company is one job, whatever the place words in its title');
+select pg_temp.expect((select count(distinct dupe_key) from jobs where slug in ('dp-a', 'dp-c', 'dp-d', 'dp-e')) = 4, 'other titles, places and companies stay apart');
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'dupeword')) = '{dp-a,dp-c,dp-d,dp-e}', 'search shows one copy: the one posted on Ocelot');
+select pg_temp.expect((select count(*) from search_jobs(q => 'dupeword')) = 4, 'and counts it once');
+select pg_temp.expect(shown_copy((select dupe_key from jobs where slug = 'dp-b')) = 'dp-a', 'the other copy knows which one is shown');
+update jobs set featured_until = now() + interval '1 day' where slug = 'dp-b';
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'dupeword')) = '{dp-b,dp-c,dp-d,dp-e}', 'a promoted copy is shown first');
+update orgs set name = 'Renamed Dupe' where slug = 'dupe-co-inc';
+select pg_temp.expect((select dupe_key from jobs where slug = 'dp-a') <> (select dupe_key from jobs where slug = 'dp-b'), 'a new company name changes the match');
+select pg_temp.act(null);
+select pg_temp.expect(shown_copy((select dupe_key from jobs where slug = 'dp-a')) = 'dp-a', 'visitors can ask which copy is shown');
 reset role;
 \echo 'All boundary tests passed.'

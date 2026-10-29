@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { JobView } from "@/components/JobView";
 import { SITE_URL } from "@/lib/env";
 import { jobPostingJsonLd } from "@/lib/jobs";
-import { getJob } from "@/lib/queries";
+import { getJob, shownCopy } from "@/lib/queries";
 import { myTimeZone } from "@/lib/myTz";
 import { DEFAULT_TZ } from "@/lib/profile";
 import { currentUser } from "@/lib/supabase/server";
@@ -19,10 +19,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const job = await getJob((await params).slug);
   if (!job) return { title: "Job not found" };
   const live = job.status === "published";
+  // A job listed more than once points search engines to the copy search shows.
+  const shown = live ? await shownCopy(job.dupe_key ?? null) : null;
   return {
     title: `${job.title} at ${job.org.name}`,
     description: job.description.slice(0, 160),
-    alternates: { canonical: `/jobs/${job.slug}` },
+    alternates: { canonical: `/jobs/${shown ?? job.slug}` },
     robots: live ? undefined : { index: false },
   };
 }

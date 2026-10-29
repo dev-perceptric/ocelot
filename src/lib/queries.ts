@@ -61,6 +61,13 @@ export async function getJob(slug: string): Promise<(Job & { org: Org; questions
   return { ...(data as unknown as Job & { org: Org }), questions };
 }
 
+// The copy of a job that search shows, when the same job is listed more than once (030_duplicates.sql).
+export async function shownCopy(dupeKey: string | null): Promise<string | null> {
+  if (!supabaseReady || !dupeKey) return null;
+  const { data } = await (await createClient()).rpc("shown_copy", { p_key: dupeKey });
+  return data ?? null;
+}
+
 export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | { movedTo: string } | null> {
   if (!supabaseReady) return null;
   const supabase = await createClient();
