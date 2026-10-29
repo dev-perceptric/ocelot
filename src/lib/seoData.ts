@@ -5,19 +5,25 @@ import { AREAS, PLACES, seoPath } from "@/lib/seo";
 import { readFilters, type Filters } from "@/lib/search";
 import { createVisitor } from "@/lib/supabase/server";
 
-// Live job counts by area and place (031_seo_pages.sql), shared by everyone and kept for an hour.
-const counts = unstable_cache(async (): Promise<[string, number][]> => {
+// Live job counts by area and place (031_seo_pages.sql), shared by everyone and kept for an hour. A failed read
+// isn't kept: pages show without counts and links until the next one works.
+const cachedCounts = unstable_cache(async (): Promise<[string, number][]> => {
   if (!supabaseReady) return [];
   const { data, error } = await createVisitor().rpc("seo_counts");
-  if (error) { console.error("seo_counts", error); return []; }
+  if (error) throw new Error(`seo_counts: ${error.message}`);
   return (data ?? []).map((r) => [`${r.area}|${r.place}`, r.jobs]);
 }, ["seo-counts"], { revalidate: 3600 });
+async function counts(): Promise<[string, number][]> {
+  try { return await cachedCounts(); } catch (e) { console.error(e); return []; }
+}
 
 const areaKey = (f: Filters) => (f.role ? `r:${f.role}` : f.category ? `c:${f.category}` : "all");
 
 // Jobs on a role and place page. A state's page has its offices plus remote jobs open to its whole country.
 export async function pageJobs(f: Filters): Promise<number | null> {
-  const m = new Map(await counts());
+  const all = await counts();
+  if (!all.length) return null;
+  const m = new Map(all);
   const a = areaKey(f);
   const remote = f.where.length === 1 && f.where[0] === "remote";
   if (remote) return f.country || f.region || f.city ? null : m.get(`${a}|remote`) ?? 0;
@@ -56,7 +62,8 @@ export const sitemapJobs = unstable_cache(async (): Promise<{ slug: string; publ
   const out: { slug: string; published_at: string | null }[] = [];
   for (let from = 0; from < 200_000; from += 1000) {
     const { data, error } = await db.rpc("sitemap_jobs").range(from, from + 999);
-    if (error) { console.error("sitemap_jobs", error); break; }
+    // Thrown, so a half-read list isn't kept: the sitemap answers with an error and search engines try again.
+    if (error) throw new Error(`sitemap_jobs: ${error.message}`);
     out.push(...(data ?? []));
     if (!data || data.length < 1000) break;
   }
