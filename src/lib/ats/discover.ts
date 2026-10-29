@@ -2,6 +2,7 @@ import "server-only";
 import { slugify } from "@/lib/jobs";
 import { createAdmin } from "@/lib/supabase/server";
 import { PROVIDERS, type Provider } from "./boards";
+import { cleanCompanyName, sameCompany } from "./names";
 import { toJob } from "./normalize";
 import { loadBoard, syncSource } from "./sync";
 
@@ -37,6 +38,8 @@ async function check(c: Candidate, fetchImpl: typeof fetch): Promise<boolean> {
     try {
       const { jobs, company } = await loadBoard(p, b, fetchImpl);
       if (!jobs.length) continue;
+      // A board under this name that belongs to someone else ("wise" is Wise Benefits): keep looking.
+      if (company && !sameCompany(c.name, cleanCompanyName(company))) continue;
       // Remember the board, so next week's check is one request.
       await db.from("board_candidates").update({ provider: p, board: b }).eq("slug", c.slug);
       if (jobs.some((j) => "job" in toJob(j, DEFAULT))) found = { provider: p, board: b, company };
@@ -51,7 +54,7 @@ async function check(c: Candidate, fetchImpl: typeof fetch): Promise<boolean> {
     await db.from("board_candidates").update({ source_id: had.id }).eq("slug", c.slug);
     return false;
   }
-  const org = await companyFor(found.company ?? c.name);
+  const org = await companyFor(cleanCompanyName(found.company ?? c.name));
   const { data: src, error } = await db.from("job_sources").insert({ org_id: org, provider: found.provider, board: found.board, ...DEFAULT }).select("*").single();
   if (error || !src) return false;
   await db.from("board_candidates").update({ source_id: src.id }).eq("slug", c.slug);

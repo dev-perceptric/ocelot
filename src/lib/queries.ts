@@ -20,6 +20,7 @@ export async function searchJobs(f: Partial<Filters> = {}, page = 1, size = PAGE
       workplaces: f.where?.length ? f.where : undefined,
       country: f.country ?? undefined,
       city: f.city ?? undefined,
+      region: f.region ?? undefined,
       category: f.category ?? undefined,
       role: f.role ?? undefined,
       seniorities: f.level?.length ? f.level : undefined,

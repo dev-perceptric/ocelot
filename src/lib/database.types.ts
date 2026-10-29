@@ -261,14 +261,14 @@ isOneToOne: false
                   ]
                 },"jobs": {
                   Row: {
-                    "apply_method": string,"apply_url": string | null,"category": string | null,"closed_by_company": boolean,"created_at": string,"created_by": string | null,"description": string,"eligible_countries": (string)[],"employment_type": string | null,"expires_at": string | null,"external_id": string | null,"featured_until": string | null,"id": string,"office_places": (string)[],"org_id": string,"published_at": string | null,"review_note": string | null,"role": string | null,"salary_currency": string | null,"salary_max": number | null,"salary_min": number | null,"salary_period": string | null,"search": unknown,"seniority": string | null,"slug": string,"source": string,"source_id": string | null,"source_url": string | null,"status": string,"time_zones": (string)[],"title": string,"updated_at": string,"workplace": string | null,"job_missing": string | null
+                    "apply_method": string,"apply_url": string | null,"category": string | null,"closed_by_company": boolean,"created_at": string,"created_by": string | null,"description": string,"eligible_countries": (string)[],"employment_type": string | null,"expires_at": string | null,"external_id": string | null,"featured_until": string | null,"id": string,"office_places": (string)[],"office_regions": (string)[],"org_id": string,"published_at": string | null,"review_note": string | null,"role": string | null,"salary_currency": string | null,"salary_max": number | null,"salary_min": number | null,"salary_period": string | null,"search": unknown,"seniority": string | null,"slug": string,"source": string,"source_id": string | null,"source_url": string | null,"status": string,"time_zones": (string)[],"title": string,"updated_at": string,"workplace": string | null,"job_missing": string | null
                   }
                   ComputedFields: "job_missing"
                   Insert: {
-                    "apply_method"?: string,"apply_url"?: string | null,"category"?: string | null,"closed_by_company"?: boolean,"created_at"?: string,"created_by"?: string | null,"description"?: string,"eligible_countries"?: (string)[],"employment_type"?: string | null,"expires_at"?: string | null,"external_id"?: string | null,"featured_until"?: string | null,"id"?: string,"office_places"?: (string)[],"org_id": string,"published_at"?: string | null,"review_note"?: string | null,"role"?: string | null,"salary_currency"?: string | null,"salary_max"?: number | null,"salary_min"?: number | null,"salary_period"?: string | null,"search"?: never,"seniority"?: string | null,"slug": string,"source"?: string,"source_id"?: string | null,"source_url"?: string | null,"status"?: string,"time_zones"?: (string)[],"title": string,"updated_at"?: string,"workplace"?: string | null
+                    "apply_method"?: string,"apply_url"?: string | null,"category"?: string | null,"closed_by_company"?: boolean,"created_at"?: string,"created_by"?: string | null,"description"?: string,"eligible_countries"?: (string)[],"employment_type"?: string | null,"expires_at"?: string | null,"external_id"?: string | null,"featured_until"?: string | null,"id"?: string,"office_places"?: (string)[],"office_regions"?: (string)[],"org_id": string,"published_at"?: string | null,"review_note"?: string | null,"role"?: string | null,"salary_currency"?: string | null,"salary_max"?: number | null,"salary_min"?: number | null,"salary_period"?: string | null,"search"?: never,"seniority"?: string | null,"slug": string,"source"?: string,"source_id"?: string | null,"source_url"?: string | null,"status"?: string,"time_zones"?: (string)[],"title": string,"updated_at"?: string,"workplace"?: string | null
                   }
                   Update: {
-                    "apply_method"?: string,"apply_url"?: string | null,"category"?: string | null,"closed_by_company"?: boolean,"created_at"?: string,"created_by"?: string | null,"description"?: string,"eligible_countries"?: (string)[],"employment_type"?: string | null,"expires_at"?: string | null,"external_id"?: string | null,"featured_until"?: string | null,"id"?: string,"office_places"?: (string)[],"org_id"?: string,"published_at"?: string | null,"review_note"?: string | null,"role"?: string | null,"salary_currency"?: string | null,"salary_max"?: number | null,"salary_min"?: number | null,"salary_period"?: string | null,"search"?: never,"seniority"?: string | null,"slug"?: string,"source"?: string,"source_id"?: string | null,"source_url"?: string | null,"status"?: string,"time_zones"?: (string)[],"title"?: string,"updated_at"?: string,"workplace"?: string | null
+                    "apply_method"?: string,"apply_url"?: string | null,"category"?: string | null,"closed_by_company"?: boolean,"created_at"?: string,"created_by"?: string | null,"description"?: string,"eligible_countries"?: (string)[],"employment_type"?: string | null,"expires_at"?: string | null,"external_id"?: string | null,"featured_until"?: string | null,"id"?: string,"office_places"?: (string)[],"office_regions"?: (string)[],"org_id"?: string,"published_at"?: string | null,"review_note"?: string | null,"role"?: string | null,"salary_currency"?: string | null,"salary_max"?: number | null,"salary_min"?: number | null,"salary_period"?: string | null,"search"?: never,"seniority"?: string | null,"slug"?: string,"source"?: string,"source_id"?: string | null,"source_url"?: string | null,"status"?: string,"time_zones"?: (string)[],"title"?: string,"updated_at"?: string,"workplace"?: string | null
                   }
                   Relationships: [
                     {
@@ -427,14 +427,14 @@ isOneToOne: false
                   ]
                 },"places": {
                   Row: {
-                    "country_code": string,"kind": string,"name": string,"slug": string,"sort": number
+                    "country_code": string,"kind": string,"name": string,"region": string | null,"slug": string,"sort": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "country_code": string,"kind": string,"name": string,"slug": string,"sort"?: number
+                    "country_code": string,"kind": string,"name": string,"region"?: string | null,"slug": string,"sort"?: number
                   }
                   Update: {
-                    "country_code"?: string,"kind"?: string,"name"?: string,"slug"?: string,"sort"?: number
+                    "country_code"?: string,"kind"?: string,"name"?: string,"region"?: string | null,"slug"?: string,"sort"?: number
                   }
                   Relationships: [
                     
@@ -661,6 +661,7 @@ isOneToOne: false
 "featured_until": string | null,
 "id": string,
 "office_places": (string)[],
+"office_regions": (string)[],
 "org_id": string,
 "published_at": string | null,
 "review_note": string | null,
@@ -865,7 +866,7 @@ isOneToOne: false
 { Args: { "p_job": string }; Returns: string
                            },
 "search_jobs":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "apply_method": string,
 "apply_url": string | null,
 "category": string | null,
@@ -880,6 +881,7 @@ isOneToOne: false
 "featured_until": string | null,
 "id": string,
 "office_places": (string)[],
+"office_regions": (string)[],
 "org_id": string,
 "published_at": string | null,
 "review_note": string | null,

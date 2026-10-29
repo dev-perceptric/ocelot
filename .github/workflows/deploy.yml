@@ -39,39 +39,6 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       - run: npm run build
 
-  deploy:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: checks
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - app: ocelot-web
-            config: fly.toml
-          - app: ocelot-worker
-            config: fly.worker.toml
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-        if: env.FLY_API_TOKEN != ''
-      - name: Create ${{ matrix.app }} if it doesn't exist yet
-        if: env.FLY_API_TOKEN != ''
-        run: flyctl status --app ${{ matrix.app }} >/dev/null 2>&1 || flyctl apps create ${{ matrix.app }}
-      - name: Deploy ${{ matrix.app }}
-        if: env.FLY_API_TOKEN != ''
-        # --ha=false: one machine per app. Fly starts two on the first deploy otherwise, which doubles the bill.
-        run: >-
-          flyctl deploy --remote-only --ha=false --config ${{ matrix.config }} --app ${{ matrix.app }}
-          --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
-          --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }}
-      - name: No Fly token yet
-        if: env.FLY_API_TOKEN == ''
-        run: echo "::notice::Add the FLY_API_TOKEN repository secret to deploy ${{ matrix.app }}."
-
   migrate:
     # Applies new files in supabase/migrations to the live database. Skipped until the secrets exist.
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -95,3 +62,73 @@ jobs:
       - name: No Supabase token yet
         if: env.SUPABASE_ACCESS_TOKEN == ''
         run: echo "::notice::Add SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD and the SUPABASE_PROJECT_REF variable to push migrations."
+
+  # Order: migrations, then the web app, then the worker. The worker runs the hourly job as soon as it starts, so it
+  # starts only once the new web app is up (a web restart would cut that run short).
+  deploy-web:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [checks, migrate]
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      # Fly's download and API fail now and then: each Fly step gets a second try.
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        id: fly1
+        if: env.FLY_API_TOKEN != ''
+        continue-on-error: true
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: env.FLY_API_TOKEN != '' && steps.fly1.outcome == 'failure'
+      - name: Create ocelot-web if it doesn't exist yet
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl status --app ocelot-web >/dev/null 2>&1 || flyctl apps create ocelot-web
+      - name: Deploy ocelot-web
+        if: env.FLY_API_TOKEN != ''
+        # --ha=false: one machine per app. Fly starts two on the first deploy otherwise, which doubles the bill.
+        run: |
+          for try in 1 2 3; do
+            flyctl deploy --remote-only --ha=false --config fly.toml --app ocelot-web \
+              --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
+              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+              --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }} && exit 0
+            echo "::warning::Deploy try $try failed"; sleep $((try * 30))
+          done
+          exit 1
+      - name: No Fly token yet
+        if: env.FLY_API_TOKEN == ''
+        run: echo "::notice::Add the FLY_API_TOKEN repository secret to deploy ocelot-web."
+
+  deploy-worker:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: deploy-web
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      # Fly's download and API fail now and then: each Fly step gets a second try.
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        id: fly1
+        if: env.FLY_API_TOKEN != ''
+        continue-on-error: true
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+        if: env.FLY_API_TOKEN != '' && steps.fly1.outcome == 'failure'
+      - name: Create ocelot-worker if it doesn't exist yet
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl status --app ocelot-worker >/dev/null 2>&1 || flyctl apps create ocelot-worker
+      - name: Deploy ocelot-worker
+        if: env.FLY_API_TOKEN != ''
+        # --ha=false: one machine per app. Fly starts two on the first deploy otherwise, which doubles the bill.
+        run: |
+          for try in 1 2 3; do
+            flyctl deploy --remote-only --ha=false --config fly.worker.toml --app ocelot-worker \
+              --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
+              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+              --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }} && exit 0
+            echo "::warning::Deploy try $try failed"; sleep $((try * 30))
+          done
+          exit 1
+      - name: No Fly token yet
+        if: env.FLY_API_TOKEN == ''
+        run: echo "::notice::Add the FLY_API_TOKEN repository secret to deploy ocelot-worker."

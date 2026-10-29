@@ -81,6 +81,7 @@ const server = http.createServer((req, res) => {
   }
   res.setHeader("Content-Type", "application/json");
   if (req.url === "/greenhouse/lumenasia") return res.end(JSON.stringify({ jobs: [{ ...job(9, "Growth Marketing Lead", "Remote - North America"), company_name: "Lumen Asia" }, job(10, "Staff Engineer", "Austin, TX")] }));
+  if (req.url === "/greenhouse/otherco") return res.end(JSON.stringify({ jobs: [{ ...job(11, "Field Sales Agent", "Memphis, TN"), company_name: "Totally Different Benefits" }] }));
   if (req.url !== "/greenhouse/acmeasia") { res.statusCode = 404; return res.end("{}"); }
   res.statusCode = status;
   res.end(status === 200 ? JSON.stringify(board) : "{}");
@@ -171,11 +172,14 @@ const server = http.createServer((req, res) => {
     // Discovery: a company on the list with a board is found and imported with no clicks.
     sql("update board_candidates set checked_at = now()");
     sql("insert into board_candidates (slug, name) values ('lumenasia', 'Lumen') on conflict (slug) do update set checked_at = null, source_id = null, skip = false, provider = null, board = null");
+    sql("insert into board_candidates (slug, name) values ('otherco', 'Other Co') on conflict (slug) do update set checked_at = null, source_id = null, skip = false, provider = null, board = null");
     await sleep(2000); // let the last board run finish
     const d = await (await fetch(`${APP}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${key}` } })).json();
     ok(d.boards === "started" && await until(() => sql("select count(*) from job_sources where board = 'lumenasia'") === "1"), "the hourly run finds a company's board by itself");
     await until(() => sql("select count(*) from jobs where source_id = (select id from job_sources where board = 'lumenasia')") !== "0");
     ok(sql("select provider || '/' || board || '|' || (select name from orgs where id = job_sources.org_id) from job_sources where board = 'lumenasia'") === "greenhouse/lumenasia|Lumen Asia", "adds it under the company's name from the board");
+    ok(await until(() => sql("select checked_at is not null from board_candidates where slug = 'otherco'") === "t") && sql("select count(*) from job_sources where board = 'otherco'") === "0"
+      && sql("select count(*) from orgs where name = 'Totally Different Benefits'") === "0", "a board under the name that belongs to another company is left out");
     ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:US,CA", "and imports its jobs that fit");
     ok(sql("select provider || '/' || board from board_candidates where slug = 'lumenasia'") === "greenhouse/lumenasia" && sql("select checked_at is not null from board_candidates where slug = 'lumenasia'") === "t", "the board is remembered for next week's check");
 

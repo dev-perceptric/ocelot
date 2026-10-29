@@ -2,6 +2,7 @@
 // Plain functions with no app imports beyond the lists, so tests can load them.
 
 import { CITIES, COUNTRIES } from "../places.ts";
+import { CITY_REGION, regionsIn } from "../regions.ts";
 import { slugify } from "../jobs.ts";
 import type { RawJob } from "./boards.ts";
 
@@ -180,7 +181,7 @@ export function mapEmployment(v: string | null, title: string): string | null {
 export type SourceRules = { countries: string[]; niche_only: boolean };
 export type JobFields = {
   external_id: string; title: string; description: string; apply_url: string; source_url: string;
-  workplace: "remote" | "hybrid" | "on_site"; office_places: string[]; eligible_countries: string[];
+  workplace: "remote" | "hybrid" | "on_site"; office_places: string[]; office_regions: string[]; eligible_countries: string[];
   role: string | null; category: string | null; seniority: string; employment_type: string | null;
   salary_min: number | null; salary_max: number | null; salary_currency: string | null; salary_period: string | null;
 };
@@ -197,6 +198,9 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
   else if (p.remote && !p.countries.length && regional.length) eligible = regional;
   else return { skip: "place" };
   const text = raw.text ?? (raw.html ? htmlToText(raw.html) : "");
+  // States and provinces: from the location text ("Remote - Texas", "Austin, TX") and the office cities.
+  const regions = [...new Set([...regionsIn(raw.places), ...p.cities.map((c) => CITY_REGION[c]).filter(Boolean)])]
+    .filter((r) => eligible.includes(r.slice(0, 2))).sort();
   const sal = raw.salary;
   const currency = sal?.currency && /^[A-Z]{3}$/.test(sal.currency.toUpperCase()) ? sal.currency.toUpperCase() : null;
   const hasPay = Boolean(currency && sal?.period && (sal.min !== null || sal.max !== null));
@@ -206,6 +210,7 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
       apply_url: raw.applyUrl, source_url: raw.postingUrl || raw.applyUrl,
       workplace: p.remote ? "remote" : p.hybrid ? "hybrid" : "on_site",
       office_places: p.remote ? [] : p.cities.filter((c) => wanted.has(CITIES.find((x) => x.slug === c)?.country_code ?? "")),
+      office_regions: regions,
       eligible_countries: eligible,
       role, category: category ?? "other",
       seniority: guessSeniority(raw.title, raw.experience), employment_type: mapEmployment(raw.employment, raw.title),

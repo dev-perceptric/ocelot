@@ -888,4 +888,27 @@ select pg_temp.act(null);
 select pg_temp.expect(exists (select 1 from live_companies() where slug = 'mix-one') and not exists (select 1 from live_companies() where slug = 'mix-three'), 'the company list has companies with live jobs only');
 select pg_temp.expect((select count(*) from search_jobs(q => 'mixword')) = 5, 'visitors can search');
 reset role;
+-- ---------- Wrong boards on the look-for list ----------
+reset role;
+select pg_temp.expect((select string_agg(slug || ':' || name || ':' || coalesce(provider, '-'), ',' order by slug) from board_candidates where slug in ('meta', 'wise', 'disney'))
+  = 'disney:Disney:-,meta:Meta:-,wise:Wise:-', 'names that came from someone else''s board go back to the company, with no board');
+-- ---------- States and provinces ----------
+reset role;
+insert into orgs (name, slug) values ('Region Co', 'region-co');
+insert into job_sources (org_id, provider, board) select id, 'lever', 'regionco' from orgs where slug = 'region-co';
+insert into jobs (org_id, slug, title, description, status, published_at, expires_at, apply_method, apply_url, eligible_countries, workplace, office_places, office_regions, source, source_id, external_id)
+select o.id, v.slug, 'Regionword Rep', 'Sell.', 'published', now(), now() + interval '30 days', 'external', 'https://example.com', v.c::text[], v.w, v.p::text[], v.r::text[], v.src,
+  case when v.src = 'ats' then (select id from job_sources where board = 'regionco') end, case when v.src = 'ats' then v.slug end
+from (values ('rg-austin', '{US}', 'on_site', '{austin}', '{}', 'employer'), ('rg-memphis', '{US}', 'on_site', '{}', '{US-TN}', 'ats'),
+             ('rg-remote', '{US}', 'remote', '{}', '{}', 'ats'), ('rg-sneaky', '{US}', 'on_site', '{boston}', '{US-TX}', 'employer'),
+             ('rg-toronto', '{CA}', 'hybrid', '{toronto}', '{}', 'employer')) v(slug, c, w, p, r, src)
+join orgs o on o.slug = 'region-co';
+select pg_temp.expect((select office_regions from jobs where slug = 'rg-austin') = '{US-TX}', 'a job gets the state of its office city');
+select pg_temp.expect((select office_regions from jobs where slug = 'rg-memphis') = '{US-TN}', 'an imported job keeps the state its board names');
+select pg_temp.expect((select office_regions from jobs where slug = 'rg-sneaky') = '{US-MA}', 'a company''s own job only gets the states of its cities');
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'regionword', region => 'US-TX')) = '{rg-austin,rg-remote}', 'Texas: offices there and remote jobs open to the US');
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'regionword', region => 'CA-ON')) = '{rg-toronto}', 'Ontario');
+select pg_temp.expect((select array_agg(slug order by slug) from search_jobs(q => 'regionword', region => 'US-TN')) = '{rg-memphis,rg-remote}', 'a state from the location text');
+select pg_temp.fails($$update jobs set office_regions = '{XX-YY}' where slug = 'rg-memphis'$$, 'only state and province codes are kept');
+reset role;
 \echo 'All boundary tests passed.'

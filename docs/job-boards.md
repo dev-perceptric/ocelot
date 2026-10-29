@@ -32,6 +32,9 @@ All are public feeds made for career pages. No keys.
 - The company's team can close an imported job but can't edit it; changes come from the board.
 - A board that fails to load changes nothing and shows its error in Admin → Job boards. An empty board where there were more than 5 live jobs is treated as a hiccup, not as every job closing.
 
+- Discovery checks the name: a board whose company name isn't the company Ocelot looked for (the same name without words like "Inc" or "Careers", or that name plus one word) is left out. Page names like "HackerRank Careers" become "HackerRank".
+- Imported jobs keep their US states and Canadian provinces, read from the location text ("Austin, TX", "Remote - Texas") and their office cities.
+
 ## Logos
 
 - Each hourly run, after sync and discovery, looks for logos for every company that has a job board and no logo (up to 1,000, for at most 8 minutes) (`due_logos`, migration 024). A company is looked at again after 30 days if nothing was found.
