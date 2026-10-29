@@ -1,17 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { PLACES } from "../src/lib/places.ts";
 import { CURRENCIES, ROLES } from "../src/lib/taxonomy.ts";
 
 // The code's lists and the database's lists must match, or forms offer values the database refuses.
-const sql = readFileSync(new URL("../supabase/migrations/003_lists_and_profiles.sql", import.meta.url), "utf8");
+const dir = new URL("../supabase/migrations/", import.meta.url);
+const sql = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort().map((f) => readFileSync(new URL(f, dir), "utf8")).join("\n");
+const bySlug = <T extends { slug: string }>(a: T[]) => [...a].sort((x, y) => x.slug.localeCompare(y.slug));
 
 test("places match the database", () => {
   const rows = [...sql.matchAll(/\('([a-z0-9-]+)', '(country|city)', '([^']+)', '([A-Z]{2})', \d+\)/g)]
     .map(([, slug, kind, name, country_code]) => ({ slug, kind, name, country_code }));
-  assert.ok(rows.length > 40);
-  assert.deepEqual(PLACES, rows);
+  assert.ok(rows.length > 70);
+  assert.deepEqual(bySlug(PLACES), bySlug(rows));
 });
 
 test("every city's country is on the list", () => {
@@ -26,7 +28,9 @@ test("roles match the database", () => {
 });
 
 test("currencies match the database", () => {
-  const checks = [...sql.matchAll(/in \(('[A-Z]{3}'(?:, '[A-Z]{3}')*)\)/g)].map((m) => m[1].replace(/'/g, "").split(", "));
-  assert.equal(checks.length, 2);
-  for (const list of checks) assert.deepEqual(list, [...CURRENCIES]);
+  // The latest definition of each currency check is the one in force.
+  const latest = new Map<string, string[]>();
+  for (const m of sql.matchAll(/(salary_currency|salary_hope_currency) in \(('[A-Z]{3}'(?:, '[A-Z]{3}')*)\)/g)) latest.set(m[1], m[2].replace(/'/g, "").split(", "));
+  assert.equal(latest.size, 2);
+  for (const list of latest.values()) assert.deepEqual(list, [...CURRENCIES]);
 });

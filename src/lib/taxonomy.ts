@@ -34,7 +34,7 @@ export const ROLES: { slug: string; category: Category; name: string }[] = [
   { slug: "cs_lead", category: "customer_success", name: "Customer success leadership" },
 ];
 
-export const CURRENCIES = ["VND", "USD", "SGD", "THB", "MYR", "IDR", "PHP"] as const;
+export const CURRENCIES = ["USD", "CAD", "VND", "SGD", "THB", "MYR", "IDR", "PHP"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
 export const roleName = (slug: string) => ROLES.find((r) => r.slug === slug)?.name ?? slug;

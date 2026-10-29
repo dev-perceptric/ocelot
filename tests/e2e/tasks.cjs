@@ -6,7 +6,7 @@ const APP = "http://localhost:3100", MAIL = "http://127.0.0.1:54324";
 const sql = (q) => execSync(`psql postgres://postgres:postgres@127.0.0.1:54322/postgres -tAc "${q.replace(/"/g, '\\"')}"`).toString().trim();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ok = (cond, what) => { console.log(`${cond ? "ok  " : "FAIL"} ${what}`); if (!cond) process.exitCode = 1; };
-const day = (offset, tz = "Asia/Ho_Chi_Minh") => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(Date.now() + offset * 86_400_000));
+const day = (offset, tz = "America/New_York") => new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(Date.now() + offset * 86_400_000));
 
 async function code(email, after) {
   for (let i = 0; i < 30; i++) {
@@ -47,7 +47,7 @@ async function login(page, email, intent) {
   const brand = sql(`insert into tracker_items (user_id, title, company, stage) values ('${uid}', 'Brand Manager', 'Elsewhere Co', 'applied') returning id`).split("\n")[0];
   const seo = sql(`insert into tracker_items (user_id, title, company, stage) values ('${uid}', 'SEO Lead', 'Beta Co', 'saved') returning id`).split("\n")[0];
 
-  // An interview tomorrow at 15:00 (Vietnam time, the default).
+  // An interview tomorrow at 15:00 (New York time, the default).
   await p.goto(`${APP}/app/tracker/${brand}`);
   await p.getByRole("button", { name: "Add an interview" }).click();
   await p.locator("dialog[open]").getByLabel("What kind").fill("Hiring manager call");
@@ -56,8 +56,8 @@ async function login(page, email, intent) {
   await p.locator("dialog[open]").getByLabel("Meeting link").fill("meet.test/abc");
   await p.locator("dialog[open]").getByRole("button", { name: "Add interview" }).click();
   await p.waitForSelector("text=Interview added");
-  const startsVN = sql(`select to_char(starts_at at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD HH24:MI') from interviews where item_id = '${brand}'`);
-  ok(startsVN === `${day(1)} 15:00`, "the interview is saved at 15:00 Vietnam time");
+  const startsNY = sql(`select to_char(starts_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') from interviews where item_id = '${brand}'`);
+  ok(startsNY === `${day(1)} 15:00`, "the interview is saved at 15:00 New York time");
   ok(sql(`select stage from tracker_items where id = '${brand}'`) === "interviewing", "adding an interview moves the card to Interviewing");
   await p.reload();
   ok(await p.isVisible("text=Tomorrow at 15:00") && await p.isVisible("text=Join the meeting"), "the card shows when and the link");
@@ -98,7 +98,7 @@ async function login(page, email, intent) {
   await p.locator("dialog[open]").getByLabel("Due date").fill(day(3));
   await p.locator("dialog[open]").getByRole("button", { name: "Save task" }).click();
   await p.waitForSelector("text=Task saved");
-  ok(sql("select to_char(due_at at time zone 'Asia/Ho_Chi_Minh', 'YYYY-MM-DD') from tasks where title = 'Send portfolio'") === day(3), "a task's date can be changed");
+  ok(sql("select to_char(due_at at time zone 'America/New_York', 'YYYY-MM-DD') from tasks where title = 'Send portfolio'") === day(3), "a task's date can be changed");
   await p.getByRole("button", { name: "Actions for Update my CV" }).click();
   await p.getByRole("menuitem", { name: "Delete" }).click();
   await p.locator("dialog[open]").getByRole("button", { name: "Delete task" }).click();

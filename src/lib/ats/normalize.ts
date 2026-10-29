@@ -39,17 +39,34 @@ export function htmlToText(html: string): string {
 // ---------- Places ----------
 
 const COUNTRY_ALIASES: Record<string, string> = {
-  "viet nam": "VN", "usa": "US", "u.s.": "US", "united states of america": "US", "uk": "GB", "england": "GB", "great britain": "GB",
-  "uae": "AE", "korea": "KR", "republic of korea": "KR", "hong kong sar": "HK",
+  "viet nam": "VN", "usa": "US", "u.s.": "US", "u.s": "US", "us": "US", "united states of america": "US", "uk": "GB", "england": "GB",
+  "great britain": "GB", "uae": "AE", "korea": "KR", "republic of korea": "KR", "hong kong sar": "HK",
+  // States and provinces people write out in full (Georgia and Washington are left out: a country and a city).
+  "california": "US", "texas": "US", "florida": "US", "illinois": "US", "massachusetts": "US", "colorado": "US", "arizona": "US",
+  "oregon": "US", "utah": "US", "virginia": "US", "north carolina": "US", "pennsylvania": "US", "ohio": "US", "michigan": "US",
+  "minnesota": "US", "tennessee": "US", "new jersey": "US", "maryland": "US",
+  "ontario": "CA", "british columbia": "CA", "quebec": "CA", "québec": "CA", "alberta": "CA", "manitoba": "CA", "nova scotia": "CA",
 };
 const CITY_ALIASES: Record<string, string> = {
   "ho chi minh": "ho-chi-minh-city", "hcmc": "ho-chi-minh-city", "saigon": "ho-chi-minh-city", "ha noi": "hanoi", "bangalore": "bengaluru",
+  "nyc": "new-york", "new york city": "new-york", "sf": "san-francisco", "bay area": "san-francisco", "sf bay area": "san-francisco",
+  "washington dc": "washington-dc", "washington d.c.": "washington-dc", "dc": "washington-dc", "montréal": "montreal", "kitchener-waterloo": "waterloo",
 };
-// Remote across a region: the source's countries can apply.
-const REGION = /\b(apac|asia[- ]?pacific|asia|south[- ]?east asia|southeast asia|worldwide|anywhere|global)\b/i;
+// "Austin, TX" or "Toronto, ON": a state or province code after a comma.
+const US_STATE = /,\s*(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
+const CA_PROVINCE = /,\s*(ON|BC|QC|AB|MB|SK|NS|NB|NL|PE|YT|NT|NU)\b/;
 
-const words = (t: string) => ` ${t.toLowerCase().replace(/[^a-z0-9.\s-]/g, " ").replace(/\s+/g, " ")} `;
-const has = (hay: string, needle: string) => hay.includes(` ${needle.toLowerCase()} `);
+// Remote across a region: which countries it covers ("*" for anywhere).
+const REGIONS: [RegExp, string[] | "*"][] = [
+  [/\b(worldwide|anywhere|global)\b/i, "*"],
+  [/\b(north america|americas|us\s*(and|&|\/|or)\s*canada|canada\s*(and|&|\/|or)\s*us)\b/i, ["US", "CA"]],
+  [/\b(apac|asia[- ]?pacific|asia|south[- ]?east asia|southeast asia)\b/i, ["VN", "SG", "TH", "MY", "ID", "PH", "KH", "LA", "MM", "BN", "HK", "TW", "JP", "KR", "IN", "AU", "NZ"]],
+  [/\b(emea|europe)\b/i, ["GB", "IE", "DE", "NL", "FR", "AE"]],
+];
+
+const clean = (t: string) => t.toLowerCase().replace(/[^a-z0-9.\u00c0-\u024f\s-]/g, " ").replace(/\s+/g, " ").trim();
+const words = (t: string) => ` ${clean(t)} `;
+const has = (hay: string, needle: string) => hay.includes(` ${clean(needle)} `);
 
 export function readPlaces(raw: Pick<RawJob, "places" | "countries" | "remote" | "hybrid">) {
   const text = words(raw.places.join(" , "));
@@ -71,10 +88,16 @@ export function readPlaces(raw: Pick<RawJob, "places" | "countries" | "remote" |
     const code = CITIES.find((c) => c.slug === slug)?.country_code;
     if (code) countries.add(code);
   }
+  for (const p of raw.places) {
+    if (US_STATE.test(p)) countries.add("US");
+    if (CA_PROVINCE.test(p)) countries.add("CA");
+  }
   const placeText = raw.places.join(" ");
   const remote = raw.remote ?? /\bremote\b/i.test(placeText);
   const hybrid = !remote && (raw.hybrid ?? /\bhybrid\b/i.test(placeText));
-  return { countries: [...countries], cities: [...cities], remote, hybrid, region: REGION.test(placeText) };
+  let region: string[] | "*" | null = null;
+  for (const [re, codes] of REGIONS) if (re.test(placeText)) { region = codes === "*" || region === "*" ? "*" : [...new Set([...(region ?? []), ...codes])]; }
+  return { countries: [...countries], cities: [...cities], remote, hybrid, region };
 }
 
 // ---------- Roles and levels ----------
@@ -86,6 +109,8 @@ const NOT_OUR_ROLES = new RegExp([
   "recruiter", "recruiting", "sourcer", "talent", "people", "hr", "human resources", "payroll", "employer brand", "employee experience",
   "product manager", "product owner", "project manager", "executive assistant", "assistant to",
   "it support", "it operations", "av support", "desktop support", "help ?desk analyst",
+  // Shop floor and seasonal work, not office careers.
+  "retail sales", "store", "seasonal", "cashier", "warehouse", "driver", "barista",
 ].map((w) => `\\b${w}\\b`).join("|"), "i");
 const ROLE_RULES: [RegExp, string, "marketing" | "sales" | "customer_success"][] = [
   [/\b(head|director|vp|vice president|chief)\b.*\bmarketing\b|\bcmo\b/i, "marketing_lead", "marketing"],
@@ -167,8 +192,9 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
   const wanted = new Set(rules.countries);
   const inWanted = p.countries.filter((c) => wanted.has(c));
   let eligible: string[];
+  const regional = p.region === "*" ? rules.countries : (p.region ?? []).filter((c) => wanted.has(c));
   if (inWanted.length) eligible = inWanted;
-  else if (p.remote && p.region && !p.countries.length) eligible = rules.countries;
+  else if (p.remote && !p.countries.length && regional.length) eligible = regional;
   else return { skip: "place" };
   const text = raw.text ?? (raw.html ? htmlToText(raw.html) : "");
   const sal = raw.salary;

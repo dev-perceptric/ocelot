@@ -766,6 +766,7 @@ update saved_searches set frequency = 'off', checked_at = now() - interval '30 d
 select pg_temp.expect(not exists (select 1 from due_alerts() where id = :'dee_search'), 'a search set to off never sends');
 
 -- Reminders: the morning a task is due, in the person's own time zone. 7 January 2030 is a Monday.
+update profiles set time_zone = 'Asia/Ho_Chi_Minh' where id = '00000000-0000-0000-0000-00000000000d';
 insert into tasks (user_id, title, due_at) values ('00000000-0000-0000-0000-00000000000d', 'Call Minh', '2030-01-07 10:00+07') returning id as call_task \gset
 select pg_temp.expect(not exists (select 1 from due_reminders(500, '2030-01-07 07:30+07') where user_id = '00000000-0000-0000-0000-00000000000d'), 'no reminder before 8:00');
 select pg_temp.expect((select tasks->0->>'title' from due_reminders(500, '2030-01-07 08:05+07') where user_id = '00000000-0000-0000-0000-00000000000d') = 'Call Minh', 'a reminder from 8:00 on the day');
@@ -827,4 +828,16 @@ select pg_temp.expect((select count(*) from board_candidates) = 0, 'companies ca
 select pg_temp.fails($$insert into board_candidates (slug, name) values ('sneaky', 'Sneaky')$$, 'or add to it');
 select pg_temp.fails($$select * from due_candidates()$$, 'or run it');
 reset role;
+-- ---------- US and Canada first ----------
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000b9', 'nora@mail.test');
+select pg_temp.expect((select time_zone from profiles where id = '00000000-0000-0000-0000-0000000000b9') = 'America/New_York', 'new accounts start in New York time');
+select pg_temp.expect((select count(*) from places where kind = 'city' and country_code in ('US', 'CA')) >= 30, 'US and Canadian cities are on the list');
+select pg_temp.expect((select slug from places where kind = 'country' order by sort limit 1) = 'united-states', 'the United States comes first');
+select pg_temp.act('00000000-0000-0000-0000-0000000000b9');
+update profiles set salary_hope_min = 90000, salary_hope_currency = 'CAD', salary_hope_period = 'year', city = 'toronto' where id = auth.uid();
+select pg_temp.expect((select salary_hope_currency = 'CAD' and country_code = 'CA' from profiles where id = auth.uid()), 'pay in CAD and Canadian cities work on profiles');
+select pg_temp.fails($$update profiles set salary_hope_currency = 'XYZ' where id = auth.uid()$$, 'unknown currencies are still refused');
+reset role;
+select pg_temp.expect((select count(*) from job_sources where countries <> '{US,CA}') = 0, 'every job board now looks for US and Canadian jobs');
 \echo 'All boundary tests passed.'

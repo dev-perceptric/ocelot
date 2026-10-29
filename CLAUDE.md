@@ -1,6 +1,6 @@
 # Ocelot
 
-A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Launch niche: English-speaking marketing, sales and customer success roles in Vietnam and Southeast Asia.
+A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Launch market: marketing, sales and customer success roles in the United States and Canada (job board sync pulls these first; `docs/job-boards.md`). Southeast Asia stays supported.
 
 Start with `docs/plan.md` (what to build and in what order), `docs/setup.md` (Supabase, Fly and the other accounts) and `docs/brand.md` (look and copy).
 
