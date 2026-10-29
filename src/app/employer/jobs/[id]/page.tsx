@@ -20,7 +20,10 @@ export default async function EditJob({ params, searchParams }: { params: Promis
   if (!current) redirect("/employer");
   const { data: job } = await supabase.from("jobs").select("*, job_questions(prompt, position)").eq("id", id).eq("org_id", current.id).maybeSingle();
   if (!job) notFound();
-  const { data: org } = await supabase.from("orgs").select("trusted").eq("id", current.id).single();
+  const [{ data: org }, { count: applicants }] = await Promise.all([
+    supabase.from("orgs").select("trusted").eq("id", current.id).single(),
+    supabase.from("applications").select("id", { count: "exact", head: true }).eq("job_id", job.id),
+  ]);
   const status = JOB_STATUS[job.status] ?? { label: job.status, tone: "neutral" as const };
   const questions = [...(job.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
   const editable = job.status !== "closed" && job.status !== "expired" && job.status !== "suspended";
@@ -43,6 +46,7 @@ export default async function EditJob({ params, searchParams }: { params: Promis
       {sent ? <p className="mt-4 border border-border bg-surface p-4 text-body rounded-[var(--radius-card)]" role="status">{job.status === "published" ? "Your job is live." : "Sent for review. You'll get an email when it's live."}</p> : null}
       {missing ? <p className="mt-4 border border-danger bg-danger-bg p-4 text-body text-danger rounded-[var(--radius-card)]" role="alert">Saved as a draft. {missing}</p> : null}
       {banner && !sent ? <p className={`mt-4 border p-4 text-body rounded-[var(--radius-card)] ${job.status === "rejected" ? "border-warning bg-warning-bg" : "border-border bg-surface"}`}>{banner}</p> : null}
+      {applicants ? <p className="mt-4 text-body"><Link href={`/employer/applicants?job=${job.id}`} className="font-bold underline">{applicants === 1 ? "1 applicant" : `${applicants} applicants`}</Link></p> : null}
       <div className="mt-6"><JobActions id={job.id} status={job.status} everPublished={Boolean(job.published_at)} slug={job.slug} /></div>
       {editable ? (
         <div className="mt-8">

@@ -12,7 +12,7 @@ import { RESUME_EXT, RESUME_MAX, RESUME_TYPES, fileSize, type ResumeType } from 
 import { createClient } from "@/lib/supabase/browser";
 import { addResume, deleteResume, renameResume, setCardResume } from "./actions";
 
-export type Resume = { id: string; name: string; mime_type: string; size_bytes: number; created_at: string; used: number; sent: boolean };
+export type Resume = { id: string; name: string; mime_type: string; size_bytes: number; added: string; used: number; sent: boolean };
 
 export function UploadResume({ userId, label = "Upload résumé", variant }: { userId: string; label?: string; variant?: "outline" }) {
   const router = useRouter();
@@ -74,7 +74,7 @@ export function ResumeTable({ resumes }: { resumes: Resume[] }) {
             <Td><a href={`/app/resumes/${r.id}/download`} className="font-bold underline-offset-2 hover:underline">{r.name}</a></Td>
             <Td><Tag>{RESUME_TYPES[r.mime_type as ResumeType] ?? "File"}</Tag></Td>
             <Td className="hidden text-meta sm:table-cell">{fileSize(r.size_bytes)}</Td>
-            <Td className="hidden text-meta sm:table-cell">{new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</Td>
+            <Td className="hidden text-meta sm:table-cell">{r.added}</Td>
             <Td className="hidden text-meta md:table-cell">{r.used ? (r.used === 1 ? "1 job" : `${r.used} jobs`) : ""}</Td>
             <Td className="w-12 text-right">
               <Menu label={`Actions for ${r.name}`} items={[
