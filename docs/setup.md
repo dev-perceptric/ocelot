@@ -232,6 +232,7 @@ node tests/e2e/tracker.cjs
 node tests/e2e/tasks.cjs
 node tests/e2e/resumes.cjs
 node tests/e2e/apply.cjs
+SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs
 ```
 

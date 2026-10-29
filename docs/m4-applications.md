@@ -25,7 +25,7 @@ Each ships as its own pull request.
 | Job page | "Apply" opens the form. After applying it reads "Applied 3 Nov" and links to the card |
 | Email | A receipt to the candidate |
 
-### 2. Applicant pipeline
+### 2. Applicant pipeline (done)
 
 | Item | Detail |
 |---|---|

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Tag } from "@/components/ui";
+import { CANDIDATE_LABEL, type HiringStage } from "@/lib/hiring";
 import { currentUser } from "@/lib/supabase/server";
 import { cleanContacts, STAGE_LABEL, STAGE_TONE, type Stage } from "@/lib/tracker";
 import { CardResume } from "../../resumes/ResumeParts";
@@ -18,7 +19,6 @@ const EVENT: Record<string, (d: Record<string, string>) => string> = {
   notes: () => "Notes updated",
   interview: (d) => `Interview added${d.title ? `: ${d.title}` : ""}`,
 };
-const HIRING: Record<string, string> = { new: "Received", interviewing: "Invited to interview", offer: "Offer", hired: "Hired", rejected: "Not moving forward", withdrawn: "Withdrawn" };
 
 export default async function CardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -68,7 +68,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
         <section className="border border-border bg-surface p-5 rounded-[var(--radius-card)]">
           <h2 className="text-card font-bold">Updates from the company</h2>
           <ul className="mt-3 flex flex-col gap-1 text-body">
-            {(updates ?? []).map((u, i) => <li key={i}><span className="text-meta text-muted">{day(u.created_at)}</span> {u.kind === "submitted" ? "Application sent" : HIRING[u.to_stage ?? ""] ?? u.to_stage}</li>)}
+            {(updates ?? []).map((u, i) => <li key={i}><span className="text-meta text-muted">{day(u.created_at)}</span> {u.kind === "submitted" ? "Application sent" : CANDIDATE_LABEL[(u.to_stage ?? "") as HiringStage] ?? u.to_stage}</li>)}
           </ul>
           <p className="mt-3 text-meta text-muted">The company&apos;s updates never change your own stage.</p>
           {app && !["withdrawn", "hired"].includes(app.hiring_stage) ? <div className="mt-4"><Withdraw cardId={c.id} applicationId={c.application_id} company={c.company} /></div> : null}

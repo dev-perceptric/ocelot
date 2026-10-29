@@ -594,4 +594,28 @@ reset role;
 delete from auth.users where id = '00000000-0000-0000-0000-00000000000e';
 select pg_temp.expect((select count(*) from documents where user_id = '00000000-0000-0000-0000-00000000000e') = 0, 'deleting an account removes its sent résumés');
 select pg_temp.expect((select candidate_id is null and resume_id is null and snapshot = '{"deleted": true}' from applications where id = :'eve_app'), 'and leaves the company a record without details');
+-- ---------- Milestone 4, part 2: the applicant pipeline ----------
+reset role;
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000000000a4', 'lan@gamma.test');
+insert into org_members (org_id, user_id, role) values (:'gamma', '00000000-0000-0000-0000-0000000000a4', 'member');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+insert into application_notes (application_id, author_id, body) values (:'dee_app', auth.uid(), 'Strong outbound numbers') returning id as hanh_note \gset
+select pg_temp.fails(format($$insert into application_notes (application_id, author_id, body) values (%L, auth.uid(), '  ')$$, :'dee_app'), 'a note needs words');
+select pg_temp.fails(format($$insert into application_notes (application_id, author_id, body) values (%L, '00000000-0000-0000-0000-0000000000a4', 'In Lan''s name')$$, :'dee_app'), 'nobody writes notes in a teammate''s name');
+select pg_temp.fails(format($$update application_notes set body = 'Changed' where id = %L$$, :'hanh_note'), 'notes cannot be edited');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a4');
+select pg_temp.expect((select count(*) from application_notes where id = :'hanh_note') = 1, 'teammates read each other''s notes');
+delete from application_notes where id = :'hanh_note';
+select pg_temp.expect((select count(*) from application_notes where id = :'hanh_note') = 1, 'but cannot delete them');
+update applications set hiring_stage = 'reviewing' where id = :'eve_app';
+select pg_temp.expect((select hiring_stage from applications where id = :'eve_app') = 'reviewing', 'any teammate can move an applicant');
+select pg_temp.act('00000000-0000-0000-0000-00000000000d');
+select pg_temp.expect((select count(*) from application_notes) = 0, 'the candidate never sees hiring notes');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a3');
+select pg_temp.expect((select count(*) from application_notes) = 0, 'other companies never see them');
+select pg_temp.fails(format($$insert into application_notes (application_id, author_id, body) values (%L, auth.uid(), 'Sneaky')$$, :'dee_app'), 'other companies cannot add notes');
+select pg_temp.act('00000000-0000-0000-0000-0000000000a2');
+delete from application_notes where id = :'hanh_note';
+select pg_temp.expect((select count(*) from application_notes where id = :'hanh_note') = 0, 'the author can delete their note');
+reset role;
 \echo 'All boundary tests passed.'
