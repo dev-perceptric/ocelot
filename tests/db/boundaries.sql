@@ -926,7 +926,7 @@ update job_sources set sync_hours = 24, last_synced_at = now() - interval '7 hou
 select pg_temp.expect(not exists (select 1 from due_sources() where provider = 'workday'), 'crawl boards sync once a day');
 update job_sources set last_synced_at = now() - interval '25 hours' where provider = 'workday';
 select pg_temp.expect(exists (select 1 from due_sources() where provider = 'workday'), 'and sync again after a day');
-select pg_temp.expect((select max_imported_jobs from app_settings) = 15000, 'imported jobs are capped');
+select pg_temp.expect((select max_imported_jobs from app_settings) = 9000, 'imported jobs are capped while Ocelot shares a plan');
 select pg_temp.fails($$insert into job_sources (org_id, provider, board) select id, 'myspace', 'acme' from orgs where slug = 'region-co'$$, 'unknown board kinds are refused');
 select pg_temp.fails($$insert into board_candidates (slug, name, found_by) values ('odd', 'Odd', 'rumor')$$, 'a list entry says where it came from');
 reset role;
