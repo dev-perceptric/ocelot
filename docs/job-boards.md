@@ -6,8 +6,8 @@ Ocelot pulls jobs from companies' public job boards so Find jobs fills up withou
    - Company names (about 1,300, mostly companies hiring in the US and Canada, plus every company that joins Ocelot), checked once a week against every board type whose address is the company's name. The board's company name must match.
    - About 44,600 boards of the 16 kinds below, found in three months of the public web crawl (Common Crawl, October 2026; `supabase/migrations/029_more_boards.sql`), checked once a month.
 
-   A board with jobs that pass the filters is added under the company's name and synced at once. Discovery stops adding boards once 15,000 imported jobs are live (`app_settings.max_imported_jobs`), so the database stays inside its plan. Raise it after moving Supabase to Pro.
-2. **Syncing boards.** Boards from the name list sync every 6 hours; boards from the crawl, once a day.
+   A board with jobs that pass the filters is added under the company's name and synced at once. Discovery stops adding boards once the cap of imported jobs is live (`app_settings.max_imported_jobs`, 9,000 since migration 034). Ocelot shares its Supabase organization, and the Free plan's logs, egress and database limits, with Omniscient: going over them can restrict both. Raise the cap after moving Ocelot to its own organization on Pro.
+2. **Syncing boards.** Boards from the name list sync every 6 hours; boards from the crawl, once a day. Each imported job keeps a fingerprint of what the board said, so a sync writes only the jobs that changed, adds new ones in one batch and tops up the 30 live days in one go.
 
 The hourly call answers at once; board work runs after it: syncing for up to 4 minutes (six boards at a time), finding for up to 4 minutes (up to 1,000 checks, ten at a time), then logos.
 
