@@ -169,6 +169,14 @@ const server = http.createServer((req, res) => {
     ok(sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia')") === "3" && sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia') and status = 'published' and source_id is not null") === "2",
       "a board added again takes back its old jobs");
 
+    // A sync where nothing changed on the board writes nothing (each write is logged against the plan).
+    const before = sql("select string_agg(updated_at::text, ',' order by id) from jobs where source = 'ats'");
+    await p.goto(`${APP}/admin/sources`);
+    await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
+    await p.getByRole("menuitem", { name: "Sync now" }).click();
+    await p.waitForSelector("text=Synced: 2 of 2 jobs: 0 new, 0 closed");
+    ok(sql("select string_agg(updated_at::text, ',' order by id) from jobs where source = 'ats'") === before, "a sync with no changes writes nothing");
+
     // Discovery: a company on the list with a board is found and imported with no clicks.
     sql("update board_candidates set checked_at = now()");
     sql("insert into board_candidates (slug, name) values ('lumenasia', 'Lumen') on conflict (slug) do update set checked_at = null, source_id = null, skip = false, provider = null, board = null");

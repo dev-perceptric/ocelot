@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { createAdmin } from "@/lib/supabase/server";
 import { detailUrl, feedCompany, feedUrl, isClassic, nextPageUrl, parseDetail, parseFeed, type Provider, type RawJob } from "./boards";
 import { guessRole, htmlToText, importedSlug, toJob } from "./normalize";
@@ -83,42 +84,58 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
 
     const [{ data: org }, { data: existing }] = await Promise.all([
       db.from("orgs").select("name").eq("id", src.org_id).single(),
-      db.from("jobs").select("id, external_id, status, closed_by_company").eq("source_id", src.id),
+      db.from("jobs").select("id, external_id, status, closed_by_company, source_hash, expires_at").eq("source_id", src.id),
     ]);
     const byId = new Map((existing ?? []).map((j) => [j.external_id, j]));
     const live = (existing ?? []).filter((j) => j.status === "published").length;
     // An empty board when we had several live jobs is more likely a hiccup than every job closing at once.
     if (!raw.length && live > 5) throw new Error("The board returned no jobs. Nothing was closed.");
 
+    // Each request to the database is logged, and the logs count toward the plan: write only what changed. A job's
+    // fingerprint says whether the board changed it; new jobs go in one batch; the 30 days are topped up in one go.
     const now = new Date();
     const until = new Date(now.getTime() + LIVE_DAYS * 86_400_000).toISOString();
+    const soon = now.getTime() + (LIVE_DAYS - 10) * 86_400_000;
+    const fingerprint = (job: object) => createHash("sha1").update(JSON.stringify(job)).digest("hex");
     let added = 0, updated = 0, closed = 0;
+    const fresh: { job: (typeof picked)[number]["job"]; hash: string; slug: string }[] = [];
     for (const { job } of picked) {
-      const fields = { ...job, expires_at: until };
+      const hash = fingerprint(job);
       const had = byId.get(job.external_id);
       if (had) {
         const reopen = (had.status === "closed" || had.status === "expired") && !had.closed_by_company;
-        const { error } = await db.from("jobs").update({ ...fields, ...(reopen ? { status: "published" } : {}) }).eq("id", had.id);
+        if (had.source_hash === hash && !reopen) continue;
+        const { error } = await db.from("jobs").update({ ...job, source_hash: hash, expires_at: until, ...(reopen ? { status: "published" } : {}) }).eq("id", had.id);
         if (error) throw error;
         updated++;
       } else {
-        const key = `${src.provider}:${src.board}:${job.external_id}`;
-        const slug = importedSlug(job.title, org?.name ?? "", key);
-        // A board that was deleted and added again takes back its old jobs (same board, same job, same address).
-        const { data: old } = await db.from("jobs").select("id, closed_by_company").eq("slug", slug).eq("org_id", src.org_id).is("source_id", null).maybeSingle();
-        if (old) {
-          const { error } = await db.from("jobs").update({ ...fields, source_id: src.id, ...(old.closed_by_company ? {} : { status: "published" }) }).eq("id", old.id);
-          if (error) throw error;
-          updated++;
-          continue;
-        }
-        const { error } = await db.from("jobs").insert({
-          ...fields, org_id: src.org_id, source: "ats", source_id: src.id, apply_method: "external",
-          slug, status: "published", published_at: now.toISOString(),
-        });
-        if (error) throw error;
-        added++;
+        fresh.push({ job, hash, slug: importedSlug(job.title, org?.name ?? "", `${src.provider}:${src.board}:${job.external_id}`) });
       }
+    }
+    if (fresh.length) {
+      // A board that was deleted and added again takes back its old jobs (same board, same job, same address).
+      const { data: olds } = await db.from("jobs").select("id, slug, closed_by_company").eq("org_id", src.org_id).is("source_id", null).in("slug", fresh.map((f) => f.slug));
+      const oldBySlug = new Map((olds ?? []).map((o) => [o.slug, o]));
+      for (const f of fresh.filter((f) => oldBySlug.has(f.slug))) {
+        const old = oldBySlug.get(f.slug)!;
+        const { error } = await db.from("jobs").update({ ...f.job, source_hash: f.hash, expires_at: until, source_id: src.id, ...(old.closed_by_company ? {} : { status: "published" }) }).eq("id", old.id);
+        if (error) throw error;
+        updated++;
+      }
+      const rows = fresh.filter((f) => !oldBySlug.has(f.slug)).map((f) => ({
+        ...f.job, source_hash: f.hash, expires_at: until, org_id: src.org_id, source: "ats", source_id: src.id, apply_method: "external",
+        slug: f.slug, status: "published", published_at: now.toISOString(),
+      }));
+      if (rows.length) {
+        const { error } = await db.from("jobs").insert(rows);
+        if (error) throw error;
+        added = rows.length;
+      }
+    }
+    // Live jobs still on the board stay live another 30 days; topped up when fewer than 20 are left.
+    if ((existing ?? []).some((j) => j.status === "published" && j.expires_at && new Date(j.expires_at).getTime() < soon)) {
+      const { error } = await db.from("jobs").update({ expires_at: until }).eq("source_id", src.id).eq("status", "published").lt("expires_at", new Date(soon).toISOString());
+      if (error) throw error;
     }
     const keep = new Set(picked.map((p) => p.job.external_id));
     const gone = (existing ?? []).filter((j) => j.status === "published" && !keep.has(j.external_id ?? "")).map((j) => j.id);
