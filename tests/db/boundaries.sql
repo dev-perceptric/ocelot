@@ -926,7 +926,7 @@ update job_sources set sync_hours = 24, last_synced_at = now() - interval '7 hou
 select pg_temp.expect(not exists (select 1 from due_sources() where provider = 'workday'), 'crawl boards sync once a day');
 update job_sources set last_synced_at = now() - interval '25 hours' where provider = 'workday';
 select pg_temp.expect(exists (select 1 from due_sources() where provider = 'workday'), 'and sync again after a day');
-select pg_temp.expect((select max_imported_jobs from app_settings) = 9000, 'imported jobs are capped while Ocelot shares a plan');
+select pg_temp.expect((select max_imported_jobs from app_settings) = 25000, 'imported jobs are capped at 25,000 on Ocelot''s own database');
 select pg_temp.fails($$insert into job_sources (org_id, provider, board) select id, 'myspace', 'acme' from orgs where slug = 'region-co'$$, 'unknown board kinds are refused');
 select pg_temp.fails($$insert into board_candidates (slug, name, found_by) values ('odd', 'Odd', 'rumor')$$, 'a list entry says where it came from');
 reset role;
@@ -979,6 +979,39 @@ select refresh_seo_counts();
 select pg_temp.act(null);
 select pg_temp.expect(not exists (select 1 from sitemap_jobs() where slug like 'sm-%') and (select jobs from seo_counts() where area = 'all' and place = 'all') = (select count(*) from search_jobs()),
   'a suspended company''s jobs leave the sitemap and the counts');
+reset role;
+update orgs set suspended_at = null where slug = 'region-co';
+-- ---------- Shown copies (036_search_speed.sql) ----------
+reset role;
+select pg_temp.expect(not exists (select dupe_key from jobs where status = 'published' group by dupe_key having count(*) filter (where shown) <> 1),
+  'each live job group has exactly one shown copy');
+select pg_temp.expect(not exists (select 1 from jobs where shown and status <> 'published'), 'jobs that are not live are never shown');
+create temp table shown_probe as
+  select j.id, j.shown from jobs j join orgs o on o.id = j.org_id join org_members m on m.org_id = o.id
+  where m.user_id = '00000000-0000-0000-0000-00000000000a' and j.status = 'published' limit 1;
+grant select on shown_probe to authenticated;
+select pg_temp.expect((select count(*) from shown_probe) = 1, 'Ana has a live job to try with');
+select pg_temp.act('00000000-0000-0000-0000-00000000000a');
+update jobs set shown = not shown where id = (select id from shown_probe);
+reset role;
+select pg_temp.expect((select j.shown from jobs j join shown_probe p on p.id = j.id) = (select shown from shown_probe), 'a company member cannot change which copy is shown');
+select pg_temp.act(null);
+select pg_temp.fails($$select refresh_shown()$$, 'visitors cannot recompute shown copies');
+reset role;
+select pg_temp.act('00000000-0000-0000-0000-00000000000c');
+select pg_temp.fails($$select refresh_shown()$$, 'nor can signed-in people');
+reset role;
+-- Search runs as the owner (036_search_speed.sql), so it must apply the visitor rule itself.
+reset role;
+update orgs set suspended_at = now() where slug = 'region-co';
+select pg_temp.act(null);
+select pg_temp.expect(not exists (select 1 from search_jobs() where status <> 'published' or published_at is null), 'search shows only live jobs');
+select pg_temp.expect(not exists (select 1 from search_jobs() j join orgs o on o.id = j.org_id where o.slug = 'region-co'), 'search hides a suspended company''s jobs')
+  ;
+select pg_temp.expect(not exists (select 1 from hiring_companies(5000) where slug = 'region-co'), 'and the companies list hides it');
+select pg_temp.expect(search_jobs_count() = (select count(*) from search_jobs()), 'the search count matches the list');
+select pg_temp.expect((select count(*) from search_jobs(p_limit => 2)) <= 2 and (select array_agg(id) from search_jobs(p_limit => 2, p_offset => 1)) is not distinct from
+  (select array_agg(id) from (select id from search_jobs() offset 1 limit 2) x), 'a page is the same jobs as that part of the full list');
 reset role;
 update orgs set suspended_at = null where slug = 'region-co';
 \echo 'All boundary tests passed.'

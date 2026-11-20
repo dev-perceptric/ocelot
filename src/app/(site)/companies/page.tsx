@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 // Every company with live jobs, most jobs first.
 export default async function CompaniesPage() {
-  const companies = await hiringCompanies(2000);
+  const companies = await hiringCompanies();
   const jobs = companies.reduce((n, c) => n + c.jobs, 0);
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8 md:py-12">

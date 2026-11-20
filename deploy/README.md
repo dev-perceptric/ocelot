@@ -8,7 +8,7 @@ Each folder here is one Docker Compose project in `/docker` on the server:
 
 | Folder | What it is | Memory limit |
 |---|---|---|
-| `sb-ocelot/` | Ocelot's Supabase: Postgres 17, GoTrue, PostgREST, Storage, Envoy gateway (shared files in `/opt/sb/files`) | 512 + 128 + 128 + 256 + 128 MB |
+| `sb-ocelot/` | Ocelot's Supabase: Postgres 17, GoTrue, PostgREST, Storage, Envoy gateway (shared files in `/opt/sb/files`) | 1 GB + 128 + 128 + 256 + 128 MB |
 | `sb-public-ocelot/` | `db.joinocelot.com` through Traefik to the gateway | 64 MB |
 | `ocelot-migrate/` | Applies new `supabase/migrations/NNN_*.sql` from `main` every 2 minutes, recorded in `ops.schema_migrations` | 128 MB |
 | `ocelot-web/` | `joinocelot.com` (and `www`), image `ghcr.io/dev-perceptric/ocelot-web`. Only serves visitors (`CRON_DISABLED=1`), with twice the default CPU weight | 768 MB |
@@ -18,7 +18,7 @@ Each folder here is one Docker Compose project in `/docker` on the server:
 | `ocelot-move/` | The one-time data move from Supabase Cloud | runs once |
 | `uptime/gatus-endpoint.yaml` | The health checks for the `uptime` project's Gatus | |
 
-Real use is about 1.5 GB. `migrate.sh` and `backup.sh` are embedded in their compose files as base64, because
+Real use is about 1.5 – 2 GB (the database grows with the job count: about 0.5 – 1 GB at 25,000 jobs). `migrate.sh` and `backup.sh` are embedded in their compose files as base64, because
 Hostinger's Docker manager can't place files next to a project: after editing one, run `build.sh` in its folder.
 
 ## 1. DNS (Namecheap, joinocelot.com, Advanced DNS)

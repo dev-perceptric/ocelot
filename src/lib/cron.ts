@@ -60,12 +60,17 @@ export async function runDigests(): Promise<number> {
   if (!due?.length) return 0;
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const now = new Date().toISOString();
+  // What search shows (036_search_speed.sql): live, one copy of each, from companies that aren't suspended. Asked for
+  // directly, so only these few jobs are read.
+  const live = () => db.from("jobs").select("*, org:orgs!inner(suspended_at)").eq("status", "published").eq("shown", true)
+    .not("published_at", "is", null).is("org.suspended_at", null);
   const [{ data: featured }, { data: latest }] = await Promise.all([
-    db.rpc("search_jobs", {}).gt("featured_until", now).limit(3),
-    db.rpc("search_jobs", {}).gt("published_at", weekAgo).order("published_at", { ascending: false }).limit(13),
+    live().gt("featured_until", now).order("featured_until", { ascending: false }).limit(3),
+    live().gt("published_at", weekAgo).order("published_at", { ascending: false }).limit(13),
   ]);
-  const top = (featured ?? []) as Job[];
-  const rest = ((latest ?? []) as Job[]).filter((j) => !top.some((t) => t.id === j.id)).slice(0, 10);
+  const strip = (rows: unknown[] | null) => (rows ?? []).map((r) => { const job = { ...(r as Job & { org?: unknown }) }; delete job.org; return job as Job; });
+  const top = strip(featured);
+  const rest = strip(latest).filter((j) => !top.some((t) => t.id === j.id)).slice(0, 10);
   const [f, l] = await Promise.all([toLines(top), toLines(rest)]);
   let sent = 0;
   for (const d of due) {

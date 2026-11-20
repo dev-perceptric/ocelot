@@ -15,7 +15,7 @@ const QUICK: { label: string; href: string }[] = [
 ];
 
 export async function QuickStart() {
-  const [jobs, companies] = await Promise.all([countJobs({}), hiringCompanies(2000)]);
+  const [jobs, companies] = await Promise.all([countJobs({}), hiringCompanies()]);
   return (
     <div className="mt-5">
       <nav aria-label="Popular searches" className="flex flex-wrap gap-2">

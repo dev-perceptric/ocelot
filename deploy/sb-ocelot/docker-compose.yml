@@ -18,7 +18,7 @@ services:
   db:
     image: supabase/postgres:17.6.1.136
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf", "-c", "log_min_messages=fatal"]
     environment:
       POSTGRES_HOST: /var/run/postgresql

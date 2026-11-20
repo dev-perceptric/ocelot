@@ -39,6 +39,10 @@ export async function POST(req: NextRequest) {
         const synced = await runSources().catch((e) => { console.error("cron sources failed", e); return -1; });
         const found = await runDiscovery().catch((e) => { console.error("cron discovery failed", e); return -1; });
         const logos = await runLogos().catch((e) => { console.error("cron logos failed", e); return -1; });
+        // A promotion can end with no change to the job, so the shown copy of each job is rechecked once an hour
+        // (036_search_speed.sql), before the page counts.
+        const { error: shownError } = await db.rpc("refresh_shown");
+        if (shownError) console.error("cron shown copies failed", shownError);
         // Role and place pages read their job counts from a table; count once an hour.
         const { error: countError } = await db.rpc("refresh_seo_counts");
         if (countError) console.error("cron page counts failed", countError);

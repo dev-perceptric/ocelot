@@ -4,7 +4,8 @@ import type { Job, Org } from "@/lib/jobs";
 import { myTimeZone } from "@/lib/myTz";
 import { DEFAULT_TZ } from "@/lib/profile";
 import { getJob } from "@/lib/queries";
-import { createClient, currentUser } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createVisitor, currentUser } from "@/lib/supabase/server";
 import { supabaseReady } from "@/lib/env";
 import type { Stage } from "@/lib/tracker";
 
@@ -47,11 +48,19 @@ export type Suggestion = { kind: "title" | "company"; label: string; slug: strin
 
 // What the search box suggests while someone types: job titles and companies with live jobs (search_suggestions,
 // 035_jobs_ui.sql).
-export async function suggest(q: string): Promise<Suggestion[]> {
-  const text = typeof q === "string" ? q.trim().slice(0, 80) : "";
-  if (text.length < 2 || !supabaseReady) return [];
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("search_suggestions", { p_q: text });
-  if (error) { console.error("suggest", error); return []; }
+const cachedSuggest = unstable_cache(async (text: string): Promise<Suggestion[]> => {
+  const { data, error } = await createVisitor().rpc("search_suggestions", { p_q: text });
+  if (error) throw new Error(`suggest: ${error.message}`);
   return (data ?? []).map((s) => ({ kind: s.kind === "company" ? "company" : "title", label: s.label, slug: s.slug, jobs: Number(s.jobs) }));
+}, ["search-suggestions-v1"], { revalidate: 600 });
+
+export async function suggest(q: string): Promise<Suggestion[]> {
+  const text = typeof q === "string" ? q.trim().toLowerCase().replace(/\s+/g, " ").slice(0, 80) : "";
+  if (text.length < 2 || !supabaseReady) return [];
+  try {
+    return await cachedSuggest(text);
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
 }
