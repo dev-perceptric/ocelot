@@ -3,7 +3,8 @@ import Link from "next/link";
 import { CompanyLogo } from "@/components/ui";
 import { hiringCompanies } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+// The same for every visitor, so it is built once and refreshed every 10 minutes (hiringCompanies is cached that long too).
+export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: "Companies hiring",

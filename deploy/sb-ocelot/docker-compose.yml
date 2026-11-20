@@ -122,6 +122,9 @@ services:
       PGRST_DB_USE_LEGACY_GUCS: "false"
       PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXP}
+      # Keep idle database connections for 10 minutes (default 30 seconds), so busy moments reuse them
+      # instead of opening new ones. Opening a Postgres connection costs CPU every time.
+      PGRST_DB_POOL_MAX_IDLETIME: 600
     logging: *logging
 
   # Résumés (private) and company logos (public) live here.

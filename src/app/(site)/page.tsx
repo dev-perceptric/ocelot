@@ -3,7 +3,8 @@ import { JobCard } from "@/components/JobCard";
 import { ButtonLink, inputClass, Button } from "@/components/ui";
 import { listJobs } from "@/lib/queries";
 
-export const dynamic = "force-dynamic";
+// The same for every visitor, so it is built once and refreshed every 5 minutes (the job list is cached that long too).
+export const revalidate = 300;
 
 export default async function Home() {
   const jobs = await listJobs({ limit: 6 });
