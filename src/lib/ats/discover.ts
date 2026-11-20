@@ -58,7 +58,7 @@ async function check(c: Candidate, fetchImpl: typeof fetch): Promise<boolean> {
   }
   const org = await companyFor(cleanCompanyName(found.company ?? c.name));
   const { data: src, error } = await db.from("job_sources")
-    .insert({ org_id: org, provider: found.provider, board: found.board, ...DEFAULT, sync_hours: c.found_by === "crawl" ? 24 : 6 }).select("*").single();
+    .insert({ org_id: org, provider: found.provider, board: found.board, ...DEFAULT, sync_hours: 84 }).select("*").single();
   if (error || !src) return false;
   await db.from("board_candidates").update({ source_id: src.id }).eq("slug", c.slug);
   try { await syncSource(src, fetchImpl); } catch (e) { console.error(`first sync ${PROVIDERS[found.provider].name} ${found.board} failed`, e); }

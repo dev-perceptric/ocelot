@@ -20,10 +20,11 @@ services:
       - traefik.enable=false
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 30s
+      interval: 168h
       timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 300s
+      start_interval: 5s
     logging:
       driver: json-file
       options:

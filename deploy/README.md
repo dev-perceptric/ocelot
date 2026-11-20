@@ -101,3 +101,7 @@ the other apps, then `docker compose restart` in `/docker/uptime`.
 `ocelot-web ocelot-jobs ocelot-worker` off the autodeploy list (the install left a `.bak-ocelot` copy of
 `/docker/autodeploy/docker-compose.yml`), and point
 DNS elsewhere.
+
+## Keeping CPU low
+
+KVM 2 is throttled when the server's 24-hour CPU average stays above 30%. `deploy/trim-server.sh` trims every stack on the server (weekly health checks with a 5-minute start window, PostgREST keeps idle connections for 10 minutes, Supabase Studio helpers off, Ocelot discovery paused and boards synced twice a week), backs up each compose file first and restarts one stack at a time. Run it with `nohup bash trim-server.sh > /dev/null 2>&1 &` and watch `/root/trim.log`. Safe to run again.
