@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/env";
-import { liveCompanies } from "@/lib/queries";
+import { hiringCompanies } from "@/lib/queries";
 import { AREAS } from "@/lib/seo";
 import { companyAreas, MIN_JOBS_EXTRA, seoPages, sitemapJobs } from "@/lib/seoData";
 
@@ -19,7 +19,8 @@ export async function generateSitemaps() {
 export default async function sitemap({ id }: { id: Promise<string> }): Promise<MetadataRoute.Sitemap> {
   const part = Number(await id);
   if (part === 0) {
-    const [pages, companies, byArea] = await Promise.all([seoPages(), liveCompanies(), companyAreas()]);
+    // hiringCompanies reads past the API's 1,000-row page, so every company hiring is listed.
+    const [pages, companies, byArea] = await Promise.all([seoPages(), hiringCompanies(), companyAreas()]);
     const areaSlug = new Map(AREAS.map((a) => [a.role ? `r:${a.role}` : `c:${a.category}`, a.slug]));
     return [
       { url: `${SITE_URL}/`, changeFrequency: "daily" },
