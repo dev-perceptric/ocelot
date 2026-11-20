@@ -1,0 +1,41 @@
+# /docker/ocelot-backup on the Hostinger VPS: dumps the Ocelot database every night at BACKUP_AT (UTC), keeps
+# KEEP_DAYS of dumps in /opt/backups/ocelot on the server, and copies each one to Backblaze B2 when the B2 values are
+# set. backup.sh (next to this file) has the rules. Hostinger's Docker manager can't place files next to a project, so
+# the script is embedded below as base64: after editing backup.sh, regenerate this file with build.sh here.
+# PGPASSWORD (the sb-ocelot Postgres password) and the optional B2_KEY_ID, B2_APP_KEY, B2_BUCKET are in this
+# project's .env. Logs: docker logs ocelot-backup-backup-1
+name: ocelot-backup
+
+services:
+  backup:
+    image: postgres:17-alpine
+    entrypoint:
+      - sh
+      - -c
+      - apk add --no-cache bash coreutils rclone >/dev/null && echo "$$BACKUP_SH" | base64 -d > /tmp/backup.sh && exec bash /tmp/backup.sh
+    environment:
+      PGHOST: db
+      PGUSER: supabase_admin
+      PGDATABASE: postgres
+      PGPASSWORD: ${PGPASSWORD}
+      B2_KEY_ID: ${B2_KEY_ID:-}
+      B2_APP_KEY: ${B2_APP_KEY:-}
+      B2_BUCKET: ${B2_BUCKET:-}
+      BACKUP_AT: "03:15"
+      KEEP_DAYS: "14"
+      BACKUP_SH: IyEvdXNyL2Jpbi9lbnYgYmFzaAojIE5pZ2h0bHkgYmFja3VwIG9mIHRoZSBPY2Vsb3QgZGF0YWJhc2UuIEF0IEJBQ0tVUF9BVCAoVVRDKSBlYWNoIGRheSBpdCB3cml0ZXMgcGdfZHVtcCAtRmMgdG8KIyAvYmFja3Vwcy9vY2Vsb3QtWVlZWU1NREQtSEhNTVNTLmR1bXAgKHdyaXR0ZW4gdG8gYSAucGFydCBmaWxlIGZpcnN0LCBzbyBhIGhhbGYtd3JpdHRlbiBkdW1wIG5ldmVyIGxvb2tzIGRvbmUpLAojIGRlbGV0ZXMgbG9jYWwgZHVtcHMgb2xkZXIgdGhhbiBLRUVQX0RBWVMsIHRoZW4gY29waWVzIHRoZSBuZXcgZHVtcCB0byBCYWNrYmxhemUgQjIgd2hlbiBCMl9LRVlfSUQsIEIyX0FQUF9LRVkgYW5kCiMgQjJfQlVDS0VUIGFyZSBzZXQuIEIyIGtlZXBzIHRoZW0gOTAgZGF5cyB0aHJvdWdoIHRoZSBidWNrZXQncyBsaWZlY3ljbGUgcnVsZSwgbm90IHRoaXMgc2NyaXB0LgojIFJ1biBvbmNlIG5vdzogZG9ja2VyIGNvbXBvc2UgZXhlYyBiYWNrdXAgYmFzaCAvYXBwL2JhY2t1cC5zaCBub3cKIyBSZXN0b3JlOiBwZ19yZXN0b3JlIC0tY2xlYW4gLS1pZi1leGlzdHMgLS1uby1vd25lciAtaCBkYiAtVSBzdXBhYmFzZV9hZG1pbiAtZCBwb3N0Z3JlcyA8ZmlsZT4Kc2V0IC11byBwaXBlZmFpbAoKQVQ9IiR7QkFDS1VQX0FUOi0wMzoxNX0iCktFRVA9IiR7S0VFUF9EQVlTOi0xNH0iCk9VVD0vYmFja3VwcwoKbG9nKCkgeyBwcmludGYgJyVzICVzXG4nICIkKGRhdGUgLXUgKyVZLSVtLSVkVCVIOiVNOiVTWikiICIkKiI7IH0KCmlmIFsgLXogIiR7UEdQQVNTV09SRDotfSIgXTsgdGhlbgogIFBHUEFTU1dPUkQ9IiQoc2VkIC1uICdzL15QT1NUR1JFU19QQVNTV09SRD0vL3AnIC9ydW4vc2IuZW52IHwgdGFpbCAtbiAxIHwgc2VkIC1lICdzL15bIidcJyddLy8nIC1lICdzL1siJ1wnJ10kLy8nKSIKZmkKaWYgWyAteiAiJFBHUEFTU1dPUkQiIF07IHRoZW4gbG9nICJObyBQT1NUR1JFU19QQVNTV09SRCBpbiAvcnVuL3NiLmVudiI7IGV4aXQgMTsgZmkKZXhwb3J0IFBHUEFTU1dPUkQKCmJhY2t1cCgpIHsKICBsb2NhbCBuYW1lIGZpbGUKICBuYW1lPSJvY2Vsb3QtJChkYXRlIC11ICslWSVtJWQtJUglTSVTKS5kdW1wIgogIGZpbGU9IiRPVVQvJG5hbWUiCiAgbG9nICJEdW1waW5nIHRvICRmaWxlIgogIGlmICEgcGdfZHVtcCAtRmMgLWYgIiRmaWxlLnBhcnQiOyB0aGVuCiAgICBsb2cgIkZBSUxFRDogcGdfZHVtcCI7IHJtIC1mICIkZmlsZS5wYXJ0IjsgcmV0dXJuIDEKICBmaQogIG12ICIkZmlsZS5wYXJ0IiAiJGZpbGUiCiAgbG9nICJEb25lOiAkKGR1IC1oICIkZmlsZSIgfCBjdXQgLWYxKSIKICBmaW5kICIkT1VUIiAtbWF4ZGVwdGggMSAtbmFtZSAnb2NlbG90LSouZHVtcCcgLW10aW1lICsiJCgoS0VFUCAtIDEpKSIgLXByaW50IC1kZWxldGUgfCBzZWQgJ3MvXi9EZWxldGVkIC8nCgogIGlmIFsgLW4gIiR7QjJfS0VZX0lEOi19IiBdICYmIFsgLW4gIiR7QjJfQVBQX0tFWTotfSIgXSAmJiBbIC1uICIke0IyX0JVQ0tFVDotfSIgXTsgdGhlbgogICAgIyByY2xvbmUgcmVhZHMgdGhlIEIyIHJlbW90ZSBmcm9tIHRoZXNlIHZhcmlhYmxlcywgc28gbm8gY29uZmlnIGZpbGUgaXMgbmVlZGVkLgogICAgZXhwb3J0IFJDTE9ORV9DT05GSUdfQjJfVFlQRT1iMiBSQ0xPTkVfQ09ORklHX0IyX0FDQ09VTlQ9IiRCMl9LRVlfSUQiIFJDTE9ORV9DT05GSUdfQjJfS0VZPSIkQjJfQVBQX0tFWSIKICAgIGlmIHJjbG9uZSBjb3B5IC0tcmV0cmllcyA1ICIkZmlsZSIgImIyOiRCMl9CVUNLRVQvJHtCMl9QUkVGSVg6LW9jZWxvdH0vIjsgdGhlbgogICAgICBsb2cgIkNvcGllZCB0byBCMjogJEIyX0JVQ0tFVC8ke0IyX1BSRUZJWDotb2NlbG90fS8kbmFtZSIKICAgIGVsc2UKICAgICAgbG9nICJGQUlMRUQ6IGNvcHkgdG8gQjIgKHRoZSBsb2NhbCBkdW1wIGlzIGtlcHQpIjsgcmV0dXJuIDEKICAgIGZpCiAgZWxzZQogICAgbG9nICJCMiBub3Qgc2V0LCBrZXB0IG9uIHRoZSBzZXJ2ZXIgb25seSIKICBmaQp9CgppZiBbICIkezE6LX0iID0gIm5vdyIgXTsgdGhlbiBiYWNrdXA7IGV4aXQgJD87IGZpCgpsb2cgIkJhY2tpbmcgdXAgZXZlcnkgZGF5IGF0ICRBVCBVVEMsIGtlZXBpbmcgJEtFRVAgZGF5cyBoZXJlIgojIE9uZSBkdW1wIHdoZW4gdGhlIGNvbnRhaW5lciBzdGFydHMsIHNvIGEgbmV3IG9yIHJlc3RhcnRlZCBiYWNrdXAgcHJvdmVzIGl0c2VsZiBpbiB0aGUgbG9ncyByaWdodCBhd2F5LgppZiBbICIke0JBQ0tVUF9PTl9TVEFSVDotMX0iID0gIjEiIF07IHRoZW4gYmFja3VwIHx8IGxvZyAiRmlyc3QgYmFja3VwIGZhaWxlZCI7IGZpCndoaWxlIHRydWU7IGRvCiAgbmV4dD0iJChkYXRlIC11IC1kICJ0b2RheSAkQVQiICslcykiCiAgWyAiJG5leHQiIC1sZSAiJChkYXRlIC11ICslcykiIF0gJiYgbmV4dD0iJChkYXRlIC11IC1kICJ0b21vcnJvdyAkQVQiICslcykiCiAgc2xlZXAgIiQoKG5leHQgLSAkKGRhdGUgLXUgKyVzKSkpIgogIGJhY2t1cCB8fCBsb2cgIkJhY2t1cCBmYWlsZWQ7IG5leHQgdHJ5IHRvbW9ycm93Igpkb25lCg==
+    volumes:
+      - /opt/backups/ocelot:/backups
+    networks: [sb]
+    restart: unless-stopped
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  sb:
+    external: true
+    name: sb-ocelot

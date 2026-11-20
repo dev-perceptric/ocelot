@@ -1,0 +1,37 @@
+# /docker/ocelot-web on the Hostinger VPS. The site and app at joinocelot.com, routed by the shared Traefik.
+# Secrets live in /docker/ocelot-web/.env on the server (see .env.example at the repo root), never in the repo.
+# autodeploy pulls :latest every 5 minutes and restarts it when the image changed.
+# Like pulsearr-web and arrowsterr-web, this joins no named network.
+name: ocelot-web
+
+services:
+  web:
+    image: ghcr.io/dev-perceptric/ocelot-web:latest
+    env_file:
+      - .env
+    restart: unless-stopped
+    # The job board sync runs inside the web app, so it keeps the 1 GB it had on Fly.
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ocelot-web.rule=Host(`joinocelot.com`) || Host(`www.joinocelot.com`)
+      - traefik.http.routers.ocelot-web.entrypoints=websecure
+      - traefik.http.routers.ocelot-web.tls=true
+      - traefik.http.routers.ocelot-web.tls.certresolver=letsencrypt
+      - traefik.http.routers.ocelot-web.middlewares=ocelot-www
+      # www.joinocelot.com sends people to joinocelot.com.
+      - traefik.http.middlewares.ocelot-www.redirectregex.regex=^https?://www\.joinocelot\.com/(.*)
+      - traefik.http.middlewares.ocelot-www.redirectregex.replacement=https://joinocelot.com/$${1}
+      - traefik.http.middlewares.ocelot-www.redirectregex.permanent=true
+      - traefik.http.services.ocelot-web.loadbalancer.server.port=3000
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"

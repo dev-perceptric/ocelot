@@ -1,0 +1,28 @@
+# /docker/sb-public-ocelot on the Hostinger VPS: db.joinocelot.com (Traefik, Let's Encrypt) in front of the sb-ocelot
+# API gateway. Its own project, so adding Ocelot never restarts the shared sb-public Caddy the other apps use.
+name: sb-public-ocelot
+
+services:
+  ocelot:
+    image: caddy:2.8.4-alpine
+    command: ["caddy", "reverse-proxy", "--from", ":8080", "--to", "sb-ocelot-api-gw-1:8000"]
+    networks: [ocelot]
+    restart: unless-stopped
+    mem_limit: 64m
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sb-ocelot.rule=Host(`db.joinocelot.com`)
+      - traefik.http.routers.sb-ocelot.entrypoints=websecure
+      - traefik.http.routers.sb-ocelot.tls=true
+      - traefik.http.routers.sb-ocelot.tls.certresolver=letsencrypt
+      - traefik.http.services.sb-ocelot.loadbalancer.server.port=8080
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  ocelot:
+    external: true
+    name: sb-ocelot

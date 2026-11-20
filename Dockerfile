@@ -1,5 +1,5 @@
 # The Ocelot site and app on the VPS: build Next.js, then run the standalone server.
-# NEXT_PUBLIC_* values are baked into the build, so they come in as build args (see compose.yaml).
+# NEXT_PUBLIC_* values are baked into the build, so they come in as build args (see .github/workflows/deploy.yml).
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_SUPABASE_URL

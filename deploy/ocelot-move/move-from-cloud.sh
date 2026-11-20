@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
-# One-time move of Ocelot's data from Supabase Cloud to the self-hosted Supabase on the VPS (docs/setup.md, "6. Move
-# the data"). Run on the server in /docker/ocelot after the new Supabase is up and before the app takes traffic:
+# One-time move of Ocelot's data from Supabase Cloud to sb-ocelot on the VPS (deploy/README.md, step 6). Run as root on
+# the server once sb-ocelot is up and ocelot-migrate has applied every migration, before people use the new site:
 #
-#   export CLOUD_DB_URL='postgresql://postgres.<ref>:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres'
-#   export CLOUD_URL='https://<ref>.supabase.co' CLOUD_SERVICE_KEY='<cloud secret key>'
-#   bash ops/vps/move-from-cloud.sh
+#   cd /docker/ocelot-move
+#   read -rsp "Cloud DB URL: " CLOUD_DB_URL; echo; export CLOUD_DB_URL          # Connect -> Session pooler
+#   read -rsp "Cloud secret key: " CLOUD_SERVICE_KEY; echo; export CLOUD_SERVICE_KEY
+#   export CLOUD_URL=https://tqvtkdftgzlteayzbqvj.supabase.co
+#   bash move-from-cloud.sh
 #
-# It copies sign-ins (auth.users, auth.identities), every table in public, and the files in the resumes and logos
-# buckets, then compares row counts. Sessions don't move: everyone signs in again once. It never changes the cloud
-# project. Run it on an empty new database: it empties public's tables first.
+# It copies sign-ins (auth.users, auth.identities), every table in public and the files in the resumes and logos
+# buckets, points logo links at db.joinocelot.com, then compares row counts. Sessions don't move: everyone signs in
+# again once. It never changes the cloud project. It empties public's tables on the new database first, so run it
+# before anyone uses the new site.
 set -euo pipefail
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")"
 
-: "${CLOUD_DB_URL:?Set CLOUD_DB_URL (Supabase dashboard -> Connect -> Session pooler)}"
+: "${CLOUD_DB_URL:?Set CLOUD_DB_URL (Supabase dashboard, Connect, Session pooler)}"
 : "${CLOUD_URL:?Set CLOUD_URL (https://<ref>.supabase.co)}"
 : "${CLOUD_SERVICE_KEY:?Set CLOUD_SERVICE_KEY (the cloud project secret key)}"
 DB_CONTAINER="${DB_CONTAINER:-sb-ocelot-db-1}"
-NEW_URL="${NEW_URL:-http://127.0.0.1:8400}"
-NEW_SERVICE_KEY="${NEW_SERVICE_KEY:-$(grep '^SERVICE_ROLE_KEY=' /docker/sb-ocelot/.env | cut -d= -f2-)}"
+SB_ENV="${SB_ENV:-/docker/sb-ocelot/.env}"
+NEW_URL="${NEW_URL:-http://sb-ocelot-api-gw-1:8000}"
+NEW_SERVICE_KEY="${NEW_SERVICE_KEY:-$(grep '^SERVICE_ROLE_KEY=' "$SB_ENV" | cut -d= -f2-)}"
 NEW_PUBLIC_URL="${NEW_PUBLIC_URL:-https://db.joinocelot.com}"
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -31,8 +35,13 @@ cloud_major=$(docker run --rm -e CLOUD_DB_URL postgres:17-alpine sh -c 'psql "$C
 cloud() { docker run --rm -i -e CLOUD_DB_URL "postgres:${cloud_major}-alpine" sh -c "$1"; }
 echo "Cloud Postgres $cloud_major, new Postgres $(new_db -At -c 'show server_version_num' | cut -c1-2)."
 
-echo "1/5 Tables on the new database"
-bash scripts/migrate-vps.sh
+echo "1/5 Checking the new database has every migration"
+cloud_files=$(echo "select version from supabase_migrations.schema_migrations order by 1;" | cloud 'psql "$CLOUD_DB_URL" -At' || true)
+new_files=$(new_db -At -c "select filename from ops.schema_migrations order by 1")
+echo "Cloud has $(echo "$cloud_files" | grep -c . || true) migrations recorded, the new database $(echo "$new_files" | grep -c . || true)."
+for v in $cloud_files; do
+  grep -q "^${v}_" <<<"$new_files" || { echo "Migration $v is on the cloud but not yet on the new database. Wait for ocelot-migrate (docker logs ocelot-migrate-migrate-1), then run this again." >&2; exit 1; }
+done
 
 echo "2/5 Dumping from the cloud"
 cloud 'pg_dump "$CLOUD_DB_URL" --data-only --no-owner --no-privileges -t auth.users -t auth.identities' > "$WORK/auth.sql"
@@ -50,8 +59,8 @@ tables=$(new_db -At -c "select string_agg(format('%I.%I', schemaname, tablename)
 } | new_db --single-transaction
 
 echo "4/5 Copying résumé and logo files"
-docker run --rm --network host -e CLOUD_URL -e CLOUD_SERVICE_KEY -e NEW_URL="$NEW_URL" -e NEW_SERVICE_KEY="$NEW_SERVICE_KEY" \
-  -v "$PWD/ops/vps:/w:ro" node:22-alpine node /w/copy-storage.mjs resumes logos
+docker run --rm --network sb-ocelot -e CLOUD_URL -e CLOUD_SERVICE_KEY -e NEW_URL="$NEW_URL" -e NEW_SERVICE_KEY="$NEW_SERVICE_KEY" \
+  -v "$PWD:/w:ro" node:22-alpine node /w/copy-storage.mjs resumes logos
 
 echo "5/5 Row counts (cloud, new)"
 count_sql="select 'auth.users', count(*) from auth.users union all select 'auth.identities', count(*) from auth.identities"

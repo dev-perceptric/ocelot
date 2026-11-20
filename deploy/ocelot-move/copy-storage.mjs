@@ -1,6 +1,6 @@
 // Copies every file in the given buckets from Supabase Cloud to the self-hosted Supabase, keeping each path
 // (resumes/<user id>/<file>, logos/<org id>/<file>), so the storage access rules keep working. Run by
-// ops/vps/move-from-cloud.sh; safe to run again (it overwrites). Needs CLOUD_URL, CLOUD_SERVICE_KEY, NEW_URL and
+// deploy/ocelot-move/move-from-cloud.sh; safe to run again (it overwrites). Needs CLOUD_URL, CLOUD_SERVICE_KEY, NEW_URL and
 // NEW_SERVICE_KEY in the environment. Uses only Supabase's Storage HTTP API, so it needs no packages.
 const { CLOUD_URL, CLOUD_SERVICE_KEY, NEW_URL, NEW_SERVICE_KEY } = process.env;
 if (!CLOUD_URL || !CLOUD_SERVICE_KEY || !NEW_URL || !NEW_SERVICE_KEY) throw new Error("Set CLOUD_URL, CLOUD_SERVICE_KEY, NEW_URL and NEW_SERVICE_KEY.");
