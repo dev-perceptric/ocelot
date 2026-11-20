@@ -19,7 +19,7 @@ const LIST_COLUMNS = "id, org_id, slug, title, dupe_key, category, seniority, em
 // same results, so each search and page is kept for 5 minutes and shared: most visits, crawlers included, never reach
 // the database. A database hiccup shows an empty list instead of an error page, and isn't kept.
 const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWithOrg[]; total: number }> => {
-  const { f, page, size } = JSON.parse(key) as { f: Partial<Filters>; page: number; size: number };
+  const { f, page, size } = JSON.parse(key) as { f: Partial<Filters> & { company?: string }; page: number; size: number };
   const filters = {
     q: f.q || undefined,
     workplaces: f.where?.length ? f.where : undefined,
@@ -33,6 +33,7 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
     pay_only: f.pay ?? false,
     posted_days: f.posted ?? undefined,
     min_pay: f.minPay ?? undefined,
+    company: f.company ?? undefined,
   };
   const db = createVisitor();
   // The page and the total are separate calls: the database sorts only to find the page, and counts without sorting.
@@ -46,7 +47,8 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
   return { jobs, total: Number(counted.data ?? 0) };
 }, ["search-jobs-v2"], { revalidate: 300 });
 
-export async function searchJobs(f: Partial<Filters> = {}, page = 1, size = PAGE_SIZE): Promise<{ jobs: JobWithOrg[]; total: number }> {
+// company (a company slug) keeps to one company: the company pages by area.
+export async function searchJobs(f: Partial<Filters> & { company?: string } = {}, page = 1, size = PAGE_SIZE): Promise<{ jobs: JobWithOrg[]; total: number }> {
   if (!supabaseReady) return { jobs: [], total: 0 };
   // The same search always makes the same key, whatever order the filters came in.
   const clean = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== false && !(Array.isArray(v) && !v.length)).sort(([a], [b]) => a.localeCompare(b)));

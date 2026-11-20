@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { readFilters } from "@/lib/search";
+import { seoPath } from "@/lib/seo";
 
 // Keeps the login fresh on every page, and sends signed-out people from private areas to /login.
 const PRIVATE = ["/app", "/employer", "/admin", "/welcome", "/invite"];
@@ -13,6 +15,25 @@ export async function proxy(request: NextRequest) {
     to.protocol = "https:";
     to.port = "";
     return NextResponse.redirect(to, 308);
+  }
+
+  // A Find jobs search that has a page of its own (/jobs?category=sales&level=senior) moves there for good, before
+  // anything is sent, so search engines see one address. The page number and an open job (?job=) come along.
+  if (request.nextUrl.pathname === "/jobs" && request.nextUrl.search) {
+    const sp = request.nextUrl.searchParams;
+    const params: Record<string, string[]> = {};
+    sp.forEach((v, k) => { (params[k] ??= []).push(v); });
+    const clean = seoPath(readFilters(params));
+    if (clean) {
+      const to = request.nextUrl.clone();
+      to.pathname = clean;
+      const keep = new URLSearchParams();
+      const page = Number(sp.get("page"));
+      if (page > 1) keep.set("page", String(Math.min(1000, Math.floor(page))));
+      if (sp.get("job")) keep.set("job", sp.get("job")!);
+      to.search = keep.size ? `?${keep}` : "";
+      return NextResponse.redirect(to, 308);
+    }
   }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

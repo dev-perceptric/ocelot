@@ -549,14 +549,14 @@ isOneToOne: false
                   ]
                 },"seo_page_counts": {
                   Row: {
-                    "area": string,"jobs": number,"place": string
+                    "area": string,"extra": string,"jobs": number,"place": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "area": string,"jobs": number,"place": string
+                    "area": string,"extra"?: string,"jobs": number,"place": string
                   }
                   Update: {
-                    "area"?: string,"jobs"?: number,"place"?: string
+                    "area"?: string,"extra"?: string,"jobs"?: number,"place"?: string
                   }
                   Relationships: [
                     
@@ -849,6 +849,11 @@ isOneToOne: false
 "like_escape":
 { Args: { "p": string }; Returns: string
                            },
+"company_area_counts":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "slug": string,"name": string,"area": string,"jobs": number
+            }[]
+                           },
 "hiring_companies":
 { Args: { "p_limit"?: number }; Returns: {
               "name": string,"slug": string,"logo_url": string | null,"jobs": number
@@ -897,6 +902,9 @@ isOneToOne: false
                            },
 "save_job":
 { Args: { "p_job": string }; Returns: string
+                           },
+"search_summary":
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: unknown
                            },
 "search_jobs_count":
 { Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number

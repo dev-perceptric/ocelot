@@ -1014,4 +1014,33 @@ select pg_temp.expect((select count(*) from search_jobs(p_limit => 2)) <= 2 and 
   (select array_agg(id) from (select id from search_jobs() offset 1 limit 2) x), 'a page is the same jobs as that part of the full list');
 reset role;
 update orgs set suspended_at = null where slug = 'region-co';
+-- ---------- Pages with one extra filter (037_seo_more.sql) ----------
+reset role;
+update jobs set seniority = 'senior', employment_type = 'contract', salary_min = 120000, salary_max = 160000, salary_currency = 'USD', salary_period = 'year'
+where slug in ('sm-1', 'sm-2');
+select refresh_seo_counts();
+select pg_temp.act(null);
+create or replace function pg_temp.page(p_area text, p_place text, p_extra text) returns int language sql as $$
+  select coalesce((select jobs from seo_page_counts where area = p_area and place = p_place and extra = p_extra), 0)
+$$;
+select pg_temp.expect(pg_temp.page('all', 'all', 'level:senior') = search_jobs_count(seniorities => '{senior}') and search_jobs_count(seniorities => '{senior}') > 0,
+  'a level page counts what search finds');
+select pg_temp.expect(pg_temp.page('all', 'all', 'type:contract') = search_jobs_count(types => '{contract}'), 'a job type page counts what search finds');
+select pg_temp.expect(pg_temp.page('all', 'all', 'pay:100000') = search_jobs_count(min_pay => 100000)
+  and pg_temp.page('all', 'all', 'pay:150000') = search_jobs_count(min_pay => 150000), 'pay pages count what search finds');
+select pg_temp.expect(pg_temp.page('all', 'remote', 'level:senior') = search_jobs_count(workplaces => '{remote}', seniorities => '{senior}'), 'and so do remote pages with an extra');
+select pg_temp.expect((select (search_summary()->>'jobs')::int) = search_jobs_count(), 'a page summary counts the same jobs as search');
+select pg_temp.expect((select (search_summary(seniorities => '{senior}')->>'pay_listed')::int) >= 1
+  and (select (search_summary(seniorities => '{senior}')->>'pay_low')::numeric) between 120000 and 160000, 'and reads the pay range from listed yearly pay');
+select pg_temp.expect((select count(*) from seo_counts()) = (select count(*) from seo_page_counts where extra = ''), 'seo_counts still lists the pages without an extra');
+reset role;
+update orgs set suspended_at = now() where slug = 'region-co';
+select refresh_seo_counts();
+select pg_temp.act(null);
+select pg_temp.expect(pg_temp.page('all', 'all', 'level:senior') = search_jobs_count(seniorities => '{senior}'), 'a suspended company leaves the extra pages too');
+select pg_temp.expect(not exists (select 1 from company_area_counts() where slug = 'region-co'), 'and the company pages by area');
+select pg_temp.expect(not exists (select 1 from jsonb_array_elements(search_summary()->'top') t where t->>'slug' = 'region-co'), 'and page summaries');
+reset role;
+update orgs set suspended_at = null where slug = 'region-co';
+select refresh_seo_counts();
 \echo 'All boundary tests passed.'

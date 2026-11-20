@@ -22,7 +22,12 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
   const f = readFilters(params);
   // A search with its own page (sales in Texas, or just "Texas" typed in the box) lives at that address.
   const clean = seoPath(f);
-  if (clean) permanentRedirect(page > 1 ? `${clean}?page=${page}` : clean);
+  if (clean) {
+    const keep = new URLSearchParams();
+    if (page > 1) keep.set("page", String(page));
+    if (typeof params.job === "string") keep.set("job", params.job);
+    permanentRedirect(keep.size ? `${clean}?${keep}` : clean);
+  }
   const fresh = !activeCount(f) && !f.q;
   return <JobResults filters={f} page={page} footer={fresh ? <SeoLinks /> : null} intro={fresh && page === 1 ? <QuickStart /> : null}
     heading={<h1 className="text-section-sm font-bold md:text-section">Find jobs</h1>} />;
