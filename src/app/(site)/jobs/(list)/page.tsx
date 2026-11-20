@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
 import { activeCount, readFilters } from "@/lib/search";
 import { seoPath } from "@/lib/seo";
-import { QuickStart } from "./QuickStart";
-import { JobResults } from "./Results";
-import { SeoLinks } from "./SeoLinks";
+import { QuickStart } from "../QuickStart";
+import { JobResults } from "../Results";
+import { SeoLinks } from "../SeoLinks";
 
 export const dynamic = "force-dynamic";
 

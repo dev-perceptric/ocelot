@@ -143,9 +143,22 @@ const cachedSummary = unstable_cache(async (key: string): Promise<PageSummary | 
   return (data as PageSummary | null) ?? null;
 }, ["page-summary-v1"], { revalidate: 21_600 });
 
+// A failed read isn't kept, so after one the page goes without its numbers for 10 minutes instead of asking again on
+// every view while the database is slow.
+const summaryFailed = new Map<string, number>();
 export async function pageSummary(f: Filters, company?: string): Promise<PageSummary | null> {
   if (!supabaseReady) return null;
-  try { return await cachedSummary(JSON.stringify({ ...f, company })); } catch (e) { console.error(e); return null; }
+  const key = JSON.stringify({ ...f, company });
+  const failedAt = summaryFailed.get(key);
+  if (failedAt && Date.now() - failedAt < 10 * 60_000) return null;
+  try {
+    return await cachedSummary(key);
+  } catch (e) {
+    console.error(e);
+    if (summaryFailed.size > 5000) summaryFailed.clear();
+    summaryFailed.set(key, Date.now());
+    return null;
+  }
 }
 
 // Live jobs by company and area (3 or more), for company pages by area, kept for an hour.

@@ -38,22 +38,3 @@ export function JobListSkeleton() {
     </div>
   );
 }
-
-// A job page.
-export function JobPageSkeleton() {
-  return (
-    <div role="status" aria-label="Loading job" className="mx-auto max-w-[1200px] px-5 py-10 md:px-8 md:py-16">
-      <div className="grid gap-10 md:grid-cols-[1fr_320px]">
-        <div>
-          <div className="flex items-center gap-3"><div className={`size-10 ${block}`} /><div className={`h-5 w-40 ${block}`} /></div>
-          <div className={`mt-4 h-10 w-3/4 ${block}`} />
-          <div className={`mt-3 h-5 w-1/2 ${block}`} />
-          <div className="mt-10 flex flex-col gap-3">{Array.from({ length: 10 }, (_, i) => <div key={i} className={`h-5 ${block}`} style={{ width: `${95 - (i % 4) * 12}%` }} />)}</div>
-        </div>
-        <div className="flex h-fit flex-col gap-3 border border-border bg-surface p-6 rounded-[var(--radius-card)]">
-          <div className={`h-11 ${block}`} /><div className={`h-11 ${block}`} /><div className={`h-4 w-24 ${block}`} />
-        </div>
-      </div>
-    </div>
-  );
-}
