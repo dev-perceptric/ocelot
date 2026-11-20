@@ -11,13 +11,14 @@ Each folder here is one Docker Compose project in `/docker` on the server:
 | `sb-ocelot/` | Ocelot's Supabase: Postgres 17, GoTrue, PostgREST, Storage, Envoy gateway (shared files in `/opt/sb/files`) | 512 + 128 + 128 + 256 + 128 MB |
 | `sb-public-ocelot/` | `db.joinocelot.com` through Traefik to the gateway | 64 MB |
 | `ocelot-migrate/` | Applies new `supabase/migrations/NNN_*.sql` from `main` every 2 minutes, recorded in `ops.schema_migrations` | 128 MB |
-| `ocelot-web/` | `joinocelot.com` (and `www`), image `ghcr.io/dev-perceptric/ocelot-web` | 1 GB (job board sync runs here) |
-| `ocelot-worker/` | The background worker, image `ghcr.io/dev-perceptric/ocelot-worker` | 256 MB |
+| `ocelot-web/` | `joinocelot.com` (and `www`), image `ghcr.io/dev-perceptric/ocelot-web`. Only serves visitors (`CRON_DISABLED=1`), with twice the default CPU weight | 768 MB |
+| `ocelot-jobs/` | The same image with no public address: runs the hourly alerts and job board sync, discovery and logos, so that work never slows the site. At most half a CPU core | 1 GB |
+| `ocelot-worker/` | The background worker, image `ghcr.io/dev-perceptric/ocelot-worker`. Calls `ocelot-jobs` hourly over the `ocelot-jobs` network | 256 MB |
 | `ocelot-backup/` | Nightly `pg_dump` at 03:15 UTC into `/opt/backups/ocelot`, 14 days; copies to Backblaze B2 when set | 128 MB |
 | `ocelot-move/` | The one-time data move from Supabase Cloud | runs once |
 | `uptime/gatus-endpoint.yaml` | The health checks for the `uptime` project's Gatus | |
 
-Real use is about 1.2 GB. `migrate.sh` and `backup.sh` are embedded in their compose files as base64, because
+Real use is about 1.5 GB. `migrate.sh` and `backup.sh` are embedded in their compose files as base64, because
 Hostinger's Docker manager can't place files next to a project: after editing one, run `build.sh` in its folder.
 
 ## 1. DNS (Namecheap, joinocelot.com, Advanced DNS)
@@ -40,8 +41,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dev-perceptric/ocelot/main/d
 
 It checks memory and the shared Supabase files, copies these folders to `/docker`, makes fresh secrets for
 `sb-ocelot` (matching `sb-arrowsterr`'s key format), asks for the Resend key, starts the stack, waits for Storage,
-starts `db.joinocelot.com`, the migrate runner (and waits for every migration), the backup, and the web app and
-worker once their images are on ghcr.io, and adds `ocelot-web ocelot-worker` to the autodeploy list. It keeps every
+starts `db.joinocelot.com`, the migrate runner (and waits for every migration), the backup, and the jobs copy, web app
+and worker once their images are on ghcr.io, and adds `ocelot-web ocelot-jobs ocelot-worker` to the autodeploy list. It keeps every
 `.env` that already exists, so it is safe to run again. At the end it prints the public anon key for GitHub.
 
 ## 6. Move the data from Supabase Cloud (once)
@@ -84,18 +85,19 @@ the other apps, then `docker compose restart` in `/docker/uptime`.
 - [ ] Sign in at https://joinocelot.com/login: the 6-digit code email arrives from `hello@joinocelot.com`.
 - [ ] `docker exec sb-ocelot-db-1 psql -U postgres -c 'select count(*) from ops.schema_migrations'` matches the files
   in `supabase/migrations`.
-- [ ] `docker logs ocelot-worker-worker-1` shows `ocelot worker started` and no errors; Admin → Job boards shows the
-  hourly run.
+- [ ] `docker logs ocelot-worker-worker-1` shows `ocelot worker started` and an `hourly:` line; Admin → Job boards shows
+  the hourly run; `docker logs ocelot-jobs-jobs-1` shows `boards: … synced`.
 - [ ] `docker logs ocelot-backup-backup-1` shows a `Done:` line; a file is in `/opt/backups/ocelot`.
 - [ ] `free -m` stays under about 6.4 GB in use.
 
 ## Logs and Studio
 
-- Logs: `docker logs ocelot-web-web-1`, `ocelot-worker-worker-1`, `ocelot-migrate-migrate-1`, `sb-ocelot-auth-1`.
+- Logs: `docker logs ocelot-web-web-1`, `ocelot-jobs-jobs-1`, `ocelot-worker-worker-1`, `ocelot-migrate-migrate-1`, `sb-ocelot-auth-1`.
 - SQL: `docker exec -it sb-ocelot-db-1 psql -U postgres`.
 
 ## Undo
 
 `docker compose down` in each folder (add `-v` on `sb-ocelot` only to delete the database too), take
-`ocelot-web ocelot-worker` off the autodeploy list (the install left a `.bak-ocelot` copy of the list), and point
+`ocelot-web ocelot-jobs ocelot-worker` off the autodeploy list (the install left a `.bak-ocelot` copy of
+`/docker/autodeploy/docker-compose.yml`), and point
 DNS elsewhere.

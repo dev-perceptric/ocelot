@@ -9,7 +9,7 @@ Ocelot pulls jobs from companies' public job boards so Find jobs fills up withou
    A board with jobs that pass the filters is added under the company's name and synced at once. Discovery stops adding boards once the cap of imported jobs is live (`app_settings.max_imported_jobs`, 9,000 since migration 034). Ocelot shares its Supabase organization, and the Free plan's logs, egress and database limits, with Omniscient: going over them can restrict both. Raise the cap after moving Ocelot to its own organization on Pro.
 2. **Syncing boards.** Boards from the name list sync every 6 hours; boards from the crawl, once a day. Each imported job keeps a fingerprint of what the board said, so a sync writes only the jobs that changed, adds new ones in one batch and tops up the 30 live days in one go.
 
-The hourly call answers at once; board work runs after it: syncing for up to 4 minutes (six boards at a time), finding for up to 4 minutes (up to 1,000 checks, ten at a time), then logos.
+The hourly call goes to `ocelot-jobs`, a copy of the app with no public address and at most half a CPU core (`deploy/ocelot-jobs`), so board work never slows the public site. The call answers at once; board work runs after it: syncing for up to 4 minutes (six boards at a time), finding for up to 4 minutes (up to 1,000 checks, ten at a time), then logos.
 
 When the name list was built (October 2026), a test run found 398 boards and about 4,600 live US and Canadian jobs within three hourly runs. A test of 30 random crawl boards of each kind found US and Canadian jobs on a third of them, which points to roughly 40,000 to 50,000 more jobs across the crawl list (before the cap).
 
@@ -69,8 +69,8 @@ Boards read through several calls (`src/lib/ats/readers.ts`) only open jobs whos
 | Item | Beta | Growth |
 |---|---:|---:|
 | Feeds: public, free | $0 | $0 |
-| Sync and discovery: inside the existing hourly run on the web app, up to about 8 minutes an hour | $0 | $0 |
-| Web app memory 512 MB to 1 GB for the larger board work | $2 (check) | $4, two machines (check) |
+| Sync and discovery: the hourly run on `ocelot-jobs` (VPS, already paid), up to about 12 minutes an hour | $0 | $0 |
+| `ocelot-jobs` memory, up to 1 GB on the VPS | $0 | $0 |
 | Database: 15,000 imported jobs (about 120 MB) fits Supabase Free; more needs Pro, already in the plan before real users | $0 | $0 |
 | Logos: about 10 KB each in Supabase Storage (under 20 MB for 2,000 companies, inside the plan's 100 GB) | $0 | $0 |
-| **Adds** | **$2 (check)** | **$4 (check)** |
+| **Adds** | **$0** | **$0** |

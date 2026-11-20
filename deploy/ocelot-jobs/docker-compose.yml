@@ -1,0 +1,35 @@
+# /docker/ocelot-jobs on the Hostinger VPS. A second copy of the Ocelot app that only does the hourly run: alerts,
+# reminders and digests, then job board sync, discovery and logos (src/app/api/cron/route.ts). It has no public
+# address (Traefik ignores it), so that work never slows joinocelot.com, and it may use at most half a CPU core so it
+# never starves the other apps. ocelot-worker calls it at http://ocelot-jobs:3000 on the ocelot-jobs network.
+# Its .env is the same as ocelot-web's. autodeploy keeps it on :latest.
+name: ocelot-jobs
+
+services:
+  jobs:
+    image: ghcr.io/dev-perceptric/ocelot-web:latest
+    env_file:
+      - .env
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 1g
+    networks:
+      default:
+        aliases: [ocelot-jobs]
+    labels:
+      - traefik.enable=false
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  default:
+    name: ocelot-jobs

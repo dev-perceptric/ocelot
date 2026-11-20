@@ -4,7 +4,8 @@
 #   /docker/sb-public-ocelot  db.joinocelot.com through Traefik
 #   /docker/ocelot-migrate    runs new supabase/migrations files from main
 #   /docker/ocelot-web        joinocelot.com (image from ghcr.io, kept current by autodeploy)
-#   /docker/ocelot-worker     the background worker (same)
+#   /docker/ocelot-jobs       a private copy of the app that runs the hourly job board work (same; half a CPU core)
+#   /docker/ocelot-worker     the background worker; calls ocelot-jobs hourly (same)
 #   /docker/ocelot-backup     nightly database dump to /opt/backups/ocelot
 #   /docker/ocelot-move       the one-time data move from Supabase Cloud (step 6)
 # Run as root in hPanel's browser terminal:
@@ -55,7 +56,7 @@ say "1. Ocelot's files"
 SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
 git clone -q --depth 1 "$REPO" "$SRC"
-for p in sb-ocelot sb-public-ocelot ocelot-migrate ocelot-web ocelot-worker ocelot-backup ocelot-move; do
+for p in sb-ocelot sb-public-ocelot ocelot-migrate ocelot-web ocelot-jobs ocelot-worker ocelot-backup ocelot-move; do
   mkdir -p "$D/$p"
   # Every file from the repo folder; .env files are never in the repo, so existing ones stay.
   cp -r "$SRC/deploy/$p/." "$D/$p/"
@@ -137,7 +138,9 @@ set_env "$K" SITE_URL https://joinocelot.com
 set_env "$K" RESEND_API_KEY "$resend"
 add_env "$K" EMAIL_FROM "Ocelot <hello@joinocelot.com>"
 set_env "$D/ocelot-backup/.env" PGPASSWORD "$(get_env "$SB/.env" POSTGRES_PASSWORD)"
-chmod 600 "$W" "$K" "$D/ocelot-backup/.env"
+# ocelot-jobs is the same app with no public address, so it gets the same settings.
+cp "$W" "$D/ocelot-jobs/.env"
+chmod 600 "$W" "$K" "$D/ocelot-jobs/.env" "$D/ocelot-backup/.env"
 (cd "$D/ocelot-backup" && docker compose up -d --quiet-pull)
 
 images_ok=true
@@ -145,6 +148,8 @@ for img in ocelot-web ocelot-worker; do
   docker pull -q "ghcr.io/dev-perceptric/$img:latest" >/dev/null 2>&1 || images_ok=false
 done
 if $images_ok; then
+  # ocelot-jobs first: it creates the network the worker joins.
+  (cd "$D/ocelot-jobs" && docker compose up -d)
   (cd "$D/ocelot-web" && docker compose up -d)
   (cd "$D/ocelot-worker" && docker compose up -d)
   echo "Web and worker started."
@@ -153,21 +158,28 @@ else
 fi
 
 say "6. autodeploy"
-list=$(grep -rlE 'pulsearr-worker|arrowsterr-web' "$D/autodeploy" 2>/dev/null | grep -v '\.bak' | head -1 || true)
-if [ -z "$list" ]; then
-  warn "Couldn't find the autodeploy project list in $D/autodeploy. Add 'ocelot-web ocelot-worker' to it by hand."
-elif grep -q 'ocelot-web' "$list"; then
-  echo "Already on the list in $list."
+# autodeploy's project list sits in its compose file as a base64 script: decode it, add Ocelot's projects, encode it.
+AD=$D/autodeploy/docker-compose.yml
+old=$(grep -oE 'echo [A-Za-z0-9+/=]{100,}' "$AD" 2>/dev/null | head -1 | cut -d' ' -f2 || true)
+if [ -z "$old" ]; then
+  warn "Couldn't read the project list in $AD. Add 'ocelot-web ocelot-jobs ocelot-worker' to it by hand."
 else
-  cp "$list" "$list.bak-ocelot"
-  if grep -q 'pulsearr-worker' "$list"; then
-    sed -i '0,/pulsearr-worker/s//pulsearr-worker ocelot-web ocelot-worker/' "$list"
+  script=$(echo "$old" | base64 -d)
+  list=$(grep -m1 -E '^\s*for p in ' <<<"$script")
+  newlist=$list
+  for p in ocelot-web ocelot-jobs ocelot-worker; do
+    grep -qw -- "$p" <<<"$newlist" || newlist=$(sed "s/; do\$/ $p; do/" <<<"$newlist")
+  done
+  if [ "$newlist" = "$list" ]; then
+    echo "Ocelot is already on the autodeploy list."
   else
-    sed -i '0,/arrowsterr-web/s//arrowsterr-web ocelot-web ocelot-worker/' "$list"
+    cp "$AD" "$AD.bak-ocelot"
+    new=$(awk -v a="$list" -v b="$newlist" '$0 == a { print b; next } { print }' <<<"$script" | base64 -w0)
+    sed -i "s|$old|$new|" "$AD"
+    echo "$new" | base64 -d | grep -m1 'for p in'
+    (cd "$D/autodeploy" && docker compose up -d) >/dev/null 2>&1 && echo "Added and restarted autodeploy (backup: $AD.bak-ocelot)." \
+      || warn "Added; restart autodeploy by hand: cd $D/autodeploy && docker compose up -d"
   fi
-  grep -n 'ocelot-web' "$list" | head -3
-  (cd "$D/autodeploy" && docker compose up -d) >/dev/null 2>&1 && echo "Added to $list and restarted autodeploy." \
-    || warn "Added to $list; restart autodeploy by hand (cd $D/autodeploy && docker compose up -d)."
 fi
 
 say "Done on the server."
@@ -176,6 +188,6 @@ echo
 echo "In GitHub (https://github.com/dev-perceptric/ocelot/settings/variables/actions), set the variable:"
 echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY = $ANON"
 echo "(It's public: it's built into the pages.) Also NEXT_PUBLIC_SUPABASE_URL = https://db.joinocelot.com."
-$images_ok || echo "Then run Actions > Check and deploy > Run workflow. autodeploy starts web and worker within 5 minutes of the images landing."
+$images_ok || echo "Then run Actions > Check and deploy > Run workflow. autodeploy starts web, jobs and worker within 5 minutes of the images landing."
 echo
 echo "Next: move the data from Supabase Cloud (deploy/README.md step 6): cd $D/ocelot-move && bash move-from-cloud.sh"

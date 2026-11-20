@@ -9,9 +9,13 @@ services:
     image: ghcr.io/dev-perceptric/ocelot-web:latest
     env_file:
       - .env
+    environment:
+      # The hourly run (job board sync and alerts) happens on ocelot-jobs, so this copy only serves visitors.
+      CRON_DISABLED: "1"
     restart: unless-stopped
-    # The job board sync runs inside the web app, so it keeps the 1 GB it had on Fly.
-    mem_limit: 1g
+    mem_limit: 768m
+    # Twice the default CPU weight: when the server is busy, visitors' pages go first.
+    cpu_shares: 2048
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 30s

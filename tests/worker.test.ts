@@ -110,3 +110,17 @@ test("the hourly run calls the app with the cron key, once an hour", async () =>
   assert.equal(cronCalls().length, 2);
   assert.match(cronCalls()[1].auth ?? "", /^Bearer [0-9a-f]{48}$/, "with a saved pass, the pass");
 });
+
+test("the hourly call goes to CRON_URL when it's set, and email links keep the site address", async () => {
+  const urls: string[] = [];
+  const fetchImpl = async (url: string) => {
+    urls.push(url);
+    if (url.endsWith("/rpc/claim_queue")) return new Response("[]");
+    if (url.endsWith("/rpc/expire_jobs")) return new Response("0");
+    return new Response("{}");
+  };
+  const worker = makeWorker({ url: "https://db.test", key: "service-key", siteUrl: "https://app.test", cronUrl: "http://ocelot-jobs:3000/", fetchImpl, log: { log() {}, error() {} } });
+  await worker.tick();
+  assert.ok(urls.includes("http://ocelot-jobs:3000/api/cron"));
+  assert.ok(!urls.includes("https://app.test/api/cron"));
+});

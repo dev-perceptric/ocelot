@@ -1,5 +1,6 @@
-# /docker/ocelot-worker on the Hostinger VPS. Reads jobs_queue: expires old jobs, sends queued emails, runs the hourly
-# job board sync. It talks to Supabase at https://db.joinocelot.com with the service key, so it needs no extra network.
+# /docker/ocelot-worker on the Hostinger VPS. Reads jobs_queue (expires old jobs, sends queued emails) and once an
+# hour calls ocelot-jobs, which runs the alerts and the job board sync away from the public site. It talks to Supabase
+# at https://db.joinocelot.com with the service key. Start ocelot-jobs first: it creates the ocelot-jobs network.
 # Secrets live in /docker/ocelot-worker/.env on the server, never in the repo. autodeploy keeps it on :latest.
 name: ocelot-worker
 
@@ -8,10 +9,20 @@ services:
     image: ghcr.io/dev-perceptric/ocelot-worker:latest
     env_file:
       - .env
+    environment:
+      CRON_URL: http://ocelot-jobs:3000
     restart: unless-stopped
     mem_limit: 256m
+    networks:
+      - default
+      - jobs
     logging:
       driver: json-file
       options:
         max-size: 10m
         max-file: "3"
+
+networks:
+  jobs:
+    external: true
+    name: ocelot-jobs

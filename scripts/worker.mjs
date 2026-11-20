@@ -1,5 +1,7 @@
 // The Ocelot worker. Every minute: close jobs past their end date, then run due tasks from jobs_queue.
 // Every hour: ask the app to queue alerts, reminders and digests (POST /api/cron with a key made from the service role secret).
+// On the VPS that call goes to ocelot-jobs (CRON_URL), a copy of the app with no public address, so the board work never
+// slows the site visitors use (deploy/ocelot-jobs).
 // Talks to Supabase over its REST API with the service role key, so it needs no packages.
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY (for email), EMAIL_FROM.
 
@@ -9,7 +11,7 @@ import { pathToFileURL } from "node:url";
 // A task fails for good (no more retries) when trying again can't help.
 export class FinalError extends Error {}
 
-export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocelot.com>", siteUrl = "https://joinocelot.com", cronEveryMs = 3_600_000, fetchImpl = fetch, log = console, now = () => Date.now() }) {
+export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocelot.com>", siteUrl = "https://joinocelot.com", cronUrl = siteUrl, cronEveryMs = 3_600_000, fetchImpl = fetch, log = console, now = () => Date.now() }) {
   let lastCron = 0;
   const cronKey = createHmac("sha256", key).update("ocelot-cron-v1").digest("hex");
   const rest = (path, init = {}) =>
@@ -73,7 +75,7 @@ export function makeWorker({ url, key, resendKey, from = "Ocelot <hello@joinocel
       const made = await rest("cron_passes", { method: "POST", body: JSON.stringify({ token: pass }), headers: { Prefer: "return=minimal" } });
       const auth = made.ok ? pass : cronKey;
       if (!made.ok) log.error(`cron pass not saved: ${made.status}`);
-      const res = await fetchImpl(`${siteUrl.replace(/\/$/, "")}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${auth}` } });
+      const res = await fetchImpl(`${cronUrl.replace(/\/$/, "")}/api/cron`, { method: "POST", headers: { Authorization: `Bearer ${auth}` } });
       const body = await res.text();
       if (res.ok) log.log(`hourly: ${body}`);
       else log.error(`hourly run failed: ${res.status} ${body.slice(0, 200)}`);
@@ -113,7 +115,8 @@ async function main() {
     console.error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
     process.exit(1);
   }
-  const worker = makeWorker({ url, key, resendKey: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM, siteUrl: process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL });
+  const siteUrl = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL;
+  const worker = makeWorker({ url, key, resendKey: process.env.RESEND_API_KEY, from: process.env.EMAIL_FROM, siteUrl, cronUrl: process.env.CRON_URL ?? siteUrl });
   const tickMs = Number(process.env.TICK_MS ?? 60_000);
 
   let stopping = false;

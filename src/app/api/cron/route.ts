@@ -14,6 +14,8 @@ let boardsBusy = false;
 // The worker calls this every hour with its key. Emails are queued before answering. Job boards (sync,
 // discovery, then logos) run after the answer, for up to about 12 minutes, so the worker's call stays short.
 export async function POST(req: NextRequest) {
+  // The public web app on the VPS sets CRON_DISABLED=1: the hourly run happens on ocelot-jobs instead (deploy/ocelot-jobs).
+  if (process.env.CRON_DISABLED === "1") return NextResponse.json({ error: "not here" }, { status: 404 });
   // The worker's one-time pass from the database, or the older key made from the server secret.
   const header = req.headers.get("authorization") ?? "";
   const pass = header.replace(/^Bearer /, "");
