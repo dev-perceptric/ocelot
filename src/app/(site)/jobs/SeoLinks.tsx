@@ -23,7 +23,17 @@ function Group({ title, links }: { title: string; links: SeoLink[] }) {
 // Links between role and place pages, so people and search engines can move between them. Only pages with jobs.
 export async function SeoLinks({ filters: f }: { filters?: Filters }) {
   const pages = await seoPages();
-  if (!f) return <Group title="Popular searches" links={pages.slice(0, 30)} />;
+  if (!f) {
+    const remote = (l: SeoLink) => l.f.where.length > 0;
+    const placeOnly = (l: SeoLink) => !l.f.category && !l.f.role && !remote(l);
+    return (
+      <>
+        <Group title="Popular searches" links={pages.filter((l) => !remote(l) && !placeOnly(l)).slice(0, 24)} />
+        <Group title="Remote jobs" links={pages.filter(remote).slice(0, 12)} />
+        <Group title="Jobs by place" links={pages.filter(placeOnly).slice(0, 15)} />
+      </>
+    );
+  }
   const here = (l: SeoLink) => sameArea(l.f, f) && samePlace(l.f, f);
   const hasPlace = Boolean(f.country || f.region || f.city || f.where.length);
   const hasArea = Boolean(f.category || f.role);

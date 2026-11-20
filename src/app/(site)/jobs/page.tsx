@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { permanentRedirect } from "next/navigation";
 import { activeCount, readFilters } from "@/lib/search";
 import { seoPath } from "@/lib/seo";
+import { QuickStart } from "./QuickStart";
 import { JobResults } from "./Results";
 import { SeoLinks } from "./SeoLinks";
 
@@ -22,6 +23,7 @@ export default async function JobsPage({ searchParams }: { searchParams: SP }) {
   // A search with its own page (sales in Texas, or just "Texas" typed in the box) lives at that address.
   const clean = seoPath(f);
   if (clean) permanentRedirect(page > 1 ? `${clean}?page=${page}` : clean);
-  return <JobResults filters={f} page={page} footer={activeCount(f) || f.q ? null : <SeoLinks />}
+  const fresh = !activeCount(f) && !f.q;
+  return <JobResults filters={f} page={page} footer={fresh ? <SeoLinks /> : null} intro={fresh && page === 1 ? <QuickStart /> : null}
     heading={<h1 className="text-section-sm font-bold md:text-section">Find jobs</h1>} />;
 }

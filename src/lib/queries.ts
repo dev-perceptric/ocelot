@@ -81,3 +81,47 @@ export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | 
     .order("published_at", { ascending: false });
   return { org: org as Org, jobs: (jobs ?? []) as Job[] };
 }
+
+export type HiringCompany = { name: string; slug: string; logo_url: string | null; jobs: number };
+
+// Companies with live jobs, most jobs first (hiring_companies, 035_jobs_ui.sql). Duplicates count once.
+export async function hiringCompanies(limit = 500): Promise<HiringCompany[]> {
+  if (!supabaseReady) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("hiring_companies", { p_limit: limit });
+  if (error) console.error("hiringCompanies", error);
+  return (data ?? []).map((c) => ({ ...c, jobs: Number(c.jobs) }));
+}
+
+// How many live jobs a search finds, without loading them.
+export async function countJobs(f: Partial<Filters>): Promise<number> {
+  return (await searchJobs(f, 1, 1)).total;
+}
+
+// Under a job: the company's other live jobs, and jobs in the same role (or area) from other companies.
+export async function relatedJobs(job: Pick<Job, "id" | "org_id" | "role" | "category" | "dupe_key">): Promise<{ company: Job[]; similar: JobWithOrg[] }> {
+  if (!supabaseReady) return { company: [], similar: [] };
+  const supabase = await createClient();
+  const [{ data: company }, { jobs }] = await Promise.all([
+    supabase.from("jobs").select("*").eq("org_id", job.org_id).eq("status", "published").neq("id", job.id)
+      .order("published_at", { ascending: false }).limit(4),
+    job.role || job.category ? searchJobs(job.role ? { role: job.role } : { category: job.category }, 1, 12) : Promise.resolve({ jobs: [] as JobWithOrg[] }),
+  ]);
+  const similar = jobs.filter((j) => j.id !== job.id && j.org_id !== job.org_id && (!job.dupe_key || j.dupe_key !== job.dupe_key)).slice(0, 4);
+  return { company: (company ?? []) as Job[], similar };
+}
+
+export type CardState = { id: string; stage: string };
+
+// The signed-in person's tracker cards for these jobs, so job cards can say Saved or Applied. Only their own cards
+// can be read (row rules), and nothing when nobody is signed in.
+export async function cardStates(jobIds: string[]): Promise<Record<string, CardState>> {
+  if (!supabaseReady || !jobIds.length) return {};
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return {};
+  const { data } = await supabase.from("tracker_items").select("id, stage, job_id").in("job_id", jobIds).order("created_at");
+  const out: Record<string, CardState> = {};
+  for (const c of data ?? []) if (c.job_id && !out[c.job_id]) out[c.job_id] = { id: c.id, stage: c.stage };
+  return out;
+}

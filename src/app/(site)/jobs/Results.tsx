@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { JobCard } from "@/components/JobCard";
-import { Button, inputClass, PageNumbers } from "@/components/ui";
+import { PageNumbers } from "@/components/ui";
 import { EMPLOYMENT, SENIORITY } from "@/lib/jobs";
 import { countryName, placeName } from "@/lib/places";
 import { regionName } from "@/lib/regions";
-import { PAGE_SIZE, searchJobs } from "@/lib/queries";
+import { cardStates, countJobs, PAGE_SIZE, searchJobs } from "@/lib/queries";
 import { filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } from "@/lib/search";
 import { searchHref } from "@/lib/seo";
 import { categoryName, roleName } from "@/lib/taxonomy";
 import { currentUser } from "@/lib/supabase/server";
 import { FilterBar, SortPicker } from "./Filters";
+import { JobList } from "./JobList";
+import { SearchBox } from "./SearchBox";
 import { SaveSearch } from "./SaveSearch";
 
 // Find jobs and every role and place page: the search box, the filter bar, the list and its pages.
@@ -33,21 +34,32 @@ export function chips(f: F) {
   return out;
 }
 
-export async function JobResults({ filters: f, page, heading, footer }: { filters: F; page: number; heading: React.ReactNode; footer?: React.ReactNode }) {
+// When a search finds nothing: the same search with one thing taken away, with how many jobs each finds. Up to three.
+async function looser(f: F, active: ReturnType<typeof chips>): Promise<{ label: string; href: string; jobs: number }[]> {
+  const tries: { label: string; f: F }[] = [];
+  if (f.q) tries.push({ label: active.length ? `"${f.q}" with no filters` : `All jobs`, f: active.length ? readFilters({ q: f.q }) : readFilters({}) });
+  if (f.q && active.length) tries.push({ label: `${active.map((c) => c.label).join(", ")} without "${f.q}"`, f: { ...f, q: "" } });
+  for (const c of active) tries.push({ label: `Without ${c.label}`, f: { ...f, ...c.without } });
+  if (f.q && !f.where.includes("remote")) tries.push({ label: `Remote "${f.q}" jobs`, f: { ...readFilters({ q: f.q }), where: ["remote"] } });
+  const counted = await Promise.all(tries.slice(0, 5).map(async (t) => ({ label: t.label, href: searchHref(t.f), jobs: await countJobs(t.f) })));
+  return counted.filter((t) => t.jobs > 0).sort((a, b) => b.jobs - a.jobs).slice(0, 3);
+}
+
+export async function JobResults({ filters: f, page, heading, intro, footer }: { filters: F; page: number; heading: React.ReactNode; intro?: React.ReactNode; footer?: React.ReactNode }) {
   const [{ jobs, total }, { user }] = await Promise.all([searchJobs(f, page), currentUser()]);
   const active = chips(f);
+  const [states, alternatives] = await Promise.all([
+    user ? cardStates(jobs.map((j) => j.id)) : Promise.resolve({}),
+    !jobs.length && (f.q || active.length) ? looser(f, active) : Promise.resolve([]),
+  ]);
   const from = (page - 1) * PAGE_SIZE + 1, to = Math.min(page * PAGE_SIZE, total);
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8 md:py-12">
       {heading}
-      <form action="/jobs" className="mt-6 flex max-w-[860px] flex-col gap-3 sm:flex-row" role="search">
-        <label htmlFor="q" className="sr-only">Role, company, or keyword</label>
-        <input id="q" name="q" defaultValue={f.q} placeholder="Role, company, or keyword" className={inputClass} />
-        {/* Keep the other filters when searching again. */}
-        {[...new URLSearchParams(filtersQuery({ ...f, q: "" }).slice(1))].map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        <Button type="submit" className="h-12 sm:w-56">Find jobs</Button>
-      </form>
+      {/* Keep the other filters when searching again. */}
+      <SearchBox key={f.q} q={f.q} keep={[...new URLSearchParams(filtersQuery({ ...f, q: "" }).slice(1))]} className="mt-6" />
+      {intro}
 
       <div className="mt-4"><FilterBar filters={f} /></div>
 
@@ -69,13 +81,20 @@ export async function JobResults({ filters: f, page, heading, footer }: { filter
         </div>
       </div>
       {jobs.length ? (
-        <div className="mt-4 grid gap-4">
-          {jobs.map((job) => <JobCard key={job.id} job={job} company={job.org?.name ?? ""} logo={job.org?.logo_url} />)}
-        </div>
+        <JobList jobs={jobs} states={states} signedIn={Boolean(user)} />
       ) : (
         <div className="mt-4 border border-border bg-surface p-8 rounded-[var(--radius-card)]">
-          <p className="text-card font-bold">{f.q || active.length ? "No jobs match." : "New jobs are on the way."}</p>
-          {f.q || active.length ? <p className="mt-2 text-body text-muted">Try fewer filters or other words.</p> : null}
+          <p className="text-card font-bold">{f.q || active.length ? `No jobs match${f.q ? ` "${f.q}"` : ""}${active.length ? ` with ${active.map((c) => c.label).join(", ")}` : ""}.` : "New jobs are on the way."}</p>
+          {alternatives.length ? (
+            <>
+              <p className="mt-2 text-body text-muted">These searches have jobs:</p>
+              <ul className="mt-3 flex flex-col gap-2">
+                {alternatives.map((a) => (
+                  <li key={a.href}><Link href={a.href} className="text-body font-bold underline">{a.label}</Link> <span className="text-meta text-muted">{a.jobs.toLocaleString("en-US")} {a.jobs === 1 ? "job" : "jobs"}</span></li>
+                ))}
+              </ul>
+            </>
+          ) : f.q || active.length ? <p className="mt-2 text-body text-muted">Try fewer filters or other words.</p> : null}
         </div>
       )}
       <PageNumbers page={page} total={total} size={PAGE_SIZE} href={(n) => searchHref(f, n)} />

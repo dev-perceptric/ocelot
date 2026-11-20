@@ -848,6 +848,11 @@ isOneToOne: false
 "like_escape":
 { Args: { "p": string }; Returns: string
                            },
+"hiring_companies":
+{ Args: { "p_limit"?: number }; Returns: {
+              "name": string,"slug": string,"logo_url": string | null,"jobs": number
+            }[]
+                           },
 "live_companies":
 { Args: Record<PropertyKey, never>; Returns: {
               "name": string,"slug": string
@@ -953,6 +958,11 @@ isOneToOne: false
                            },
 "show_trgm":
 { Args: { "": string }; Returns: (string)[]
+                           },
+"search_suggestions":
+{ Args: { "p_q": string }; Returns: {
+              "kind": string,"label": string,"slug": string | null,"jobs": number
+            }[]
                            },
 "shown_copy":
 { Args: { "p_key": string }; Returns: string
