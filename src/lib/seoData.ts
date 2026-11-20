@@ -22,32 +22,36 @@ const cachedCounts = unstable_cache(async (): Promise<[string, number][]> => {
   return out;
 }, ["seo-counts-v2"], { revalidate: 3600 });
 
-// The counts as a lookup, built once per hourly list rather than on every question.
-let lookup: { from: [string, number][]; map: Map<string, number> } | null = null;
+// The counts as a lookup. The data cache hands back a fresh copy on every read, so the lookup is kept in memory for
+// 5 minutes instead of being rebuilt per question.
+const MEMO_MS = 5 * 60_000;
+let lookup: { at: number; map: Map<string, number> | null } | null = null;
 async function counts(): Promise<Map<string, number> | null> {
+  if (lookup && Date.now() - lookup.at < MEMO_MS) return lookup.map;
   let list: [string, number][];
   try { list = await cachedCounts(); } catch (e) { console.error(e); return null; }
-  if (!list.length) return null;
-  if (lookup?.from !== list) lookup = { from: list, map: new Map(list) };
+  lookup = { at: Date.now(), map: list.length ? new Map(list) : null };
   return lookup.map;
 }
 
 const areaKey = (f: Filters) => (f.role ? `r:${f.role}` : f.category ? `c:${f.category}` : "all");
 
-// Jobs on a role and place page (0 when under 3). A state's page has its offices plus remote jobs open to its whole
-// country.
-export async function pageJobs(f: Filters): Promise<number | null> {
-  const m = await counts();
-  if (!m) return null;
+function jobsIn(m: Map<string, number>, f: Filters): number | null {
   const a = areaKey(f);
   const x = extraOf(f) ?? "";
-  const remote = f.where.includes("remote");
   const get = (place: string) => m.get(`${a}|${place}|${x}`) ?? 0;
-  if (remote) return f.country || f.region || f.city ? null : get("remote");
+  if (f.where.includes("remote")) return f.country || f.region || f.city ? null : get("remote");
   if (f.city) return get(`city:${f.city}`);
   if (f.region) return get(`region:${f.region}`) + get(`remote-in:${f.region.slice(0, 2)}`);
   if (f.country) return get(`country:${f.country}`);
   return get("all");
+}
+
+// Jobs on a role and place page (0 when under 3). A state's page has its offices plus remote jobs open to its whole
+// country.
+export async function pageJobs(f: Filters): Promise<number | null> {
+  const m = await counts();
+  return m ? jobsIn(m, f) : null;
 }
 
 // The fewest live jobs a page needs to be listed for search engines (in the sitemap, linked, and not marked noindex).
@@ -58,31 +62,65 @@ export const minJobs = (f: Filters) => (extraOf(f) ? MIN_JOBS_EXTRA : MIN_JOBS);
 
 export type SeoLink = { href: string; jobs: number; f: Filters };
 
-// Every role and place page with enough live jobs to be listed (minJobs), biggest first. Kept per hourly count list.
-let pagesMemo: { from: Map<string, number>; pages: SeoLink[] } | null = null;
-export async function seoPages(): Promise<SeoLink[]> {
-  const m = await counts();
-  if (!m) return [];
-  if (pagesMemo?.from === m) return pagesMemo.pages;
-  const out: SeoLink[] = [];
-  const areas = [null, ...AREAS];
-  for (const area of areas) {
-    const base = { category: area?.category ?? undefined, role: area?.role ?? undefined };
-    const shapes = [
-      ...(area ? [readFilters(base)] : []),
-      readFilters({ ...base, where: "remote" }),
-      ...PLACES.map((p) => readFilters({ ...base, country: p.country ?? undefined, region: p.region ?? undefined, city: p.city ?? undefined })),
-    ];
-    for (const shape of shapes) {
-      for (const f of [shape, ...EXTRAS.map((e) => ({ ...shape, ...e.set }))]) {
-        const href = seoPath(f);
-        const jobs = href ? await pageJobs(f) : null;
-        if (href && jobs !== null && jobs >= minJobs(f)) out.push({ href, jobs, f });
-      }
-    }
+const EMPTY_FILTERS = readFilters({});
+const REGION_CODES = PLACES.filter((p) => p.region).map((p) => p.region!);
+const EXTRA_SET = new Map(EXTRAS.map((e) => [e.key, e.set]));
+
+// The search a counts row stands for: area 'all' | 'c:sales' | 'r:account_executive'; place 'all' | 'country:US' |
+// 'region:US-TX' | 'city:austin' | 'remote'; extra '' | 'level:senior' ... ('remote-in:' rows only add to states).
+function filtersFor(area: string, place: string, extra: string): Filters | null {
+  if (place.startsWith("remote-in:")) return null;
+  const set = extra ? EXTRA_SET.get(extra) : {};
+  if (!set) return null;
+  const f: Filters = { ...EMPTY_FILTERS, ...set };
+  if (area.startsWith("r:")) {
+    const r = AREAS.find((x) => x.role === area.slice(2));
+    if (!r) return null;
+    f.role = r.role; f.category = r.category;
+  } else if (area.startsWith("c:")) f.category = area.slice(2);
+  if (place === "remote") f.where = [...f.where, "remote"];
+  else if (place.startsWith("country:")) f.country = place.slice(8);
+  else if (place.startsWith("region:")) f.region = place.slice(7);
+  else if (place.startsWith("city:")) f.city = place.slice(5);
+  else if (place !== "all") return null;
+  return f;
+}
+
+// Every role and place page with enough live jobs to be listed (minJobs), biggest first. Built from the counts that
+// exist (only pages with 3 or more jobs are read), so it takes a few thousand steps, once an hour; kept in the data
+// cache and in memory.
+function buildPages(m: Map<string, number>): SeoLink[] {
+  const out = new Map<string, SeoLink>();
+  const consider = (f: Filters | null) => {
+    if (!f) return;
+    const href = seoPath(f);
+    if (!href || out.has(href)) return;
+    const jobs = jobsIn(m, f);
+    if (jobs !== null && jobs >= minJobs(f)) out.set(href, { href, jobs, f });
+  };
+  for (const key of m.keys()) {
+    const [area, place, extra = ""] = key.split("|");
+    // Remote jobs open to a whole country also count on each of its states' pages.
+    if (place.startsWith("remote-in:")) {
+      const cc = place.slice(10);
+      for (const r of REGION_CODES) if (r.startsWith(`${cc}-`)) consider(filtersFor(area, `region:${r}`, extra));
+    } else consider(filtersFor(area, place, extra));
   }
-  pagesMemo = { from: m, pages: out.sort((x, y) => y.jobs - x.jobs) };
-  return pagesMemo.pages;
+  return [...out.values()].sort((x, y) => y.jobs - x.jobs);
+}
+
+const cachedPages = unstable_cache(async (): Promise<SeoLink[]> => {
+  const m = await counts();
+  return m ? buildPages(m) : [];
+}, ["seo-pages-v1"], { revalidate: 3600 });
+
+let pagesMemo: { at: number; pages: SeoLink[] } | null = null;
+export async function seoPages(): Promise<SeoLink[]> {
+  if (pagesMemo && Date.now() - pagesMemo.at < MEMO_MS) return pagesMemo.pages;
+  let pages: SeoLink[];
+  try { pages = await cachedPages(); } catch (e) { console.error(e); return pagesMemo?.pages ?? []; }
+  pagesMemo = { at: Date.now(), pages };
+  return pages;
 }
 
 export type PageSummary = {
