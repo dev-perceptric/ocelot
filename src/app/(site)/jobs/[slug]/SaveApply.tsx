@@ -9,11 +9,12 @@ import { Button, ButtonLink } from "@/components/ui";
 import { STAGE_LABEL, type Stage } from "@/lib/tracker";
 import { markApplied, saveJob } from "@/app/app/tracker/actions";
 
-type Props = { jobId: string; slug: string; title: string; company: string; applyUrl: string | null; signedIn: boolean; card: { id: string; stage: Stage } | null };
+type Props = { jobId: string; slug: string; title: string; company: string; applyUrl: string | null; signedIn: boolean; card: { id: string; stage: Stage } | null; hint?: boolean };
 
 // Apply opens the company's page in a new tab; when the person comes back, we ask whether they applied.
 // Clicking the link alone never marks a job as Applied.
-export function ApplyButton({ jobId, slug, title, company, applyUrl, signedIn, card }: Props) {
+// hint={false} leaves out the "Log in to track this job" line where space is short (the phone bar, the side panel).
+export function ApplyButton({ jobId, slug, title, company, applyUrl, signedIn, card, hint = true }: Props) {
   const [asking, setAsking] = useState(false);
   const [pending, start] = useTransition();
   if (!applyUrl) return null;
@@ -37,9 +38,9 @@ export function ApplyButton({ jobId, slug, title, company, applyUrl, signedIn, c
         }>
           <p>We&apos;ll move {title} at {company} to Applied in your tracker.</p>
         </Modal>
-      ) : (
+      ) : hint ? (
         <p className="text-meta text-muted"><Link href={`/login?next=/jobs/${slug}`} className="underline">Log in</Link> to track this job.</p>
-      )}
+      ) : null}
     </>
   );
 }

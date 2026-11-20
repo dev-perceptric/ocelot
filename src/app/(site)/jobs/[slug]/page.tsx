@@ -79,9 +79,11 @@ export default async function JobPage({ params }: Props) {
       ) : null}
       {live ? (
         // On a phone, Apply and Save stay at the bottom of the screen while reading.
-        <div className="fixed inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-3 border-t border-border bg-surface px-5 py-3 md:hidden [&>a]:flex-1">
-          {applyEl}
-          <SaveButton {...props} />
+        <div className="fixed inset-x-0 bottom-0 z-20 flex items-center gap-3 border-t border-border bg-surface px-5 py-3 md:hidden">
+          <div className="min-w-0 flex-1 [&_a]:w-full">
+            {job.apply_method === "ocelot" ? applyEl : <ApplyButton {...props} hint={false} />}
+          </div>
+          <div className="shrink-0"><SaveButton {...props} /></div>
         </div>
       ) : null}
     </article>

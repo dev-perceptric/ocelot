@@ -51,7 +51,10 @@ export function JobList({ jobs, states, signedIn }: { jobs: JobWithOrg[]; states
   const select = useCallback((slug: string, replace = false) => {
     setClosedFor(null);
     setJobParam(slug, replace);
-    listRef.current?.querySelector(`[data-slug="${slug}"]`)?.scrollIntoView({ block: "nearest" });
+    // Focus follows the open job, so keyboard focus and the panel never point at different jobs.
+    const link = listRef.current?.querySelector<HTMLAnchorElement>(`[data-slug="${slug}"] h3 a`);
+    link?.focus({ preventScroll: true });
+    link?.closest("[data-slug]")?.scrollIntoView({ block: "nearest" });
   }, []);
 
   useEffect(() => {
@@ -184,7 +187,7 @@ function PanelBody({ p, onClose }: { p: PanelJob; onClose: () => void }) {
       </div>
       {live ? (
         <div className="sticky top-0 z-10 -mx-6 mt-5 flex flex-wrap items-center gap-3 border-b border-border bg-surface px-6 py-3 md:-mx-8 md:px-8">
-          {job.apply_method === "ocelot" ? <OcelotApply slug={job.slug} signedIn={p.signedIn} applied={p.applied} /> : <ApplyButton {...props} />}
+          {job.apply_method === "ocelot" ? <OcelotApply slug={job.slug} signedIn={p.signedIn} applied={p.applied} /> : <ApplyButton {...props} hint={false} />}
           <SaveButton {...props} />
           {job.published_at ? <span className="text-meta text-muted">Posted {postedAgo(job.published_at).toLowerCase()}</span> : null}
         </div>
