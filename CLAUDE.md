@@ -2,11 +2,11 @@
 
 A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Launch market: marketing, sales and customer success roles in the United States and Canada (job board sync pulls these first; `docs/job-boards.md`). Southeast Asia stays supported.
 
-Start with `docs/plan.md` (what to build and in what order), `docs/setup.md` (Supabase, the VPS and the other accounts) and `docs/brand.md` (look and copy).
+Start with `docs/plan.md` (what to build and in what order), `docs/setup.md` (the VPS, its Supabase and the other accounts) and `docs/brand.md` (look and copy).
 
-Stack: Next.js 16 and TypeScript on the Hostinger VPS (Docker Compose `web` and `worker` behind the server's Traefik, `compose.yaml`), Supabase (Postgres, Auth, Storage) in Singapore under the dev-omniscient org, Stripe Checkout, Resend for email.
+Stack: Next.js 16 and TypeScript on the Hostinger VPS (Docker Compose `web` and `worker` in `/docker/ocelot`, `compose.yaml`, behind the host's Caddy, `ops/vps/Caddyfile.ocelot`), self-hosted Supabase (Postgres, Auth, Storage) on the same VPS in `/docker/sb-ocelot` at `db.joinocelot.com` (`ops/vps/sb-ocelot.override.yml`), Stripe Checkout, Resend for email.
 
-Commands: `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test` (unit), `npm run test:db` (access boundary tests on a local Postgres, `DATABASE_URL`), `npm run build`. CI runs all of them, then deploys `main` to the VPS (`scripts/deploy-vps.sh`) and pushes new files in `supabase/migrations`.
+Commands: `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test` (unit), `npm run test:db` (access boundary tests on a local Postgres, `DATABASE_URL`), `npm run build`. CI runs all of them, then builds the images, loads them onto the VPS and runs `scripts/deploy-vps.sh`, which applies new files in `supabase/migrations` (`scripts/migrate-vps.sh`) and restarts the containers.
 
 Where things are: tables and access rules in `supabase/migrations/`, boundary tests in `tests/db/boundaries.sql`, Supabase clients in `src/lib/supabase/`, job fields and Google JobPosting data in `src/lib/jobs.ts`, shared parts in `src/components/` (`ui.tsx` for buttons, fields, tags and tables; `Select`, `Dialog` with `askConfirm`/`askText`/`tell`, `Toast`, `Menu`, `Switch`, `FileDrop`, `Tabs`; previewed at `/admin/ui`), fixed lists in `src/lib/places.ts` and `src/lib/taxonomy.ts` (mirrors of the database lists, checked by `tests/lists.test.ts`), database types in `src/lib/database.types.ts` (`npm run types`), brand tokens in `src/app/globals.css`, background work in `scripts/worker.mjs` (reads `jobs_queue`). Email: templates in `src/lib/email/templates.ts` with samples previewed at `/admin/emails`; send only through `queueEmail` in `src/lib/email/send.ts`, never inside a page request. Emails people can turn off set `pref` and get signed unsubscribe links.
 

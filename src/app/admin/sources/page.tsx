@@ -33,7 +33,7 @@ export default async function AdminSources() {
         {sources?.length ?? 0} boards, {(live ?? []).length} live jobs. Ocelot checks {names ?? 0} company names for a job board once a week{unchecked ? ` (${unchecked} not checked yet)` : ""}, and every board every 6 hours.
       </p>
       <p className={`text-meta ${settings?.last_cron_at ? "text-muted" : "text-danger"}`}>
-        {settings?.last_cron_at ? `Last hourly run: ${when(settings.last_cron_at)}. ${settings.last_cron_result ?? ""}` : "The hourly run hasn't come in yet. Check the worker on the VPS: docker compose logs worker"}
+        {settings?.last_cron_at ? `Last hourly run: ${when(settings.last_cron_at)}. ${settings.last_cron_result ?? ""}` : "The hourly run hasn't come in yet. Check the worker on the VPS: cd /docker/ocelot && docker compose logs worker"}
       </p>
       {sources?.length ? (
         <Table label="Job boards">

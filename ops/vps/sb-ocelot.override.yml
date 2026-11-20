@@ -1,0 +1,56 @@
+# Override for Ocelot's self-hosted Supabase in /docker/sb-ocelot. Copy it there as docker-compose.override.yml
+# (`docker compose` reads it on its own). Service names are the ones in Supabase's docker-compose.yml; check yours with
+# `docker compose config --services` and rename to match.
+#
+# 1. Every published port listens on 127.0.0.1 only, on ports no other project on this server uses (Capybaroar,
+#    Claritia and Omniscient have their own). Caddy on the host is the one way in. Check they're free first:
+#    ss -tlnp | grep -E ':(5440|6550|8400|8401|3410|8410|4400) '
+#    `!override` replaces the base file's port list (needs Docker Compose 2.24.4 or newer).
+# 2. Sign-in matches what Ocelot had on Supabase Cloud: confirmed email, 6-digit codes that last 1 hour, Ocelot's own
+#    email templates (served by the app from public/email-templates), and Google sign-in when its keys are in .env.
+
+services:
+  db:
+    ports: !override
+      - "127.0.0.1:5440:5432"
+
+  supavisor:
+    ports: !override
+      - "127.0.0.1:6550:6543"
+
+  kong:
+    ports: !override
+      - "127.0.0.1:8400:8000"
+      - "127.0.0.1:8401:8443"
+
+  studio:
+    ports: !override
+      - "127.0.0.1:3410:3000"
+
+  meta:
+    ports: !override
+      - "127.0.0.1:8410:8080"
+
+  analytics:
+    ports: !override
+      - "127.0.0.1:4400:4000"
+
+  auth:
+    environment:
+      GOTRUE_SITE_URL: "https://joinocelot.com"
+      GOTRUE_URI_ALLOW_LIST: "https://joinocelot.com/auth/callback,http://localhost:3000/auth/callback"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_PASSWORD_MIN_LENGTH: "8"
+      GOTRUE_MAILER_OTP_LENGTH: "6"
+      GOTRUE_MAILER_OTP_EXP: "3600"
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION: "https://joinocelot.com/email-templates/confirm_signup.html"
+      GOTRUE_MAILER_SUBJECTS_CONFIRMATION: "Your Ocelot code"
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: "https://joinocelot.com/email-templates/magic_link.html"
+      GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: "Your Ocelot code"
+      GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: "https://joinocelot.com/email-templates/email_change.html"
+      GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: "Confirm your new email"
+      # Google sign-in: set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in /docker/sb-ocelot/.env (docs/setup.md).
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: "${GOOGLE_ENABLED:-false}"
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: "https://db.joinocelot.com/auth/v1/callback"

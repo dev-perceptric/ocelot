@@ -107,15 +107,15 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Supabase (dev-omniscient org: Free while testing, Pro before real users; Micro compute covered by the $10 credit) | $25 | $25 |
-| Supabase compute upgrade (Small at Growth) | $0 | $5 (check) |
-| Hostinger VPS KVM 2 (2 CPUs, 8 GB): web app (1 GB limit, job board sync runs in it) and worker (256 MB), already paid and shared with other projects | $0 extra (check) | $0 extra; KVM 4 if it gets busy (check) |
+| Self-hosted Supabase on the VPS (`/docker/sb-ocelot`) | $0 | $0 |
+| Backups to Backblaze B2 | under $1 (check) | $1 (check) |
+| Hostinger VPS KVM 2 (2 CPUs, 8 GB): web app (1 GB limit, job board sync runs in it), worker (256 MB) and Supabase, already paid and shared with other projects; KVM 4 if memory runs short | $0 extra (check) | $0 extra, or the KVM 4 difference (check) |
 | Resend email (Pro $20 for 50,000 a month at Beta once alerts start, Scale $90 for 100,000 at Growth) | $20 (check) | $90 (check) |
 | Stripe fees (Singapore account, about 3.4% + S$0.50 per card payment) | about $5 on $100 of sales (check) | about $140 on $3,000 of sales (check) |
 | Sentry errors (free tier) | $0 | $26 (check) |
 | PostHog analytics (free tier) | $0 | $0 (check) |
 | Domain joinocelot.com (about $12 a year) | $1 | $1 |
 | Claude tokens | $0 (no AI at launch) | $0 |
-| **Total** | **about $51** | **about $287** |
+| **Total** | **about $27** | **about $258** |
 
 AI is off for launch. When URL extraction for outside jobs is added (Milestone 7 or later), add its token cost here.

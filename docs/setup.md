@@ -1,169 +1,184 @@
 # Setup from scratch
 
-Everything lives under the **dev-omniscient** accounts. Do the steps in order. Supabase runs in **Singapore** (`ap-southeast-1`). The site and the worker run on the Hostinger VPS with Docker.
+Everything runs on the Hostinger VPS (`45.90.109.7`, KVM 2: 2 CPUs, 8 GB), the same server as Capybaroar, Claritia and
+Omniscient, set up the same way:
 
-Keep a scratch note open while you go. You'll copy these values into it:
+- **Caddy** on the host takes ports 80 and 443 and gets the HTTPS certificates (`ops/vps/Caddyfile.ocelot`).
+- **Ocelot's own Supabase** in `/docker/sb-ocelot` at `db.joinocelot.com`, ports on `127.0.0.1` only
+  (`ops/vps/sb-ocelot.override.yml`).
+- **The app and the worker** in `/docker/ocelot` (`compose.yaml`), the web app on `127.0.0.1:3400`.
+- **CI** builds both images, loads them onto the server over SSH and runs `scripts/deploy-vps.sh`, which applies new
+  migrations (`scripts/migrate-vps.sh`) and restarts the containers.
 
-| Value | Where it comes from | Where it goes |
-|---|---|---|
-| Project ref | Supabase step 1 | GitHub variable `SUPABASE_PROJECT_REF` |
-| Project URL | Supabase step 1 | VPS `.env`: `NEXT_PUBLIC_SUPABASE_URL` |
-| Publishable (anon) key | Supabase step 1 | VPS `.env`: `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
-| Secret (service role) key | Supabase step 1 | VPS `.env`: `SUPABASE_SERVICE_ROLE_KEY` |
-| Database password | Supabase step 1 | GitHub secret `SUPABASE_DB_PASSWORD` |
-| Supabase access token | Supabase step 4 | GitHub secret `SUPABASE_ACCESS_TOKEN` |
-| Deploy SSH key (private half) | VPS step 2 | GitHub secret `VPS_SSH_KEY` |
-| Server fingerprint | VPS step 2 | GitHub secret `VPS_KNOWN_HOSTS` |
-| Resend API key | Resend step 3 | VPS `.env`: `RESEND_API_KEY`, Supabase SMTP |
+Ports Ocelot uses on `127.0.0.1`: web 3400; Supabase Kong 8400 and 8401, Studio 3410, Postgres 5440, pooler 6550,
+meta 8410, analytics 4400. Never paste the service role key, passwords or tokens into chat or the code.
 
-Never paste the service role key, passwords or tokens into chat or the code.
+## 0. Check the server has room
 
-## 0. GitHub: make `main`
-
-The repo's only branch is `claude/bold-dirac-xp6421`. Deploys run from `main`.
-
-1. Open https://github.com/dev-perceptric/ocelot, click the branch menu (top left of the code view), type `main` → **Create branch main from claude/bold-dirac-xp6421**.
-2. **Settings → General → Default branch** → switch to `main`.
-
-## 1. Supabase project
-
-1. Open the **dev-omniscient's Org** dashboard → **New project**.
-   - Name: `ocelot`
-   - Database password: **Generate**, then save it (this is `SUPABASE_DB_PASSWORD`).
-   - Region: **Southeast Asia (Singapore)**.
-   - Compute: the default (Nano on Free).
-2. Wait about 2 minutes.
-3. Click **Connect** (top bar) or **Project Settings → API Keys / Data API** and copy:
-   - Project URL (`https://<ref>.supabase.co`). The `<ref>` part is the project ref.
-   - Publishable key (also called anon key).
-   - Secret key (also called service_role key).
-
-Free plan notes: it allows 2 active projects, and you have 1, so `ocelot` fits. A free project pauses after 7 days with no activity. The worker talks to it every minute, which should keep it awake (check). Move to Pro ($25/month) before real users arrive, for daily backups and no pausing.
-
-## 2. Supabase login settings
-
-1. **Authentication → Sign In / Providers → Email**: on. Turn **Confirm email** on.
-2. **Authentication → URL Configuration**:
-   - Site URL: `https://joinocelot.com`
-   - Redirect URLs, add both:
-     - `https://joinocelot.com/auth/callback`
-     - `http://localhost:3000/auth/callback`
-3. **Authentication → Emails → Templates → Magic Link**: change the subject to `Your Ocelot login link`. Keep the `{{ .ConfirmationURL }}` link in the body.
-4. SMTP comes in step 5 (Resend). Until then Supabase sends only a few emails an hour, which is fine for testing.
-
-## 3. The database tables
-
-Pick one way.
-
-**A. Paste (fastest, first time).** **SQL Editor → New query**. Paste all of `supabase/migrations/001_foundation.sql`, run it. Then the same for `002_storage.sql`. Then record them so the auto-deploy doesn't run them twice:
-
-```sql
-create schema if not exists supabase_migrations;
-create table if not exists supabase_migrations.schema_migrations (version text primary key, statements text[], name text);
-insert into supabase_migrations.schema_migrations (version, name) values ('001', 'foundation'), ('002', 'storage')
-on conflict do nothing;
+```
+free -h
+docker stats --no-stream --format 'table {{.Name}}\t{{.MemUsage}}'
+ss -tlnp | grep -E ':(3400|3410|4400|5440|6550|8400|8401|8410) '
 ```
 
-**B. Automatic.** Finish step 4 and GitHub step 7. Every push to `main` then applies new migration files on its own.
+A Supabase stack uses about 1.5–2.5 GB of memory and the app up to 1.25 GB. With three Supabase stacks already
+running, check there are at least 4 GB free before you start. If not, move the VPS to KVM 4 (16 GB) in hPanel first.
+The `ss` line must print nothing (those ports are free).
 
-Check: **Table Editor** shows `jobs`, `orgs`, `tracker_items` and the rest, each with a lock icon (row level security on). **Storage** shows the private `resumes` bucket and the public `logos` bucket.
+## 1. Domain records
 
-Make yourself an admin after you log in once (step 9):
+At your domain company, for `joinocelot.com`:
+- `A` record, name `@`, value `45.90.109.7`
+- `A` record, name `db`, value `45.90.109.7`
+- `CNAME` record, name `www`, value `joinocelot.com`
+- Delete the old Fly `A` and `AAAA` records.
 
-```sql
-insert into platform_admins (user_id) select id from auth.users where email = 'vincent@perceptric.com';
-```
+## 2. Resend (email)
 
-## 4. Supabase access token (for automatic migrations)
+The `joinocelot.com` domain and its key may already exist in Resend (dev-omniscient login). If not:
+1. **Domains → Add domain** → `joinocelot.com`, add the DNS records Resend lists, wait for **Verified**.
+2. **API Keys → Create API key** → copy it (`RESEND_API_KEY`).
 
-https://supabase.com/dashboard/account/tokens → **Generate new token** → name `ocelot-github` → copy (`SUPABASE_ACCESS_TOKEN`).
+## 3. Ocelot's Supabase on the VPS
 
-## 5. Resend (email)
-
-1. Sign up at https://resend.com (use the dev-omniscient email).
-2. **Domains → Add domain** → `joinocelot.com`, region **Tokyo** (closest offered; check).
-3. Add the DNS records Resend lists at your domain company (MX and TXT for `send`, the DKIM TXT, and a DMARC TXT `_dmarc` → `v=DMARC1; p=none;`). Wait for **Verified**.
-4. **API Keys → Create API key** → full access → copy (`RESEND_API_KEY`).
-5. Back in Supabase: **Authentication → Emails → SMTP Settings** → enable custom SMTP:
-   - Sender email `hello@joinocelot.com`, sender name `Ocelot`
-   - Host `smtp.resend.com`, port `465`, username `resend`, password = the Resend API key.
-
-## 6. VPS (Hostinger KVM 2)
-
-The server already runs Docker and Traefik. Traefik takes ports 80 and 443 and gets the HTTPS certificates. Ocelot joins its network with the labels in `compose.yaml`.
-
-1. **Find Traefik's settings.** Log in to the server (`ssh root@45.90.109.7`) and run:
+1. Copy an existing stack's files (same Supabase version and container naming as the others), without its data,
+   secrets or override:
    ```
-   docker network ls
-   docker ps --filter name=traefik
+   mkdir -p /docker/sb-ocelot
+   cp /docker/sb-capybaroar/docker-compose.yml /docker/sb-capybaroar/.env /docker/sb-ocelot/
+   rsync -a --exclude db/data --exclude storage /docker/sb-capybaroar/volumes/ /docker/sb-ocelot/volumes/
+   ls /docker/sb-ocelot/volumes/db              # only .sql setup files, no data folder: the new stack starts empty
    ```
-   Note the network Traefik is on, the name of its HTTPS entrypoint and its certificate resolver (in Traefik's config file or `docker inspect <traefik container>`). The defaults in `compose.yaml` are `traefik`, `websecure` and `letsencrypt`. If yours differ, set `TRAEFIK_NETWORK`, `TRAEFIK_ENTRYPOINT` and `TRAEFIK_CERTRESOLVER` in `.env` (step 3).
-2. **Make a deploy user and key.**
+2. Fresh secrets. On your Mac, in the repo, print a new set: `node ops/vps/supabase-keys.mjs`.
+   In `/docker/sb-ocelot/.env`, replace every line it printed (`POSTGRES_PASSWORD`, `JWT_SECRET`, `ANON_KEY`,
+   `SERVICE_ROLE_KEY`, `DASHBOARD_PASSWORD`, `SECRET_KEY_BASE`, `VAULT_ENC_KEY`, `PG_META_CRYPTO_KEY`, the two
+   `LOGFLARE_*` tokens). Never reuse Capybaroar's. Then set:
+   ```
+   SITE_URL=https://joinocelot.com
+   API_EXTERNAL_URL=https://db.joinocelot.com
+   SUPABASE_PUBLIC_URL=https://db.joinocelot.com
+   ADDITIONAL_REDIRECT_URLS=https://joinocelot.com/auth/callback
+   STUDIO_DEFAULT_PROJECT=Ocelot
+   POOLER_TENANT_ID=ocelot
+   ENABLE_EMAIL_AUTOCONFIRM=false
+   SMTP_HOST=smtp.resend.com
+   SMTP_PORT=465
+   SMTP_USER=resend
+   SMTP_PASS=<RESEND_API_KEY>
+   SMTP_ADMIN_EMAIL=hello@joinocelot.com
+   SMTP_SENDER_NAME=Ocelot
+   ```
+   `chmod 600 /docker/sb-ocelot/.env`. Keep `ANON_KEY` and `SERVICE_ROLE_KEY` handy for steps 4 and 7.
+3. The override (ports on `127.0.0.1`, Ocelot's sign-in settings) and start:
+   ```
+   scp ops/vps/sb-ocelot.override.yml root@45.90.109.7:/docker/sb-ocelot/docker-compose.override.yml   # from your Mac
+   cd /docker/sb-ocelot                       # on the server
+   docker compose config --services          # names must match the override
+   docker compose config | grep -E 'host_ip|published'
+   docker compose up -d
+   docker compose ps                          # all healthy after a minute or two
+   ```
+   The container names should start with `sb-ocelot-` (for example `sb-ocelot-db-1`, which the scripts use). If yours
+   differ, set `DB_CONTAINER` when you run them.
+
+## 4. The app on the VPS
+
+1. A deploy user for CI (skip `adduser` if `deploy` already exists from another project):
    ```
    adduser --disabled-password --gecos "" deploy
    usermod -aG docker deploy
    apt-get install -y rsync
-   mkdir -p /opt/ocelot && chown deploy:deploy /opt/ocelot
+   mkdir -p /docker/ocelot && chown deploy:deploy /docker/ocelot
    ```
-   On your Mac, make a key just for deploys: `ssh-keygen -t ed25519 -f ~/.ssh/ocelot_deploy -N ""`. Put the public half (`~/.ssh/ocelot_deploy.pub`) in `/home/deploy/.ssh/authorized_keys` on the server (owner `deploy`, mode 600). The private half (`~/.ssh/ocelot_deploy`) is `VPS_SSH_KEY`. Then run `ssh-keyscan -t ed25519 45.90.109.7` on your Mac; its output line is `VPS_KNOWN_HOSTS`.
-   Being in the `docker` group gives `deploy` full control of Docker on this server, so keep this key only in GitHub.
-3. **Write the server's `.env`.** As `deploy`, create `/opt/ocelot/.env` and run `chmod 600 /opt/ocelot/.env`:
+   On your Mac: `ssh-keygen -t ed25519 -f ~/.ssh/ocelot_deploy -N ""`. Add `~/.ssh/ocelot_deploy.pub` to
+   `/home/deploy/.ssh/authorized_keys` (owner `deploy`, mode 600). The private half is `VPS_SSH_KEY`. The output of
+   `ssh-keyscan -t ed25519 45.90.109.7` is `VPS_KNOWN_HOSTS`. Being in the `docker` group gives `deploy` full control of
+   Docker on this server, so keep this key only in GitHub.
+2. Copy the repo's server files up once by hand (CI does it on every deploy after this):
+   `rsync -az --relative compose.yaml scripts/ supabase/migrations/ ops/ deploy@45.90.109.7:/docker/ocelot/`
+3. `/docker/ocelot/.env` (as `deploy`, then `chmod 600`):
    ```
-   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
+   NEXT_PUBLIC_SUPABASE_URL=https://db.joinocelot.com
    NEXT_PUBLIC_SITE_URL=https://joinocelot.com
-   SUPABASE_SERVICE_ROLE_KEY=<secret key>
+   SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY from step 3>
    RESEND_API_KEY=<resend key>
    EMAIL_FROM=Ocelot <hello@joinocelot.com>
    STRIPE_SECRET_KEY=
    STRIPE_WEBHOOK_SECRET=
-   # Only if step 1 found different names:
-   # TRAEFIK_NETWORK=traefik
-   # TRAEFIK_ENTRYPOINT=websecure
-   # TRAEFIK_CERTRESOLVER=letsencrypt
    ```
-   Every deploy reads this file. It never goes into git, and the deploy copy step never overwrites it.
 
-## 7. GitHub secrets and variables
+## 5. Caddy
+
+```
+scp ops/vps/Caddyfile.ocelot root@45.90.109.7:/etc/caddy/Caddyfile.ocelot     # from your Mac
+cat /etc/caddy/Caddyfile.ocelot >> /etc/caddy/Caddyfile                        # on the server
+caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+curl -s https://db.joinocelot.com/auth/v1/health                               # answers once the certificate is in
+```
+
+Studio: `ssh -L 3410:127.0.0.1:3410 root@45.90.109.7`, then http://localhost:3410 (DASHBOARD_USERNAME /
+DASHBOARD_PASSWORD from `/docker/sb-ocelot/.env`).
+
+## 6. Move the data from Supabase Cloud (once)
+
+1. Restore the paused cloud project: https://supabase.com/dashboard/project/tqvtkdftgzlteayzbqvj → **Restore**.
+2. From its dashboard copy: **Connect → Session pooler** connection string (with the database password), and **Project
+   Settings → API Keys** → the secret key.
+3. On the server:
+   ```
+   cd /docker/ocelot
+   read -rs CLOUD_DB_URL && export CLOUD_DB_URL          # paste, Enter (not shown, not saved in history)
+   read -rs CLOUD_SERVICE_KEY && export CLOUD_SERVICE_KEY
+   export CLOUD_URL=https://tqvtkdftgzlteayzbqvj.supabase.co
+   bash ops/vps/move-from-cloud.sh
+   ```
+   It applies the migrations to the new database, copies sign-ins and every `public` table, copies the résumé and logo
+   files, points logo links at `db.joinocelot.com` and prints row counts side by side. It ends with "every table
+   matches", or marks the tables that differ.
+4. Everyone signs in again once (sessions can't move). Passwords, Google links and accounts all carry over.
+5. Once the site works on the VPS for a week, delete the cloud project.
+
+## 7. GitHub
 
 https://github.com/dev-perceptric/ocelot → **Settings → Secrets and variables → Actions**.
 
-**Secrets** tab → **New repository secret**:
-- `VPS_SSH_KEY`
-- `VPS_KNOWN_HOSTS`
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_DB_PASSWORD`
-
-**Variables** tab → **New repository variable**:
-- `VPS_HOST` = `45.90.109.7`
-- `SUPABASE_PROJECT_REF` = the project ref
-
-Delete the old `FLY_API_TOKEN` secret and the `NEXT_PUBLIC_*` variables; the VPS `.env` holds those values now.
+- **Secrets:** `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS`. Delete `FLY_API_TOKEN`, `SUPABASE_ACCESS_TOKEN` and
+  `SUPABASE_DB_PASSWORD`.
+- **Variables:** `VPS_HOST` = `45.90.109.7`; `NEXT_PUBLIC_SUPABASE_URL` = `https://db.joinocelot.com`;
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the new `ANON_KEY` (public: it is built into the pages); `NEXT_PUBLIC_SITE_URL` =
+  `https://joinocelot.com`. Delete `SUPABASE_PROJECT_REF`.
 
 ## 8. First deploy
 
-**Actions** tab → **Check and deploy** → **Run workflow** on `main` (or push anything to `main`). It runs lint, type checks, the tests and the database access tests, pushes migrations, copies the code to `/opt/ocelot` and runs `scripts/deploy-vps.sh` there. The first build on the server takes a few minutes.
+**Actions → Check and deploy → Run workflow** on `main`. It runs the checks, builds both images, loads them on the
+server and runs `scripts/deploy-vps.sh`.
 
-Check on the server: `cd /opt/ocelot && docker compose ps` shows `web` as healthy and `worker` running. `docker compose logs worker` shows `ocelot worker started`.
+Check: https://joinocelot.com/api/health shows `{"ok":true}`. On the server, `cd /docker/ocelot && docker compose ps`
+shows `web` healthy and `worker` running, and `docker compose logs worker` shows `ocelot worker started`.
 
-You can also deploy by hand on the server: `cd /opt/ocelot && bash scripts/deploy-vps.sh`.
+By hand: `cd /docker/ocelot && TAG=<commit> bash scripts/deploy-vps.sh` (any of the 3 newest commits; `docker images
+ocelot-web` lists them).
 
-## 9. Domain: joinocelot.com
+## 9. Shut down the old services
 
-1. At your domain company:
-   - `A` record, name `@`, value `45.90.109.7`
-   - `CNAME` record, name `www`, value `joinocelot.com`
-   - Delete the old Fly `A` and `AAAA` records.
-2. Wait for DNS to update, then open https://joinocelot.com/api/health. It shows `{"ok":true}` once Traefik has its certificate.
-3. Shut down Fly so it stops billing: `fly apps destroy ocelot-web` and `fly apps destroy ocelot-worker`, then remove the card in Fly **Billing**.
+- Fly: `fly apps destroy ocelot-web` and `fly apps destroy ocelot-worker`, then remove the card in **Billing**.
+- Supabase Cloud: delete the project after step 6.5.
 
-## 10. Try the loop
+## 10. Backups
 
-1. Open https://joinocelot.com/login, enter your email, open the link. You land on **My search**.
-2. Run the admin SQL from step 3.
-3. Open **For employers** → create a company.
+Use Capybaroar's nightly backup (`ops/backup.sh` and `ops/README.md` in that repo) with its own settings file
+`/etc/ocelot/backup.env`: `DB_CONTAINER=sb-ocelot-db-1`, `SUPABASE_DIR=/docker/sb-ocelot`,
+`MEDIA_DIR=/docker/sb-ocelot/volumes/storage`, `EXTRA_FILES=/docker/ocelot/.env`, its own bucket `ocelot-backups`
+and its own cron line. Until this runs, the database has no backups: Supabase Cloud's free plan had none either.
 
-Posting jobs comes in Milestone 2.
+## 11. Try the loop
+
+1. Open https://joinocelot.com/login, enter your email, open the link or type the code. You land on **My search**.
+2. Make yourself an admin (Studio SQL editor, step 5) if the move didn't bring it over:
+   ```sql
+   insert into platform_admins (user_id) select id from auth.users where email = '<your email>' on conflict do nothing;
+   ```
+3. Open **For employers** → your company, and **Admin → Job boards** shows the hourly run.
 
 ## Local development (optional)
 
@@ -180,47 +195,45 @@ npm run test:db              # access tests, needs a local Postgres (DATABASE_UR
 Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/packages.ts`. Payments stay off until you turn them on, so jobs need no credit until then.
 
 1. Make a Stripe account for the Singapore company and finish its verification. Start in test mode.
-2. Developers → API keys → copy the Secret key into `STRIPE_SECRET_KEY` in the VPS `.env`.
-3. Developers → Webhooks → Add endpoint `https://joinocelot.com/api/stripe/webhook` with the events `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its Signing secret into `STRIPE_WEBHOOK_SECRET` in the VPS `.env`, then run `bash scripts/deploy-vps.sh` on the server.
+2. Developers → API keys → copy the Secret key into `STRIPE_SECRET_KEY` in `/docker/ocelot/.env`.
+3. Developers → Webhooks → Add endpoint `https://joinocelot.com/api/stripe/webhook` with the events `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its Signing secret into `STRIPE_WEBHOOK_SECRET` in `/docker/ocelot/.env`, then `cd /docker/ocelot && docker compose up -d web` on the server.
 4. Settings → Customer emails → turn on receipts for successful payments.
 5. Buy a listing in test mode with card 4242 4242 4242 4242 and check the job goes to review.
 6. Switch to live keys (repeat steps 2 and 3 with the live ones), then turn payments on in Admin → Billing.
 
 ## Optional now, useful soon
 
-- **Sentry** (errors): free plan, Next.js project, then add `SENTRY_DSN=...` to the VPS `.env` and redeploy.
+- **Sentry** (errors): free plan, Next.js project, then add `SENTRY_DSN=...` to `/docker/ocelot/.env` and `docker compose up -d web worker`.
 - **Google Search Console**: verify joinocelot.com with a DNS TXT record and submit `https://joinocelot.com/sitemap.xml` once jobs are live.
-- **Claude in later sessions**: claude.ai → Settings → Connectors → Supabase → reconnect and allow the dev-omniscient org, so Claude can run migrations and read logs.
 
 ## Monthly cost of this setup
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Hostinger VPS KVM 2, already paid and shared with other projects | $0 extra (check) | $0 extra; KVM 4 if it gets busy (check) |
-| Supabase (Free to start, Pro before launch) | $0, then $25 | $25–30 (check) |
+| Hostinger VPS KVM 2, already paid and shared with other projects (KVM 4 if memory runs short, step 0) | $0 extra (check) | $0 extra, or the KVM 4 difference (check) |
+| Self-hosted Supabase on the VPS | $0 | $0 |
+| Backups (Backblaze B2, a few GB) | under $1 (check) | about $1 (check) |
 | Resend | $0 (free up to 3,000 emails) | $20 |
 | Domain | $1 | $1 |
-| **Total** | **about $1, then $26** | **about $46–51** |
+| **Total** | **about $2** | **about $22** |
 
 Full totals with Stripe fees and monitoring are in `docs/plan.md`.
 
-## Login email templates (Milestone 1, part B)
+## Login email templates
 
-The login email carries a 6-digit code as well as the link, so people can open it on a different device. Paste each file into Supabase → Authentication → Emails → Templates, then **Save**:
+The sign-in emails carry a 6-digit code as well as the link, so people can open them on a different device. The
+self-hosted Supabase loads them from the app (`public/email-templates/`, set in `ops/vps/sb-ocelot.override.yml`), so
+there is nothing to paste. `supabase/templates/` holds the same files for local Supabase; `tests/email-templates.test.ts`
+keeps both copies the same. After changing one, copy it to the other and redeploy.
 
-| Supabase template | Subject | File |
-|---|---|---|
-| Confirm signup | `Your Ocelot code` | `supabase/templates/confirm_signup.html` |
-| Magic Link | `Your Ocelot code` | `supabase/templates/magic_link.html` |
-| Change Email Address | `Confirm your new email` | `supabase/templates/email_change.html` |
+## Google sign-in
 
-## Google sign-in (Milestone 1, part B)
+1. console.cloud.google.com → project `Ocelot` → Credentials → its OAuth client (Web application). Authorized redirect
+   URI: `https://db.joinocelot.com/auth/v1/callback` (replace the old `supabase.co` one).
+2. In `/docker/sb-ocelot/.env` add `GOOGLE_ENABLED=true`, `GOOGLE_CLIENT_ID=...` and `GOOGLE_CLIENT_SECRET=...`, then
+   `cd /docker/sb-ocelot && docker compose up -d auth`.
 
-1. console.cloud.google.com → create a project `Ocelot` → APIs & Services → OAuth consent screen: External, app name `Ocelot`, support email, logo optional, authorized domain `joinocelot.com`. Publish it.
-2. Credentials → Create credentials → OAuth client ID → Web application. Authorized redirect URI: `https://tqvtkdftgzlteayzbqvj.supabase.co/auth/v1/callback`.
-3. Supabase → Authentication → Sign In / Providers → Google: turn on, paste the client ID and secret, **Save**.
-
-The "Continue with Google" button appears on its own within 5 minutes of turning Google on.
+The "Continue with Google" button appears on its own within 5 minutes.
 
 ## End-to-end tests (local, optional)
 

@@ -1,6 +1,7 @@
-# Checks on every push and pull request. On main, also pushes migrations and deploys the app and the worker to the VPS.
-# Needs: repository secrets VPS_SSH_KEY and VPS_KNOWN_HOSTS, and the repository variable VPS_HOST (docs/setup.md, "6. VPS").
-# Without the key, deploys are skipped.
+# Checks on every push and pull request. On main, also builds the app and worker images, loads them onto the VPS over
+# SSH and runs scripts/deploy-vps.sh there, which applies new migrations to Ocelot's self-hosted Supabase and restarts
+# the containers. Needs the secrets VPS_SSH_KEY and VPS_KNOWN_HOSTS and the variables VPS_HOST and
+# NEXT_PUBLIC_SUPABASE_ANON_KEY (docs/setup.md, "7. GitHub"). Without the key, deploys are skipped.
 name: Check and deploy
 
 on:
@@ -39,54 +40,40 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
       - run: npm run build
 
-  migrate:
-    # Applies new files in supabase/migrations to the live database. Skipped until the secrets exist.
+  deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: checks
-    runs-on: ubuntu-latest
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-        if: env.SUPABASE_ACCESS_TOKEN != ''
-        with:
-          version: 2.122.0 # pinned: "latest" asks GitHub and can hit its rate limit
-      - name: Push migrations
-        if: env.SUPABASE_ACCESS_TOKEN != ''
-        run: |
-          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
-          supabase db push --password "$SUPABASE_DB_PASSWORD"
-      - name: No Supabase token yet
-        if: env.SUPABASE_ACCESS_TOKEN == ''
-        run: echo "::notice::Add SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD and the SUPABASE_PROJECT_REF variable to push migrations."
-
-  deploy:
-    # Copies the code to the VPS and rebuilds there. scripts/deploy-vps.sh starts the web app, waits for it to be
-    # healthy, then starts the worker (the worker runs the hourly job as soon as it starts).
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [checks, migrate]
     runs-on: ubuntu-latest
     env:
       VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
       VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
       VPS_HOST: ${{ vars.VPS_HOST }}
       VPS_USER: ${{ vars.VPS_USER || 'deploy' }}
-      VPS_DIR: /opt/ocelot
+      VPS_DIR: /docker/ocelot
+      TAG: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
         if: env.VPS_SSH_KEY != ''
-      - name: Copy code and deploy
+      - name: Build images
+        if: env.VPS_SSH_KEY != ''
+        # Built here, not on the server, so a deploy never slows down the other projects on the VPS.
+        # The publishable (anon) key is safe to be public; it is built into the pages.
+        run: |
+          docker build -t "ocelot-web:$TAG" \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL || 'https://db.joinocelot.com' }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
+            --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }} .
+          docker build -t "ocelot-worker:$TAG" -f Dockerfile.worker .
+      - name: Load images on the VPS and deploy
         if: env.VPS_SSH_KEY != ''
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
           printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          # .env lives only on the server; --delete never touches excluded files.
-          rsync -az --delete --exclude .git --exclude node_modules --exclude .next --exclude .env ./ "$VPS_USER@$VPS_HOST:$VPS_DIR/"
-          ssh "$VPS_USER@$VPS_HOST" "cd $VPS_DIR && bash scripts/deploy-vps.sh"
+          docker save "ocelot-web:$TAG" "ocelot-worker:$TAG" | gzip | ssh "$VPS_USER@$VPS_HOST" 'gunzip | docker load'
+          # Only what the server needs to run. /docker/ocelot/.env lives on the server and is never copied.
+          rsync -az --relative compose.yaml scripts/ supabase/migrations/ ops/ "$VPS_USER@$VPS_HOST:$VPS_DIR/"
+          ssh "$VPS_USER@$VPS_HOST" "cd $VPS_DIR && TAG=$TAG bash scripts/deploy-vps.sh"
       - name: No VPS key yet
         if: env.VPS_SSH_KEY == ''
         run: echo "::notice::Add the VPS_SSH_KEY and VPS_KNOWN_HOSTS secrets and the VPS_HOST variable to deploy."
