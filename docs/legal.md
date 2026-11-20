@@ -11,7 +11,7 @@
 | 5 | Minimum age (16 now) | Labour and data rules for minors differ by country |
 | 6 | Liability wording (section 9 of the Terms) | Plain-language placeholder |
 | 7 | Paid listings: refund wording, tax and invoices | Needed before payments ship (Milestone 5) |
-| 8 | Data processing terms with Supabase, Fly.io, Resend and Google | The Privacy page lists them as service providers |
+| 8 | Data processing terms with Supabase, Hostinger, Resend and Google | The Privacy page lists them as service providers |
 | 9 | `hello@joinocelot.com` must reach a real inbox | Both pages give it as the contact. Set up forwarding in Namecheap or an inbox before launch |
 | 10 | Retention periods for email logs, server logs and backups | The Privacy page says "only as long as needed"; real numbers are better |
 

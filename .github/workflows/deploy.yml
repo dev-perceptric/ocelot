@@ -1,6 +1,6 @@
-# Checks on every push and pull request. On main, also deploys the app and the worker to Fly.io.
-# Needs: repository secret FLY_API_TOKEN, and repository variables NEXT_PUBLIC_SUPABASE_URL,
-# NEXT_PUBLIC_SUPABASE_ANON_KEY and NEXT_PUBLIC_SITE_URL (docs/setup.md). Without the token, deploys are skipped.
+# Checks on every push and pull request. On main, also pushes migrations and deploys the app and the worker to the VPS.
+# Needs: repository secrets VPS_SSH_KEY and VPS_KNOWN_HOSTS, and the repository variable VPS_HOST (docs/setup.md, "6. VPS").
+# Without the key, deploys are skipped.
 name: Check and deploy
 
 on:
@@ -63,72 +63,30 @@ jobs:
         if: env.SUPABASE_ACCESS_TOKEN == ''
         run: echo "::notice::Add SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD and the SUPABASE_PROJECT_REF variable to push migrations."
 
-  # Order: migrations, then the web app, then the worker. The worker runs the hourly job as soon as it starts, so it
-  # starts only once the new web app is up (a web restart would cut that run short).
-  deploy-web:
+  deploy:
+    # Copies the code to the VPS and rebuilds there. scripts/deploy-vps.sh starts the web app, waits for it to be
+    # healthy, then starts the worker (the worker runs the hourly job as soon as it starts).
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: [checks, migrate]
     runs-on: ubuntu-latest
     env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER || 'deploy' }}
+      VPS_DIR: /opt/ocelot
     steps:
       - uses: actions/checkout@v4
-      # Fly's download and API fail now and then: each Fly step gets a second try.
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-        id: fly1
-        if: env.FLY_API_TOKEN != ''
-        continue-on-error: true
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-        if: env.FLY_API_TOKEN != '' && steps.fly1.outcome == 'failure'
-      - name: Create ocelot-web if it doesn't exist yet
-        if: env.FLY_API_TOKEN != ''
-        run: flyctl status --app ocelot-web >/dev/null 2>&1 || flyctl apps create ocelot-web
-      - name: Deploy ocelot-web
-        if: env.FLY_API_TOKEN != ''
-        # --ha=false: one machine per app. Fly starts two on the first deploy otherwise, which doubles the bill.
+        if: env.VPS_SSH_KEY != ''
+      - name: Copy code and deploy
+        if: env.VPS_SSH_KEY != ''
         run: |
-          for try in 1 2 3; do
-            flyctl deploy --remote-only --ha=false --config fly.toml --app ocelot-web \
-              --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
-              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
-              --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }} && exit 0
-            echo "::warning::Deploy try $try failed"; sleep $((try * 30))
-          done
-          exit 1
-      - name: No Fly token yet
-        if: env.FLY_API_TOKEN == ''
-        run: echo "::notice::Add the FLY_API_TOKEN repository secret to deploy ocelot-web."
-
-  deploy-worker:
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: deploy-web
-    runs-on: ubuntu-latest
-    env:
-      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      # Fly's download and API fail now and then: each Fly step gets a second try.
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-        id: fly1
-        if: env.FLY_API_TOKEN != ''
-        continue-on-error: true
-      - uses: superfly/flyctl-actions/setup-flyctl@master
-        if: env.FLY_API_TOKEN != '' && steps.fly1.outcome == 'failure'
-      - name: Create ocelot-worker if it doesn't exist yet
-        if: env.FLY_API_TOKEN != ''
-        run: flyctl status --app ocelot-worker >/dev/null 2>&1 || flyctl apps create ocelot-worker
-      - name: Deploy ocelot-worker
-        if: env.FLY_API_TOKEN != ''
-        # --ha=false: one machine per app. Fly starts two on the first deploy otherwise, which doubles the bill.
-        run: |
-          for try in 1 2 3; do
-            flyctl deploy --remote-only --ha=false --config fly.worker.toml --app ocelot-worker \
-              --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ vars.NEXT_PUBLIC_SUPABASE_URL }} \
-              --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ vars.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
-              --build-arg NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL || 'https://joinocelot.com' }} && exit 0
-            echo "::warning::Deploy try $try failed"; sleep $((try * 30))
-          done
-          exit 1
-      - name: No Fly token yet
-        if: env.FLY_API_TOKEN == ''
-        run: echo "::notice::Add the FLY_API_TOKEN repository secret to deploy ocelot-worker."
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # .env lives only on the server; --delete never touches excluded files.
+          rsync -az --delete --exclude .git --exclude node_modules --exclude .next --exclude .env ./ "$VPS_USER@$VPS_HOST:$VPS_DIR/"
+          ssh "$VPS_USER@$VPS_HOST" "cd $VPS_DIR && bash scripts/deploy-vps.sh"
+      - name: No VPS key yet
+        if: env.VPS_SSH_KEY == ''
+        run: echo "::notice::Add the VPS_SSH_KEY and VPS_KNOWN_HOSTS secrets and the VPS_HOST variable to deploy."

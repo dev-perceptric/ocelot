@@ -54,7 +54,7 @@ Search: Postgres full-text search on `jobs` (a generated `tsvector` column over 
 
 ## Background work
 
-One small worker on Fly reads `jobs_queue` (same pattern as Claritia and Omniscient). Tasks:
+One small worker on the VPS reads `jobs_queue` (same pattern as Claritia and Omniscient). Tasks:
 - Expire jobs past `expires_at`.
 - Send saved-search alerts (daily or weekly).
 - Send application emails (sent, new applicant, stage changed).
@@ -109,14 +109,13 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 |---|---:|---:|
 | Supabase (dev-omniscient org: Free while testing, Pro before real users; Micro compute covered by the $10 credit) | $25 | $25 |
 | Supabase compute upgrade (Small at Growth) | $0 | $5 (check) |
-| Fly.io web app, shared-cpu-1x 1 GB (job board sync runs in it), always on, Singapore | $6 (check) | $12, two machines (check) |
-| Fly.io worker, shared-cpu-1x 256 MB | $2 (check) | $2 (check) |
+| Hostinger VPS KVM 2 (2 CPUs, 8 GB): web app (1 GB limit, job board sync runs in it) and worker (256 MB), already paid and shared with other projects | $0 extra (check) | $0 extra; KVM 4 if it gets busy (check) |
 | Resend email (Pro $20 for 50,000 a month at Beta once alerts start, Scale $90 for 100,000 at Growth) | $20 (check) | $90 (check) |
 | Stripe fees (Singapore account, about 3.4% + S$0.50 per card payment) | about $5 on $100 of sales (check) | about $140 on $3,000 of sales (check) |
 | Sentry errors (free tier) | $0 | $26 (check) |
 | PostHog analytics (free tier) | $0 | $0 (check) |
 | Domain joinocelot.com (about $12 a year) | $1 | $1 |
 | Claude tokens | $0 (no AI at launch) | $0 |
-| **Total** | **about $59** | **about $301** |
+| **Total** | **about $51** | **about $287** |
 
 AI is off for launch. When URL extraction for outside jobs is added (Milestone 7 or later), add its token cost here.

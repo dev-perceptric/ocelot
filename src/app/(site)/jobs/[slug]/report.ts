@@ -37,7 +37,7 @@ export async function submitReport(_: ReportState, form: FormData): Promise<Repo
     if (error) return { error: "The report didn't send. Try again." };
   } else {
     const h = await headers();
-    const ip = h.get("fly-client-ip") ?? h.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+    const ip = h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
     // Checked by the server before saving with the service role: a real public job, and limits on volume.
     const since = new Date(Date.now() - 3_600_000).toISOString();
     const { count } = await db.from("reports").select("id", { count: "exact", head: true }).eq("job_id", job.id).is("reporter_id", null).gte("created_at", since);

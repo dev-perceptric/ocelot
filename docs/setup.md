@@ -1,19 +1,20 @@
 # Setup from scratch
 
-Everything lives under the **dev-omniscient** accounts. Do the steps in order. Region for everything: **Singapore** (Supabase `ap-southeast-1`, Fly `sin`).
+Everything lives under the **dev-omniscient** accounts. Do the steps in order. Supabase runs in **Singapore** (`ap-southeast-1`). The site and the worker run on the Hostinger VPS with Docker.
 
-Keep a scratch note open while you go. You'll copy 8 values into it:
+Keep a scratch note open while you go. You'll copy these values into it:
 
 | Value | Where it comes from | Where it goes |
 |---|---|---|
 | Project ref | Supabase step 1 | GitHub variable `SUPABASE_PROJECT_REF` |
-| Project URL | Supabase step 1 | GitHub variable `NEXT_PUBLIC_SUPABASE_URL`, Fly secret `SUPABASE_URL` (worker) |
-| Publishable (anon) key | Supabase step 1 | GitHub variable `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
-| Secret (service role) key | Supabase step 1 | Fly secret `SUPABASE_SERVICE_ROLE_KEY` |
+| Project URL | Supabase step 1 | VPS `.env`: `NEXT_PUBLIC_SUPABASE_URL` |
+| Publishable (anon) key | Supabase step 1 | VPS `.env`: `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Secret (service role) key | Supabase step 1 | VPS `.env`: `SUPABASE_SERVICE_ROLE_KEY` |
 | Database password | Supabase step 1 | GitHub secret `SUPABASE_DB_PASSWORD` |
 | Supabase access token | Supabase step 4 | GitHub secret `SUPABASE_ACCESS_TOKEN` |
-| Fly deploy token | Fly step 4 | GitHub secret `FLY_API_TOKEN` |
-| Resend API key | Resend step 3 | Fly secret `RESEND_API_KEY`, Supabase SMTP |
+| Deploy SSH key (private half) | VPS step 2 | GitHub secret `VPS_SSH_KEY` |
+| Server fingerprint | VPS step 2 | GitHub secret `VPS_KNOWN_HOSTS` |
+| Resend API key | Resend step 3 | VPS `.env`: `RESEND_API_KEY`, Supabase SMTP |
 
 Never paste the service role key, passwords or tokens into chat or the code.
 
@@ -44,9 +45,8 @@ Free plan notes: it allows 2 active projects, and you have 1, so `ocelot` fits. 
 1. **Authentication → Sign In / Providers → Email**: on. Turn **Confirm email** on.
 2. **Authentication → URL Configuration**:
    - Site URL: `https://joinocelot.com`
-   - Redirect URLs, add all three:
+   - Redirect URLs, add both:
      - `https://joinocelot.com/auth/callback`
-     - `https://ocelot-web.fly.dev/auth/callback`
      - `http://localhost:3000/auth/callback`
 3. **Authentication → Emails → Templates → Magic Link**: change the subject to `Your Ocelot login link`. Keep the `{{ .ConfirmationURL }}` link in the body.
 4. SMTP comes in step 5 (Resend). Until then Supabase sends only a few emails an hour, which is fine for testing.
@@ -88,71 +88,74 @@ https://supabase.com/dashboard/account/tokens → **Generate new token** → nam
    - Sender email `hello@joinocelot.com`, sender name `Ocelot`
    - Host `smtp.resend.com`, port `465`, username `resend`, password = the Resend API key.
 
-## 6. Fly.io
+## 6. VPS (Hostinger KVM 2)
 
-1. Sign in at https://fly.io with the dev-omniscient account. **Billing** → add a card.
-2. Install the command line tool on your Mac: `brew install flyctl`, then `fly auth login`.
-3. Make the two apps (in your personal org, or add `--org <name>`):
+The server already runs Docker and Traefik. Traefik takes ports 80 and 443 and gets the HTTPS certificates. Ocelot joins its network with the labels in `compose.yaml`.
+
+1. **Find Traefik's settings.** Log in to the server (`ssh root@45.90.109.7`) and run:
    ```
-   fly apps create ocelot-web
-   fly apps create ocelot-worker
+   docker network ls
+   docker ps --filter name=traefik
    ```
-   If a name is taken, pick another and change `app = ...` in `fly.toml` or `fly.worker.toml`, and the names in `.github/workflows/deploy.yml`.
-4. Deploy token: `fly tokens create org` → copy the whole line starting with `FlyV1` (`FLY_API_TOKEN`).
-5. Secrets for the app (the server side reads these when it runs):
+   Note the network Traefik is on, the name of its HTTPS entrypoint and its certificate resolver (in Traefik's config file or `docker inspect <traefik container>`). The defaults in `compose.yaml` are `traefik`, `websecure` and `letsencrypt`. If yours differ, set `TRAEFIK_NETWORK`, `TRAEFIK_ENTRYPOINT` and `TRAEFIK_CERTRESOLVER` in `.env` (step 3).
+2. **Make a deploy user and key.**
    ```
-   fly secrets set --app ocelot-web --stage \
-     SUPABASE_SERVICE_ROLE_KEY='<secret key>' \
-     RESEND_API_KEY='<resend key>'
+   adduser --disabled-password --gecos "" deploy
+   usermod -aG docker deploy
+   apt-get install -y rsync
+   mkdir -p /opt/ocelot && chown deploy:deploy /opt/ocelot
    ```
-6. Secrets for the worker:
+   On your Mac, make a key just for deploys: `ssh-keygen -t ed25519 -f ~/.ssh/ocelot_deploy -N ""`. Put the public half (`~/.ssh/ocelot_deploy.pub`) in `/home/deploy/.ssh/authorized_keys` on the server (owner `deploy`, mode 600). The private half (`~/.ssh/ocelot_deploy`) is `VPS_SSH_KEY`. Then run `ssh-keyscan -t ed25519 45.90.109.7` on your Mac; its output line is `VPS_KNOWN_HOSTS`.
+   Being in the `docker` group gives `deploy` full control of Docker on this server, so keep this key only in GitHub.
+3. **Write the server's `.env`.** As `deploy`, create `/opt/ocelot/.env` and run `chmod 600 /opt/ocelot/.env`:
    ```
-   fly secrets set --app ocelot-worker --stage \
-     SUPABASE_URL='https://<ref>.supabase.co' \
-     SUPABASE_SERVICE_ROLE_KEY='<secret key>' \
-     RESEND_API_KEY='<resend key>' \
-     EMAIL_FROM='Ocelot <hello@joinocelot.com>'
+   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<publishable key>
+   NEXT_PUBLIC_SITE_URL=https://joinocelot.com
+   SUPABASE_SERVICE_ROLE_KEY=<secret key>
+   RESEND_API_KEY=<resend key>
+   EMAIL_FROM=Ocelot <hello@joinocelot.com>
+   STRIPE_SECRET_KEY=
+   STRIPE_WEBHOOK_SECRET=
+   # Only if step 1 found different names:
+   # TRAEFIK_NETWORK=traefik
+   # TRAEFIK_ENTRYPOINT=websecure
+   # TRAEFIK_CERTRESOLVER=letsencrypt
    ```
-   `--stage` saves them for the first deploy without trying to restart a machine that doesn't exist yet.
+   Every deploy reads this file. It never goes into git, and the deploy copy step never overwrites it.
 
 ## 7. GitHub secrets and variables
 
 https://github.com/dev-perceptric/ocelot → **Settings → Secrets and variables → Actions**.
 
-**Secrets** tab → **New repository secret**, three times:
-- `FLY_API_TOKEN`
+**Secrets** tab → **New repository secret**:
+- `VPS_SSH_KEY`
+- `VPS_KNOWN_HOSTS`
 - `SUPABASE_ACCESS_TOKEN`
 - `SUPABASE_DB_PASSWORD`
 
-**Variables** tab → **New repository variable**, four times:
-- `NEXT_PUBLIC_SUPABASE_URL` = `https://<ref>.supabase.co`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the publishable key
-- `NEXT_PUBLIC_SITE_URL` = `https://joinocelot.com` (use `https://ocelot-web.fly.dev` until the domain is connected)
+**Variables** tab → **New repository variable**:
+- `VPS_HOST` = `45.90.109.7`
 - `SUPABASE_PROJECT_REF` = the project ref
 
-The URL and publishable key are safe to be public; they are built into the pages. The service role key stays in Fly only.
+Delete the old `FLY_API_TOKEN` secret and the `NEXT_PUBLIC_*` variables; the VPS `.env` holds those values now.
 
 ## 8. First deploy
 
-**Actions** tab → **Check and deploy** → **Run workflow** on `main` (or push anything to `main`). It runs lint, type checks, the tests and the database access tests, then deploys both apps and pushes migrations. About 5 minutes.
+**Actions** tab → **Check and deploy** → **Run workflow** on `main` (or push anything to `main`). It runs lint, type checks, the tests and the database access tests, pushes migrations, copies the code to `/opt/ocelot` and runs `scripts/deploy-vps.sh` there. The first build on the server takes a few minutes.
 
-Check: https://ocelot-web.fly.dev shows the yellow Ocelot home page, and https://ocelot-web.fly.dev/api/health shows `{"ok":true}`. Worker logs: `fly logs --app ocelot-worker` shows `ocelot worker started`.
+Check on the server: `cd /opt/ocelot && docker compose ps` shows `web` as healthy and `worker` running. `docker compose logs worker` shows `ocelot worker started`.
+
+You can also deploy by hand on the server: `cd /opt/ocelot && bash scripts/deploy-vps.sh`.
 
 ## 9. Domain: joinocelot.com
 
-1. Add the domain on Fly:
-   ```
-   fly ips allocate-v4 --shared --app ocelot-web
-   fly ips allocate-v6 --app ocelot-web
-   fly certs add joinocelot.com --app ocelot-web
-   fly certs add www.joinocelot.com --app ocelot-web
-   ```
-2. At your domain company, add:
-   - `A` record, name `@`, value = the IPv4 from `fly ips list --app ocelot-web`
-   - `AAAA` record, name `@`, value = the IPv6 from the same list
-   - `CNAME` record, name `www`, value `ocelot-web.fly.dev`
-3. Wait until `fly certs show joinocelot.com --app ocelot-web` says the certificate is issued.
-4. Change the GitHub variable `NEXT_PUBLIC_SITE_URL` to `https://joinocelot.com` and run the workflow again.
+1. At your domain company:
+   - `A` record, name `@`, value `45.90.109.7`
+   - `CNAME` record, name `www`, value `joinocelot.com`
+   - Delete the old Fly `A` and `AAAA` records.
+2. Wait for DNS to update, then open https://joinocelot.com/api/health. It shows `{"ok":true}` once Traefik has its certificate.
+3. Shut down Fly so it stops billing: `fly apps destroy ocelot-web` and `fly apps destroy ocelot-worker`, then remove the card in Fly **Billing**.
 
 ## 10. Try the loop
 
@@ -177,15 +180,15 @@ npm run test:db              # access tests, needs a local Postgres (DATABASE_UR
 Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/packages.ts`. Payments stay off until you turn them on, so jobs need no credit until then.
 
 1. Make a Stripe account for the Singapore company and finish its verification. Start in test mode.
-2. Developers → API keys → copy the Secret key, then: `fly secrets set STRIPE_SECRET_KEY=sk_... -a ocelot-web`
-3. Developers → Webhooks → Add endpoint `https://joinocelot.com/api/stripe/webhook` with the events `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its Signing secret, then: `fly secrets set STRIPE_WEBHOOK_SECRET=whsec_... -a ocelot-web`
+2. Developers → API keys → copy the Secret key into `STRIPE_SECRET_KEY` in the VPS `.env`.
+3. Developers → Webhooks → Add endpoint `https://joinocelot.com/api/stripe/webhook` with the events `checkout.session.completed` and `checkout.session.async_payment_succeeded`. Copy its Signing secret into `STRIPE_WEBHOOK_SECRET` in the VPS `.env`, then run `bash scripts/deploy-vps.sh` on the server.
 4. Settings → Customer emails → turn on receipts for successful payments.
 5. Buy a listing in test mode with card 4242 4242 4242 4242 and check the job goes to review.
 6. Switch to live keys (repeat steps 2 and 3 with the live ones), then turn payments on in Admin → Billing.
 
 ## Optional now, useful soon
 
-- **Sentry** (errors): free plan, Next.js project, then `fly secrets set --app ocelot-web SENTRY_DSN=...`.
+- **Sentry** (errors): free plan, Next.js project, then add `SENTRY_DSN=...` to the VPS `.env` and redeploy.
 - **Google Search Console**: verify joinocelot.com with a DNS TXT record and submit `https://joinocelot.com/sitemap.xml` once jobs are live.
 - **Claude in later sessions**: claude.ai → Settings → Connectors → Supabase → reconnect and allow the dev-omniscient org, so Claude can run migrations and read logs.
 
@@ -193,12 +196,11 @@ Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/pack
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
+| Hostinger VPS KVM 2, already paid and shared with other projects | $0 extra (check) | $0 extra; KVM 4 if it gets busy (check) |
 | Supabase (Free to start, Pro before launch) | $0, then $25 | $25–30 (check) |
-| Fly web, shared-cpu-1x 512 MB, always on | about $4 (check) | about $8, two machines (check) |
-| Fly worker, shared-cpu-1x 256 MB | about $2 (check) | about $2 (check) |
 | Resend | $0 (free up to 3,000 emails) | $20 |
 | Domain | $1 | $1 |
-| **Total** | **about $7, then $32** | **about $56–61** |
+| **Total** | **about $1, then $26** | **about $46–51** |
 
 Full totals with Stripe fees and monitoring are in `docs/plan.md`.
 

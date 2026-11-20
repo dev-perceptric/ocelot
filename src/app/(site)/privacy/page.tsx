@@ -48,7 +48,7 @@ export default function Privacy() {
               <p>We use these service providers to run Ocelot, under contracts that limit how they use data:</p>
               <ul>
                 <li>Supabase: database, sign-in and file storage (Singapore).</li>
-                <li>Fly.io: the servers that run the website (Singapore).</li>
+                <li>Hostinger: the server that runs the website.</li>
                 <li>Resend: sending email.</li>
                 <li>Google: only if you choose to sign in with Google.</li>
               </ul>
