@@ -13,6 +13,15 @@ Omniscient, set up the same way:
 Ports Ocelot uses on `127.0.0.1`: web 3400; Supabase Kong 8400 and 8401, Studio 3410, Postgres 5440, pooler 6550,
 meta 8410, analytics 4400. Never paste the service role key, passwords or tokens into chat or the code.
 
+**Fast path:** in hPanel → VPS → **Browser terminal**, run
+
+```
+bash <(curl -fsSL https://raw.githubusercontent.com/dev-perceptric/ocelot/main/ops/vps/install.sh)
+```
+
+It does steps 0 and 3 to 5 below (and asks for the Resend key), then prints exactly what goes into GitHub (step 7).
+Safe to run again. You still do step 1 (DNS), step 6 (data move) and step 7 (paste into GitHub).
+
 ## 0. Check the server has room
 
 ```

@@ -6,6 +6,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+DB_CONTAINER="${DB_CONTAINER:-$(grep '^DB_CONTAINER=' .env 2>/dev/null | cut -d= -f2- || true)}"
 DB_CONTAINER="${DB_CONTAINER:-sb-ocelot-db-1}"
 
 psql_db() {
