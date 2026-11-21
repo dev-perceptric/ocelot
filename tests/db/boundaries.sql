@@ -1043,4 +1043,162 @@ select pg_temp.expect(not exists (select 1 from jsonb_array_elements(search_summ
 reset role;
 update orgs set suspended_at = null where slug = 'region-co';
 select refresh_seo_counts();
+-- ---------- Agencies (039_agencies.sql) ----------
+-- Ava owns the agency Hire Co, Rex is her recruiter, Zoe owns another agency, Oli owns the company Omega, Cy is a candidate.
+reset role;
+insert into auth.users (id, email) values
+  ('00000000-0000-0000-0000-0000000000c1', 'ava@hireco.test'),
+  ('00000000-0000-0000-0000-0000000000c2', 'rex@hireco.test'),
+  ('00000000-0000-0000-0000-0000000000c3', 'zoe@other.test'),
+  ('00000000-0000-0000-0000-0000000000c4', 'oli@omega.test'),
+  ('00000000-0000-0000-0000-0000000000c5', 'cy@mail.test');
+update profiles set full_name = 'Cy Le' where id = '00000000-0000-0000-0000-0000000000c5';
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select create_agency('Hire Co', 'hire-co') as hireco \gset
+select create_agency_invite(:'hireco', 'rex@hireco.test', 'recruiter') as rex_token \gset
+select pg_temp.fails($$select create_agency_invite('$$ || :'hireco' || $$', 'x@hireco.test', 'owner')$$, 'an agency can''t invite someone as owner');
+select create_agency_client(:'hireco', 'Client One', 'client-one') as client1 \gset
+select pg_temp.fails(format($$update orgs set agency_id = null where id = %L$$, :'client1'), 'nobody moves a company between agencies by hand');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.fails(format($$select accept_agency_invite(%L)$$, :'rex_token'), 'an agency invite works only for the invited email');
+select create_agency('Other Agency', 'other-agency') as other \gset
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.expect((select count(*) from agencies) = 0, 'Rex sees no agency before he joins');
+select accept_agency_invite(:'rex_token');
+select pg_temp.fails(format($$select accept_agency_invite(%L)$$, :'rex_token'), 'an agency invite link works once');
+select pg_temp.expect((select count(*) from orgs where id = :'client1') = 1, 'a recruiter sees the agency''s clients');
+select pg_temp.fails(format($$select create_agency_invite(%L, 'y@hireco.test')$$, :'hireco'), 'a recruiter can''t invite staff');
+select pg_temp.fails(format($$select create_agency_client(%L, 'Client Two', 'client-two')$$, :'hireco'), 'a recruiter can''t add clients');
+update agency_members set role = 'owner' where user_id = auth.uid();
+select pg_temp.expect((select role from agency_members where user_id = auth.uid()) = 'recruiter', 'a recruiter can''t promote himself');
+update orgs set about = 'Changed by a recruiter' where id = :'client1';
+select pg_temp.expect((select about from orgs where id = :'client1') is null, 'a recruiter can''t edit the client''s company page');
+insert into jobs (org_id, slug, title, created_by, workplace, eligible_countries, role, seniority, employment_type, description)
+  values (:'client1', 'client-one-sdr', 'SDR', auth.uid(), 'remote', '{US}', 'growth', 'mid', 'full_time', repeat('Book meetings with new customers. ', 10));
+update jobs set status = 'pending_review' where org_id = :'client1';
+select pg_temp.expect((select status from jobs where org_id = :'client1') = 'pending_review', 'a recruiter posts a job for a client, and it goes to review');
+select pg_temp.expect(can_write_logo('agencies/' || :'hireco' || '/logo.png') = false, 'a recruiter can''t change the agency logo');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.fails($$delete from agency_members where user_id = auth.uid()$$, 'the only owner can''t leave while others are in the agency');
+update orgs set about = 'Hiring for sales teams' where id = :'client1';
+select pg_temp.expect((select about from orgs where id = :'client1') = 'Hiring for sales teams', 'an agency owner edits the client''s company page');
+select pg_temp.expect(can_write_logo('agencies/' || :'hireco' || '/logo.png') and can_write_logo(:'client1' || '/logo.png'), 'an agency owner can change the agency and client logos');
+select pg_temp.expect(not can_write_logo('agencies/' || :'other' || '/logo.png') and not can_write_logo('not-a-folder/logo.png'), 'but not another agency''s logo');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.expect((select count(*) from orgs where agency_id = :'hireco') = 0, 'another agency can''t see Hire Co''s clients');
+select pg_temp.expect((select count(*) from jobs where org_id = :'client1') = 0, 'or their jobs under review');
+select pg_temp.expect((select count(*) from agency_members where agency_id = :'hireco') = 0, 'or Hire Co''s staff');
+select pg_temp.expect((select count(*) from agency_team(:'hireco')) = 0, 'or the staff list');
+select pg_temp.fails(format($$select create_agency_client(%L, 'Sneaky', 'sneaky')$$, :'hireco'), 'another agency can''t add clients to Hire Co');
+
+-- The job goes live, Cy applies, and only Hire Co sees the application.
+reset role;
+set role service_role;
+update jobs set status = 'published', published_at = now(), expires_at = now() + interval '30 days' where org_id = :'client1';
+reset role;
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from agencies where id = :'hireco') = 1, 'visitors see an agency once a client has a live job');
+select pg_temp.expect((select count(*) from agencies where id = :'other') = 0, 'and not an agency with no live jobs');
+select pg_temp.expect((select count(*) from agency_members) = 0, 'visitors never see agency staff');
+
+reset role;
+insert into documents (user_id, name, storage_path, mime_type, size_bytes)
+  values ('00000000-0000-0000-0000-0000000000c5', 'Cy CV', '00000000-0000-0000-0000-0000000000c5/cv.pdf', 'application/pdf', 1000)
+  returning id as cy_cv \gset
+select pg_temp.act('00000000-0000-0000-0000-0000000000c5');
+select apply_to_job((select id from jobs where org_id = :'client1'), :'cy_cv', '{}', 'Hello Hire Co');
+select stage as cy_stage from tracker_items where job_id = (select id from jobs where org_id = :'client1') \gset
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.expect((select count(*) from applications where org_id = :'client1') = 1, 'a recruiter sees applications sent to the client');
+select pg_temp.expect(not exists (select 1 from applications where org_id <> :'client1'), 'and no other company''s applications');
+select pg_temp.expect((select count(*) from tracker_items) = 0 and (select count(*) from tracker_events) = 0, 'agency staff can''t reach a candidate''s tracker');
+select pg_temp.expect((select count(*) from tasks) = 0 and (select count(*) from interviews) = 0, 'or their tasks and interviews');
+select pg_temp.expect((select count(*) from saved_jobs) = 0 and (select count(*) from saved_searches) = 0, 'or their saved jobs and searches');
+select pg_temp.expect(not exists (select 1 from documents d where not exists (
+  select 1 from applications a where a.resume_id = d.id and a.org_id = :'client1')), 'agency staff see only résumés sent to their clients');
+select pg_temp.expect((select count(*) from profiles) = 1, 'agency staff can''t read a candidate''s live profile');
+update applications set hiring_stage = 'reviewing' where org_id = :'client1';
+insert into application_notes (application_id, author_id, body) select id, auth.uid(), 'Good fit for the client' from applications where org_id = :'client1';
+select pg_temp.fails(format($$select apply_to_job((select id from jobs where org_id = %L), null, '{}', '')$$, :'client1'), 'agency staff can''t apply to their own client''s job');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.expect((select count(*) from applications where org_id = :'client1') = 0, 'another agency can''t see Hire Co''s applicants');
+select pg_temp.expect((select count(*) from application_notes) = 0, 'or its hiring notes');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c5');
+select pg_temp.expect((select stage from tracker_items where job_id = (select id from jobs where org_id = :'client1')) = :'cy_stage',
+  'an agency''s hiring stage never moves the candidate''s card');
+
+-- An existing company: Omega has its own team. The agency asks, and only Omega's owner can say yes.
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select create_org('Omega', 'omega') as omega \gset
+insert into jobs (org_id, slug, title, created_by) values (:'omega', 'omega-draft', 'AE', auth.uid());
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.fails($$select request_agency_client('$$ || :'hireco' || $$', 'omega')$$, 'a recruiter can''t ask a company to become a client');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select request_agency_client(:'hireco', 'omega') as omega_req \gset
+select pg_temp.fails($$select request_agency_client('$$ || :'hireco' || $$', 'omega')$$, 'an agency asks a company once at a time');
+select pg_temp.expect((select count(*) from jobs where org_id = :'omega') = 0, 'asking gives the agency nothing');
+select pg_temp.fails(format($$select answer_agency_client_request(%L, true)$$, :'omega_req'), 'the agency can''t answer its own request');
+reset role;
+insert into orgs (name, slug) values ('Imported Co', 'imported-co');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.fails($$select request_agency_client('$$ || :'hireco' || $$', 'imported-co')$$, 'an agency can''t take over a company with no team, such as an imported one');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select request_agency_client(:'other', 'omega') as other_req \gset
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select pg_temp.expect((select count(*) from agency_client_requests) = 2, 'the company owner sees the requests');
+select answer_agency_client_request(:'omega_req', true);
+select pg_temp.expect((select accepted from agency_client_requests where id = :'other_req') = false, 'saying yes to one agency says no to the others');
+select pg_temp.expect((select count(*) from agencies) = 1, 'the company''s team sees its agency');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.expect((select count(*) from jobs where org_id = :'omega') = 1, 'once accepted, the agency sees the company''s jobs');
+select pg_temp.fails(format($$insert into org_members (org_id, user_id, role) values (%L, auth.uid(), 'owner')$$, :'omega'), 'agency staff can''t join the company''s own team');
+update org_members set role = 'member' where org_id = :'omega';
+select pg_temp.expect((select role from org_members where org_id = :'omega') = 'owner', 'agency staff can''t change the company''s team');
+delete from org_members where org_id = :'omega';
+reset role;
+select pg_temp.expect((select count(*) from org_members where org_id = :'omega') = 1, 'agency staff can''t remove the company''s team');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.fails(format($$select create_invite(%L, 'friend@hireco.test')$$, :'omega'), 'agency staff can''t invite people to the company''s team');
+select pg_temp.fails(format($$select delete_agency_client(%L)$$, :'omega'), 'an agency can''t delete a company that has its own team');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select remove_agency_client(:'omega');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.expect((select count(*) from jobs where org_id = :'omega') = 0, 'removing the agency cuts off its access at once');
+
+-- Suspending an agency hides every client job. Only Ocelot can do it.
+select pg_temp.fails(format($$select suspend_agency(%L, 'testing it')$$, :'hireco'), 'people can''t suspend an agency');
+reset role;
+select suspend_agency(:'hireco', 'Charged candidates a fee');
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from jobs where org_id = :'client1') = 0, 'a suspended agency''s client jobs leave public pages');
+select pg_temp.expect(not exists (select 1 from search_jobs() where org_id = :'client1'), 'and search');
+select pg_temp.expect((select count(*) from agencies where id = :'hireco') = 0, 'and the agency page goes too');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.fails(format($$select create_agency_client(%L, 'Client Three', 'client-three')$$, :'hireco'), 'a suspended agency can''t add clients');
+reset role;
+select unsuspend_agency(:'hireco');
+select pg_temp.act(null);
+select pg_temp.expect((select count(*) from jobs where org_id = :'client1') = 1, 'lifting the suspension brings the client jobs back');
+
+-- Deleting a client the agency runs alone: owners only.
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.fails(format($$select delete_agency_client(%L)$$, :'client1'), 'a recruiter can''t delete a client');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select delete_agency_client(:'client1');
+reset role;
+select pg_temp.expect(not exists (select 1 from orgs where id = :'client1'), 'an agency owner deletes a client it runs alone');
 \echo 'All boundary tests passed.'

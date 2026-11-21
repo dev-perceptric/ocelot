@@ -5,7 +5,93 @@ export type Database = {
   
   "public": {
           Tables: {
-            "app_settings": {
+            "agencies": {
+                  Row: {
+                    "about": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"id": string,"logo_url": string | null,"name": string,"slug": string,"suspended_at": string | null,"suspended_reason": string | null,"website": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"logo_url"?: string | null,"name": string,"slug": string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"website"?: string | null
+                  }
+                  Update: {
+                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"id"?: string,"logo_url"?: string | null,"name"?: string,"slug"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"website"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"agency_client_requests": {
+                  Row: {
+                    "accepted": boolean | null,"agency_id": string,"agency_name": string,"answered_at": string | null,"answered_by": string | null,"created_at": string,"id": string,"org_id": string,"org_name": string,"requested_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted"?: boolean | null,"agency_id": string,"agency_name": string,"answered_at"?: string | null,"answered_by"?: string | null,"created_at"?: string,"id"?: string,"org_id": string,"org_name": string,"requested_by"?: string | null
+                  }
+                  Update: {
+                    "accepted"?: boolean | null,"agency_id"?: string,"agency_name"?: string,"answered_at"?: string | null,"answered_by"?: string | null,"created_at"?: string,"id"?: string,"org_id"?: string,"org_name"?: string,"requested_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "agency_client_requests_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agency_client_requests_org_id_fkey"
+      columns: ["org_id"]
+isOneToOne: false
+      referencedRelation: "orgs"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"agency_invites": {
+                  Row: {
+                    "accepted_at": string | null,"accepted_by": string | null,"agency_id": string,"created_at": string,"email": string,"expires_at": string,"id": string,"invited_by": string | null,"revoked_at": string | null,"role": string,"token_hash": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"agency_id": string,"created_at"?: string,"email": string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"revoked_at"?: string | null,"role"?: string,"token_hash": string
+                  }
+                  Update: {
+                    "accepted_at"?: string | null,"accepted_by"?: string | null,"agency_id"?: string,"created_at"?: string,"email"?: string,"expires_at"?: string,"id"?: string,"invited_by"?: string | null,"revoked_at"?: string | null,"role"?: string,"token_hash"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "agency_invites_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"agency_members": {
+                  Row: {
+                    "agency_id": string,"created_at": string,"role": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "agency_id": string,"created_at"?: string,"role"?: string,"user_id": string
+                  }
+                  Update: {
+                    "agency_id"?: string,"created_at"?: string,"role"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "agency_members_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "agency_members_profile_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"app_settings": {
                   Row: {
                     "id": boolean,"last_cron_at": string | null,"last_cron_result": string | null,"max_imported_jobs": number,"payments_on": boolean,"updated_at": string
                   }
@@ -413,17 +499,23 @@ isOneToOne: false
                   ]
                 },"orgs": {
                   Row: {
-                    "about": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_checked_at": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"suspended_at": string | null,"suspended_reason": string | null,"trusted": boolean,"website": string | null
+                    "about": string | null,"agency_id": string | null,"business_verified_at": string | null,"business_verified_note": string | null,"created_at": string,"created_by": string | null,"email_verified_domain": string | null,"id": string,"industry": string | null,"logo_checked_at": string | null,"logo_url": string | null,"name": string,"office_places": (string)[],"size": string | null,"slug": string,"suspended_at": string | null,"suspended_by_agency": boolean,"suspended_reason": string | null,"trusted": boolean,"website": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"agency_id"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name": string,"office_places"?: (string)[],"size"?: string | null,"slug": string,"suspended_at"?: string | null,"suspended_by_agency"?: boolean,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Update: {
-                    "about"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"suspended_at"?: string | null,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
+                    "about"?: string | null,"agency_id"?: string | null,"business_verified_at"?: string | null,"business_verified_note"?: string | null,"created_at"?: string,"created_by"?: string | null,"email_verified_domain"?: string | null,"id"?: string,"industry"?: string | null,"logo_checked_at"?: string | null,"logo_url"?: string | null,"name"?: string,"office_places"?: (string)[],"size"?: string | null,"slug"?: string,"suspended_at"?: string | null,"suspended_by_agency"?: boolean,"suspended_reason"?: string | null,"trusted"?: boolean,"website"?: string | null
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "orgs_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"places": {
                   Row: {
@@ -653,11 +745,27 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "accept_invite":
+            "accept_agency_invite":
+{ Args: { "p_token": string }; Returns: string
+                           },
+"accept_invite":
 { Args: { "p_token": string }; Returns: string
                            },
 "admin_counts":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"agency_invite_preview":
+{ Args: { "p_token": string }; Returns: {
+              "agency": string,"agency_slug": string,"email": string,"inviter": string,"role": string,"status": string
+            }[]
+                           },
+"agency_open":
+{ Args: { "p_agency": string }; Returns: undefined
+                           },
+"agency_team":
+{ Args: { "p_agency": string }; Returns: {
+              "email": string,"full_name": string,"joined_at": string,"role": string,"user_id": string
+            }[]
                            },
 "alert_jobs":
 { Args: { "p_search": string }; Returns: {
@@ -705,6 +813,9 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"answer_agency_client_request":
+{ Args: { "p_accept": boolean,"p_id": string }; Returns: undefined
+                           },
 "apply_to_job":
 { Args: { "p_answers"?: Json,"p_job": string,"p_note"?: string,"p_resume": string }; Returns: string
                            },
@@ -713,6 +824,9 @@ isOneToOne: false
                            },
 "can_refund":
 { Args: { "p_order": string }; Returns: boolean
+                           },
+"can_write_logo":
+{ Args: { "p_name": string }; Returns: boolean
                            },
 "check_places":
 { Args: { "p_cities": (string)[],"p_countries": (string)[] }; Returns: undefined
@@ -735,8 +849,22 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"company_area_counts":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "area": string,"jobs": number,"name": string,"slug": string
+            }[]
+                           },
 "company_key":
 { Args: { "n": string }; Returns: string
+                           },
+"create_agency":
+{ Args: { "p_name": string,"p_slug": string }; Returns: string
+                           },
+"create_agency_client":
+{ Args: { "p_agency": string,"p_name": string,"p_slug": string }; Returns: string
+                           },
+"create_agency_invite":
+{ Args: { "p_agency": string,"p_email": string,"p_role"?: string }; Returns: string
                            },
 "create_invite":
 { Args: { "p_email": string,"p_org": string,"p_role"?: string }; Returns: string
@@ -746,6 +874,9 @@ isOneToOne: false
                            },
 "dearmor":
 { Args: { "": string }; Returns: string
+                           },
+"delete_agency_client":
+{ Args: { "p_org": string }; Returns: undefined
                            },
 "due_alerts":
 { Args: { "p_limit"?: number,"p_now"?: string }; Returns: {
@@ -823,6 +954,11 @@ isOneToOne: false
 "grant_credits":
 { Args: { "p_admin": string,"p_count": number,"p_org": string }; Returns: undefined
                            },
+"hiring_companies":
+{ Args: { "p_limit"?: number }; Returns: {
+              "jobs": number,"logo_url": string,"name": string,"slug": string
+            }[]
+                           },
 "invite_preview":
 { Args: { "p_token": string }; Returns: {
               "company": string,"company_slug": string,"email": string,"inviter": string,"role": string,"status": string
@@ -830,6 +966,12 @@ isOneToOne: false
                            },
 "is_admin":
 { Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_agency_member":
+{ Args: { "p_agency": string,"p_roles"?: (string)[] }; Returns: boolean
+                           },
+"is_direct_org_member":
+{ Args: { "p_org": string,"p_roles"?: (string)[] }; Returns: boolean
                            },
 "is_free_email_domain":
 { Args: { "p_domain": string }; Returns: boolean
@@ -848,16 +990,6 @@ isOneToOne: false
                            },
 "like_escape":
 { Args: { "p": string }; Returns: string
-                           },
-"company_area_counts":
-{ Args: Record<PropertyKey, never>; Returns: {
-              "slug": string,"name": string,"area": string,"jobs": number
-            }[]
-                           },
-"hiring_companies":
-{ Args: { "p_limit"?: number }; Returns: {
-              "name": string,"slug": string,"logo_url": string | null,"jobs": number
-            }[]
                            },
 "live_companies":
 { Args: Record<PropertyKey, never>; Returns: {
@@ -894,8 +1026,20 @@ isOneToOne: false
 "refresh_seo_counts":
 { Args: Record<PropertyKey, never>; Returns: number
                            },
+"refresh_shown":
+{ Args: { "p_keys"?: (string)[] }; Returns: undefined
+                           },
 "refund_order":
 { Args: { "p_order": string }; Returns: undefined
+                           },
+"remove_agency_client":
+{ Args: { "p_org": string }; Returns: undefined
+                           },
+"request_agency_client":
+{ Args: { "p_agency": string,"p_org_slug": string }; Returns: string
+                           },
+"revoke_agency_invite":
+{ Args: { "p_id": string }; Returns: undefined
                            },
 "revoke_invite":
 { Args: { "p_id": string }; Returns: undefined
@@ -903,14 +1047,8 @@ isOneToOne: false
 "save_job":
 { Args: { "p_job": string }; Returns: string
                            },
-"search_summary":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: unknown
-                           },
-"search_jobs_count":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
-                           },
 "search_jobs":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[],"sort"?: string,"p_limit"?: number,"p_offset"?: number }; Returns: {
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"p_limit"?: number,"p_offset"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "apply_method": string,
 "apply_url": string | null,
 "category": string | null,
@@ -955,6 +1093,22 @@ isOneToOne: false
         isOneToOne: false
         isSetofReturn: true
       } },
+"search_jobs_count":
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
+                           },
+"search_matches":
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+              "featured": boolean,"id": string,"org_id": string,"published_at": string,"rank": number
+            }[]
+                           },
+"search_suggestions":
+{ Args: { "p_q": string }; Returns: {
+              "jobs": number,"kind": string,"label": string,"slug": string
+            }[]
+                           },
+"search_summary":
+{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: Json
+                           },
 "send_back_job":
 { Args: { "p_job": string,"p_note": string }; Returns: undefined
                            },
@@ -972,14 +1126,6 @@ isOneToOne: false
 "show_trgm":
 { Args: { "": string }; Returns: (string)[]
                            },
-"refresh_shown":
-{ Args: { "p_keys"?: string[] }; Returns: undefined
-                           },
-"search_suggestions":
-{ Args: { "p_q": string }; Returns: {
-              "kind": string,"label": string,"slug": string | null,"jobs": number
-            }[]
-                           },
 "shown_copy":
 { Args: { "p_key": string }; Returns: string
                            },
@@ -988,6 +1134,9 @@ isOneToOne: false
               "published_at": string,"slug": string
             }[]
                            },
+"suspend_agency":
+{ Args: { "p_agency": string,"p_reason": string }; Returns: undefined
+                           },
 "take_cron_pass":
 { Args: { "p_token": string }; Returns: boolean
                            },
@@ -995,6 +1144,9 @@ isOneToOne: false
 { Args: { "p_org": string }; Returns: {
               "email": string,"full_name": string,"joined_at": string,"role": string,"user_id": string
             }[]
+                           },
+"unsuspend_agency":
+{ Args: { "p_agency": string }; Returns: undefined
                            },
 "website_domain":
 { Args: { "p_url": string }; Returns: string

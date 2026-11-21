@@ -35,7 +35,7 @@ Every app now runs on the OVH SYS-1 (6 cores, 32 GB). The Hostinger CPU limits t
 
 ## Data model
 
-New migration `039_agencies.sql`.
+Step 1 (done): migration `039_agencies.sql`. Step 4 adds the billing columns in its own migration.
 
 | Table | Holds | Who can read | Who can write |
 |---|---|---|---|
@@ -44,12 +44,17 @@ New migration `039_agencies.sql`.
 | `agency_invites` | Same shape and limits as `org_invites` | Owner and admin | Functions only |
 | `agency_client_requests` | An agency asks to manage a company that already has its own team | Both sides | Functions only |
 | `orgs.agency_id` | The agency that manages this company, or empty | Same as the company | Functions only |
-| `orders.agency_id`, `entitlements.agency_id` | Credits bought by the agency. Each row has a company or an agency, never both | Agency staff | Server only (webhook) |
+| `orgs.suspended_by_agency` | The company is suspended because its agency is | Same as the company | Ocelot only |
+| `orders.agency_id`, `entitlements.agency_id` (step 4) | Credits bought by the agency. Each row has a company or an agency, never both | Agency staff | Server only (webhook) |
 
 How access works:
 - Every access rule already goes through `is_org_member` (`supabase/migrations/001_foundation.sql:70`). It also returns true for staff of the company's agency. Agency owners and admins act as company admins. Recruiters act as company members.
-- Agency staff never become company owners. Only a company's own owner can delete the company or take it away from the agency.
-- An agency owner can delete a client company the agency made, when nobody else is in it.
+- Agency staff never become company owners. Only a company's own owner can delete the company. The owner, or the agency's owners and admins, can end the arrangement (`remove_agency_client`).
+- Managing a company's own team (roles, removals, invites) uses `is_direct_org_member`, so agency staff can't touch it.
+- Suspending an agency (`suspend_agency`, Ocelot only) suspends every client with it, so every list that hides suspended companies hides them too. Lifting it clears only those suspensions.
+- Logos: `<org id>/<file>` for companies, `agencies/<agency id>/<file>` for agencies (`can_write_logo`).
+- Job board discovery never matches an imported board to an agency's client by name (`src/lib/ats/discover.ts`).
+- An agency owner can delete a client company the agency made, when nobody else is in it (`delete_agency_client`). When the last person leaves an agency, the agency goes, and so do the clients it ran alone.
 
 How a company joins an agency:
 - **New client.** Agency staff create the company from the agency page. It starts out managed by the agency.
@@ -93,8 +98,8 @@ Added to `tests/db/boundaries.sql`:
 
 | Step | Part | Size for one developer |
 |---|---|---|
-| 0 | Finish the OVH move for Ocelot, update docs, raise limits | 1 day |
-| 1 | Migration, `is_org_member` change, boundary tests | 2–3 days |
+| 0 | Finish the OVH move for Ocelot, update docs, raise limits (repo part done) | 1 day |
+| 1 | Migration, `is_org_member` change, boundary tests (done) | 2–3 days |
 | 2 | Agency pages, staff, invites, client requests | 3–4 days |
 | 3 | Labels on jobs, companies, apply form, tracker, filter | 2 days |
 | 4 | Shared credits and the webhook | 1–2 days |

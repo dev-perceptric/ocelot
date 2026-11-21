@@ -18,7 +18,8 @@ type Candidate = { slug: string; name: string; provider: string | null; board: s
 // Finds or makes the company for a board: an existing company with the same name, or a new one.
 async function companyFor(name: string): Promise<string> {
   const db = createAdmin();
-  const { data: same } = await db.from("orgs").select("id").ilike("name", name.replace(/[%_\\]/g, "\\$&")).limit(1).maybeSingle();
+  // An agency's client is never matched by name: imported jobs must not land in an agency's hands.
+  const { data: same } = await db.from("orgs").select("id").is("agency_id", null).ilike("name", name.replace(/[%_\\]/g, "\\$&")).limit(1).maybeSingle();
   if (same) return same.id;
   const base = slugify(name) || "company";
   const { data: taken } = await db.from("orgs").select("slug").like("slug", `${base}%`);
