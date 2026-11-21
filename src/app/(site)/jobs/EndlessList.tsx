@@ -50,7 +50,7 @@ export function EndlessList({ first, states: firstStates, total, signedIn, panel
   }, [status, load]);
 
   return (
-    <JobList jobs={jobs} states={states} signedIn={signedIn} panelTop={panelTop} end={
+    <JobList jobs={jobs} states={states} signedIn={signedIn} panelTop={panelTop} autoOpen={false} end={
       <div ref={end} className="py-6 text-center">
         <p role="status" className="text-meta text-muted">
           {status === "loading" ? "Loading more jobs" : status === "done" ? `That's all ${total.toLocaleString("en-US")} jobs.` : status === "failed" ? "More jobs didn't load." : ""}
