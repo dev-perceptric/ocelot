@@ -1,6 +1,6 @@
 # Setup
 
-Ocelot runs on the shared Hostinger VPS with its own self-hosted Supabase, laid out like the other apps there.
+Ocelot runs on the shared OVH server (SYS-1, Beauharnois, Canada) with its own self-hosted Supabase, laid out like the other apps there.
 **The runbook is `deploy/README.md`**: DNS, the one-command server install (`deploy/install.sh`), the data move from
 Supabase Cloud, the GitHub variables and the checks. This page covers local development, payments, Google sign-in,
 the email templates and the running cost.
@@ -35,8 +35,8 @@ Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/pack
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Hostinger VPS KVM 2, already paid and shared with the other apps (KVM 4 if memory runs short) | $0 extra (check) | $0 extra, or the KVM 4 difference (check) |
-| Self-hosted Supabase on the VPS | $0 | $0 |
+| OVH SYS-1 (6 cores, 32 GB), already paid and shared with the other apps | $0 extra (check the OVH invoice) | $0 extra (check the OVH invoice) |
+| Self-hosted Supabase on the server | $0 | $0 |
 | Backups (on the server; Backblaze B2 copy optional) | $0, B2 under $1 (check) | $0, B2 about $1 (check) |
 | Resend | $0 (free up to 3,000 emails) | $20 |
 | Domain | $1 | $1 |
@@ -71,7 +71,9 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=<p
 cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 (cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> STRIPE_SECRET_KEY=sk_test_local STRIPE_WEBHOOK_SECRET=whsec_local STRIPE_API_URL=http://127.0.0.1:4243 ATS_TEST_URL=http://127.0.0.1:4244 node server.js) &
 node tests/e2e/team.cjs
+node tests/e2e/agency.cjs
 node tests/e2e/admin.cjs
+node tests/e2e/agency-admin.cjs
 node tests/e2e/jobs.cjs
 node tests/e2e/search.cjs
 node tests/e2e/reports.cjs
@@ -81,6 +83,7 @@ node tests/e2e/resumes.cjs
 node tests/e2e/apply.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
 node tests/e2e/billing.cjs
+node tests/e2e/agency-billing.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/alerts.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/boards.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs

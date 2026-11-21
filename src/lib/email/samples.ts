@@ -1,15 +1,21 @@
 // Sample data for each email, for /admin/emails. Add a sample whenever a template is added.
 
 import type { Email } from "./layout.ts";
-import { applicationSent, newApplicant, stageUpdate, jobAlert, weeklyDigest, taskReminder, inviteAccepted, jobPublished, jobSentBack, reportReceived, teamInvite } from "./templates.ts";
+import { applicationSent, newApplicant, stageUpdate, jobAlert, weeklyDigest, taskReminder, inviteAccepted, jobPublished, jobSentBack, reportReceived, teamInvite, agencyInvite, agencyJoined, clientRequest, clientRequestAnswered } from "./templates.ts";
 
 export function samples(siteUrl: string): { kind: string; name: string; email: Email }[] {
   return [
     { kind: "team_invite", name: "Team invite", email: teamInvite({ company: "Example Co", inviter: "Ana Tran", role: "admin", url: `${siteUrl}/invite/sample`, expiresDays: 7 }) },
     { kind: "invite_accepted", name: "Invite accepted", email: inviteAccepted({ company: "Example Co", member: "Ben Le", teamUrl: `${siteUrl}/employer/team` }) },
+    { kind: "agency_invite", name: "Agency invite", email: agencyInvite({ agency: "Example Agency", inviter: "Ana Tran", role: "recruiter", url: `${siteUrl}/invite/sample`, expiresDays: 7 }) },
+    { kind: "agency_joined", name: "Agency invite accepted", email: agencyJoined({ agency: "Example Agency", member: "Ben Le", teamUrl: `${siteUrl}/employer/agency/team` }) },
+    { kind: "client_request", name: "Agency asks to manage a company (to company owners)", email: clientRequest({ agency: "Example Agency", company: "Example Co", asker: "Ana Tran", url: `${siteUrl}/employer/team` }) },
+    { kind: "client_request_answered", name: "Company answered an agency (to the agency)", email: clientRequestAnswered({ agency: "Example Agency", company: "Example Co", accepted: true, url: `${siteUrl}/employer/agency` }) },
     { kind: "job_published", name: "Job published", email: jobPublished({ company: "Example Co", title: "Marketing Manager", jobUrl: `${siteUrl}/jobs/sample`, manageUrl: `${siteUrl}/employer/jobs`, until: "28 November" }) },
     { kind: "report_received", name: "Report (to admins)", email: reportReceived({ job: "Marketing Manager", company: "Example Co", reason: "fee_required", details: "They asked for a training fee.", reviewUrl: `${siteUrl}/admin/reports` }) },
     { kind: "application_sent", name: "Application sent (to candidate)", email: applicationSent({ job: "Marketing Manager", company: "Example Co", cardUrl: `${siteUrl}/app/tracker` }) },
+    { kind: "application_sent_agency", name: "Application sent to an agency job (to candidate)", email: applicationSent({ job: "Account Executive", company: "Example Co", agency: "Example Agency", cardUrl: `${siteUrl}/app/tracker` }) },
+    { kind: "stage_interviewing_agency", name: "Stage: interviewing, agency job (to candidate)", email: stageUpdate({ company: "Example Co", agency: "Example Agency", job: "Account Executive", stage: "interviewing", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },
     { kind: "new_applicant", name: "New applicant (to company)", email: newApplicant({ company: "Example Co", job: "Marketing Manager", name: "Mai Nguyen", url: `${siteUrl}/employer/applicants`, siteUrl }) },
     { kind: "stage_interviewing", name: "Stage: interviewing (to candidate)", email: stageUpdate({ company: "Example Co", job: "Marketing Manager", stage: "interviewing", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },
     { kind: "stage_offer", name: "Stage: offer (to candidate)", email: stageUpdate({ company: "Example Co", job: "Marketing Manager", stage: "offer", cardUrl: `${siteUrl}/app/tracker`, siteUrl }) },

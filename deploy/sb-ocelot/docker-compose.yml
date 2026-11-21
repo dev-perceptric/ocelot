@@ -1,8 +1,8 @@
-# /docker/sb-ocelot on the Hostinger VPS: Ocelot's own self-hosted Supabase stack (Postgres, GoTrue, PostgREST,
+# /docker/sb-ocelot on the OVH server: Ocelot's own self-hosted Supabase stack (Postgres, GoTrue, PostgREST,
 # Storage and the Envoy gateway), the same images, limits and shared gateway files as the other sb-<app> stacks.
 #
 # Every value comes from /docker/sb-ocelot/.env (see .env.example here), written when the project is created
-# through Hostinger's Docker manager. Nothing secret is in the repo.
+# through Hostinger's Docker manager (kept as is since the move to OVH). Nothing secret is in the repo.
 #
 # The default network is named sb-ocelot, so the worker, the migrate runner, the backup and the sb-public Caddy can
 # join it as an external network and reach Postgres at db:5432 and the gateway at sb-ocelot-api-gw-1:8000.

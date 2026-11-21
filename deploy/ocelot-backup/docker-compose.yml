@@ -1,6 +1,6 @@
-# /docker/ocelot-backup on the Hostinger VPS: dumps the Ocelot database every night at BACKUP_AT (UTC), keeps
+# /docker/ocelot-backup on the OVH server: dumps the Ocelot database every night at BACKUP_AT (UTC), keeps
 # KEEP_DAYS of dumps in /opt/backups/ocelot on the server, and copies each one to Backblaze B2 when the B2 values are
-# set. backup.sh (next to this file) has the rules. Hostinger's Docker manager can't place files next to a project, so
+# set. backup.sh (next to this file) has the rules. Hostinger's Docker manager couldn't place files next to a project (kept since the move to OVH), so
 # the script is embedded below as base64: after editing backup.sh, regenerate this file with build.sh here.
 # PGPASSWORD (the sb-ocelot Postgres password) and the optional B2_KEY_ID, B2_APP_KEY, B2_BUCKET are in this
 # project's .env. Logs: docker logs ocelot-backup-backup-1

@@ -16,7 +16,7 @@ export default async function ReviewJob({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const db = createAdmin();
-  const { data: job } = await db.from("jobs").select("*, job_questions(prompt, position), org:orgs(*)").eq("id", id).maybeSingle();
+  const { data: job } = await db.from("jobs").select("*, job_questions(prompt, position), org:orgs(*, agency:agencies(name, slug))").eq("id", id).maybeSingle();
   if (!job || !job.org) notFound();
   const org = job.org;
   const [{ count: published }, { count: reports }, { data: creator }] = await Promise.all([

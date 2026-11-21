@@ -17,7 +17,7 @@ export async function applyToJob(_: ApplyState, form: FormData): Promise<ApplySt
   const { supabase, user } = await currentUser();
   if (!user) return { error: "Your session ended. Log in again." };
   const slug = String(form.get("slug") ?? "");
-  const { data: job } = await supabase.from("jobs").select("id, title, org:orgs(name), job_questions(id, required)").eq("slug", slug).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("id, title, org:orgs(name, agency:agencies(name)), job_questions(id, required)").eq("slug", slug).maybeSingle();
   if (!job) return { error: "This job isn't taking applications." };
 
   const errors: NonNullable<ApplyState["errors"]> = {};
@@ -49,9 +49,10 @@ export async function applyToJob(_: ApplyState, form: FormData): Promise<ApplySt
 
   const { data: card } = await supabase.from("tracker_items").select("id").eq("application_id", appId).maybeSingle();
   const cardUrl = `${SITE_URL}/app/tracker${card ? `/${card.id}` : ""}`;
-  const company = (job.org as unknown as { name: string } | null)?.name ?? "the company";
+  const org = job.org as unknown as { name: string; agency: { name: string } | null } | null;
+  const company = org?.name ?? "the company";
   try {
-    if (user.email) await queueEmail({ to: user.email, userId: user.id, kind: "application_sent", email: applicationSent({ job: job.title, company, cardUrl }) });
+    if (user.email) await queueEmail({ to: user.email, userId: user.id, kind: "application_sent", email: applicationSent({ job: job.title, company, cardUrl, agency: org?.agency?.name ?? null }) });
     await emailNewApplicant(appId);
   } catch (e) {
     // The application is saved either way; a missed email shows in the email log.

@@ -39,7 +39,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
     supabase.from("documents").select("id, name").eq("user_id", user.id)
       .or(c.resume_id ? `deleted_at.is.null,id.eq.${c.resume_id}` : "deleted_at.is.null").order("created_at", { ascending: false }),
     c.application_id
-      ? supabase.from("applications").select("hiring_stage").eq("id", c.application_id).maybeSingle()
+      ? supabase.from("applications").select("hiring_stage, agency_name").eq("id", c.application_id).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
   const job = c.job as { slug: string; status: string } | null;
@@ -67,6 +67,7 @@ export default async function CardPage({ params }: { params: Promise<{ id: strin
       {c.application_id ? (
         <section className="border border-border bg-surface p-5 rounded-[var(--radius-card)]">
           <h2 className="text-card font-bold">Updates from the company</h2>
+          {app?.agency_name ? <p className="mt-1 text-meta text-muted">Sent to {app.agency_name}, a recruiting agency hiring for {c.company}.</p> : null}
           <ul className="mt-3 flex flex-col gap-1 text-body">
             {(updates ?? []).map((u, i) => <li key={i}><span className="text-meta text-muted">{day(u.created_at)}</span> {u.kind === "submitted" ? "Application sent" : CANDIDATE_LABEL[(u.to_stage ?? "") as HiringStage] ?? u.to_stage}</li>)}
           </ul>

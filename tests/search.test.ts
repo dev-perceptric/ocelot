@@ -62,3 +62,14 @@ test("a state or province: from the address, or typed as the whole search", () =
   assert.deepEqual([typed.q, typed.region], ["", "CA-ON"]);
   assert.equal(readFilters({ q: "texas sales" }).region, null, "only a search that is just the name");
 });
+
+test("hiding agency jobs reads from the address, writes back, counts as a filter and is saved", async () => {
+  const { activeCount, fromSaved, toSaved } = await import("../src/lib/search.ts");
+  const f = readFilters({ no_agency: "1", where: "remote" });
+  assert.equal(f.noAgency, true);
+  assert.equal(filtersQuery(f), "?where=remote&no_agency=1");
+  assert.equal(activeCount(f), 2);
+  assert.equal(fromSaved("", JSON.parse(JSON.stringify(toSaved(f)))).noAgency, true);
+  assert.equal(readFilters({ no_agency: "yes" }).noAgency, false);
+  assert.ok(!("no_agency" in toSaved(readFilters({}))), "searches that show agency jobs save nothing extra");
+});

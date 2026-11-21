@@ -8,52 +8,72 @@ import { Modal } from "@/components/Dialog";
 import { Select } from "@/components/Select";
 import { toast } from "@/components/Toast";
 import { Button, CompanyLogo, Field, inputClass, Table, Tag, Td, Th } from "@/components/ui";
-import type { Role } from "@/lib/org";
-import { cancelInvite, changeRole, invite, removeMember, type InviteState } from "./actions";
 
-type Member = { user_id: string; role: Role; full_name: string | null; email: string };
-type Invite = { id: string; email: string; role: string; expires_at: string };
+// The team list for a company or an agency. Roles run from most to least access: the first is the owner.
+export type TeamRole = { value: string; label: string; hint: string };
+export type TeamMember = { user_id: string; role: string; full_name: string | null; email: string };
+export type TeamInvite = { id: string; email: string; role: string; expires_at: string };
+type Result = { ok: boolean; message?: string };
+export type InviteState = { error?: string; sentTo?: string };
+export type TeamActions = {
+  invite: (s: InviteState, f: FormData) => Promise<InviteState>;
+  cancelInvite: (id: string) => Promise<Result>;
+  changeRole: (userId: string, role: string) => Promise<Result>;
+  removeMember: (userId: string) => Promise<Result>;
+};
 
-const ROLE_NAME: Record<string, string> = { owner: "Owner", admin: "Admin", member: "Member" };
-
-export function TeamView({ me, myRole, company, members, invites }: { me: string; myRole: Role; company: string; members: Member[]; invites: Invite[] }) {
+export function TeamView({ me, myRole, place, kind, access, roles, members, invites, actions, intro }: {
+  me: string;
+  myRole: string | null;     // null: they see the list but can't change it
+  place: string;             // the company or agency name
+  kind: "company" | "agency";
+  access: string;            // what members lose when they leave, like "jobs and applicants"
+  roles: TeamRole[];
+  members: TeamMember[];
+  invites: TeamInvite[];
+  actions: TeamActions;
+  intro?: React.ReactNode;
+}) {
   const [open, setOpen] = useState(false);
-  const manage = myRole === "owner" || myRole === "admin";
-  const owners = members.filter((m) => m.role === "owner").length;
+  const [owner, admin] = [roles[0].value, roles[1].value];
+  const name = (v: string) => roles.find((r) => r.value === v)?.label ?? v;
+  const manage = myRole === owner || myRole === admin;
+  const owners = members.filter((m) => m.role === owner).length;
 
-  const run = async (p: Promise<{ ok: boolean; message?: string }>, done: string) => {
+  const run = async (p: Promise<Result>, done: string) => {
     const r = await p;
     toast(r.ok ? done : r.message ?? "That didn't work. Try again.");
   };
 
-  const actions = (m: Member): MenuItem[] => {
+  const menu = (m: TeamMember): MenuItem[] => {
+    if (!myRole) return [];
     const self = m.user_id === me;
-    const name = m.full_name || m.email;
+    const who = m.full_name || m.email;
     const items: MenuItem[] = [];
-    const canTouch = myRole === "owner" || (myRole === "admin" && m.role !== "owner");
+    const canTouch = myRole === owner || (myRole === admin && m.role !== owner);
     if (canTouch && !self) {
-      for (const r of (myRole === "owner" ? ["owner", "admin", "member"] : ["admin", "member"]) as Role[]) {
-        if (r !== m.role) items.push({ label: `Make ${ROLE_NAME[r].toLowerCase()}`, onSelect: () => run(changeRole(m.user_id, r), `${name} is now ${ROLE_NAME[r].toLowerCase()}`) });
+      for (const r of roles.filter((r) => myRole === owner || r.value !== owner)) {
+        if (r.value !== m.role) items.push({ label: `Make ${r.label.toLowerCase()}`, onSelect: () => run(actions.changeRole(m.user_id, r.value), `${who} is now ${r.label.toLowerCase()}`) });
       }
       items.push({
-        label: "Remove from company", danger: true,
+        label: `Remove from ${kind}`, danger: true,
         onSelect: async () => {
-          if (await askConfirm({ title: `Remove ${name}?`, body: `They lose access to ${company}'s jobs and applicants.`, confirm: "Remove member", danger: true })) {
-            await run(removeMember(m.user_id), `${name} was removed`);
+          if (await askConfirm({ title: `Remove ${who}?`, body: `They lose access to ${place}'s ${access}.`, confirm: "Remove member", danger: true })) {
+            await run(actions.removeMember(m.user_id), `${who} was removed`);
           }
         },
       });
     }
-    if (self && m.role === "owner" && owners > 1) {
-      items.push({ label: "Step down to admin", onSelect: () => run(changeRole(m.user_id, "admin"), "You're now an admin") });
+    if (self && m.role === owner && owners > 1) {
+      items.push({ label: "Step down to admin", onSelect: () => run(actions.changeRole(m.user_id, admin), "You're now an admin") });
     }
     if (self) {
       items.push({
-        label: "Leave company", danger: true,
-        disabled: m.role === "owner" && owners === 1,
+        label: `Leave ${kind}`, danger: true,
+        disabled: m.role === owner && owners === 1,
         onSelect: async () => {
-          if (await askConfirm({ title: `Leave ${company}?`, body: "You lose access to its jobs and applicants until someone invites you again.", confirm: "Leave company", danger: true })) {
-            await run(removeMember(m.user_id), "You left the company");
+          if (await askConfirm({ title: `Leave ${place}?`, body: `You lose access to its ${access} until someone invites you again.`, confirm: `Leave ${kind}`, danger: true })) {
+            await run(actions.removeMember(m.user_id), `You left the ${kind}`);
           }
         },
       });
@@ -64,15 +84,16 @@ export function TeamView({ me, myRole, company, members, invites }: { me: string
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-title font-bold">Team</h1>
+        <h1 className="text-title font-bold">{kind === "agency" ? "Agency team" : "Team"}</h1>
         {manage ? <Button onClick={() => setOpen(true)}>Invite people</Button> : null}
       </div>
+      {intro}
 
       <Table label="Members">
         <thead><tr><Th>Member</Th><Th>Role</Th><Th className="w-14"><span className="sr-only">Actions</span></Th></tr></thead>
         <tbody>
           {members.map((m) => {
-            const items = actions(m);
+            const items = menu(m);
             return (
               <tr key={m.user_id}>
                 <Td>
@@ -84,14 +105,14 @@ export function TeamView({ me, myRole, company, members, invites }: { me: string
                     </span>
                   </span>
                 </Td>
-                <Td><Tag>{ROLE_NAME[m.role]}</Tag></Td>
+                <Td><Tag>{name(m.role)}</Tag></Td>
                 <Td>{items.length ? <Menu label={`Actions for ${m.full_name || m.email}`} items={items} /> : null}</Td>
               </tr>
             );
           })}
         </tbody>
       </Table>
-      {owners === 1 && myRole === "owner" ? <p className="-mt-6 text-meta text-muted">To leave, make someone else an owner first.</p> : null}
+      {owners === 1 && myRole === owner ? <p className="-mt-6 text-meta text-muted">To leave, make someone else an owner first.</p> : null}
 
       {manage && invites.length ? (
         <section>
@@ -102,9 +123,9 @@ export function TeamView({ me, myRole, company, members, invites }: { me: string
               {invites.map((i) => (
                 <tr key={i.id}>
                   <Td>{i.email}</Td>
-                  <Td><Tag tone="warning">{ROLE_NAME[i.role]}, invited</Tag></Td>
+                  <Td><Tag tone="warning">{name(i.role)}, invited</Tag></Td>
                   <Td className="text-meta">{new Date(i.expires_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</Td>
-                  <Td><Menu label={`Actions for invite to ${i.email}`} items={[{ label: "Cancel invite", danger: true, onSelect: () => run(cancelInvite(i.id), "Invite cancelled") }]} /></Td>
+                  <Td><Menu label={`Actions for invite to ${i.email}`} items={[{ label: "Cancel invite", danger: true, onSelect: () => run(actions.cancelInvite(i.id), "Invite cancelled") }]} /></Td>
                 </tr>
               ))}
             </tbody>
@@ -112,12 +133,14 @@ export function TeamView({ me, myRole, company, members, invites }: { me: string
         </section>
       ) : null}
 
-      {manage ? <InviteDialog open={open} onClose={() => setOpen(false)} company={company} /> : null}
+      {manage ? <InviteDialog open={open} onClose={() => setOpen(false)} place={place} roles={roles.slice(1)} invite={actions.invite} /> : null}
     </div>
   );
 }
 
-function InviteDialog({ open, onClose, company }: { open: boolean; onClose: () => void; company: string }) {
+function InviteDialog({ open, onClose, place, roles, invite }: {
+  open: boolean; onClose: () => void; place: string; roles: TeamRole[]; invite: TeamActions["invite"];
+}) {
   const [state, action, pending] = useActionState<InviteState, FormData>(invite, {});
   // A result stays on screen until it's dismissed; the next send gives a new result object.
   const [dismissed, setDismissed] = useState<InviteState | null>(null);
@@ -127,9 +150,10 @@ function InviteDialog({ open, onClose, company }: { open: boolean; onClose: () =
   const error = fresh ? state.error : undefined;
   const again = () => { setDismissed(state); setRound((r) => r + 1); };
   const close = () => { onClose(); again(); };
+  const lowest = roles[roles.length - 1].value;
 
   return (
-    <Modal open={open} onClose={close} title={`Invite people to ${company}`} footer={
+    <Modal open={open} onClose={close} title={`Invite people to ${place}`} footer={
       sent ? (
         <>
           <Button variant="ghost" onClick={again}>Invite another</Button>
@@ -151,10 +175,8 @@ function InviteDialog({ open, onClose, company }: { open: boolean; onClose: () =
               aria-invalid={Boolean(error)} aria-describedby={error ? "invite-email-error" : undefined} />
           </Field>
           <Field label="Role" htmlFor="invite-role">
-            <Select id="invite-role" name="role" defaultValue="member" options={[
-              { value: "member", label: "Member: jobs and applicants" },
-              { value: "admin", label: "Admin: also company settings and team" },
-            ]} />
+            <Select id="invite-role" name="role" defaultValue={lowest}
+              options={[...roles].reverse().map((r) => ({ value: r.value, label: `${r.label}: ${r.hint}` }))} />
           </Field>
         </form>
       )}

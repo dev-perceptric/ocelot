@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rewrites MIGRATE_SH in docker-compose.yml from migrate.sh (Hostinger's Docker manager can't mount a file).
+# Rewrites MIGRATE_SH in docker-compose.yml from migrate.sh (Hostinger's Docker manager couldn't mount a file; kept since the move to OVH).
 set -euo pipefail
 cd "$(dirname "$0")"
 b64=$(base64 -w0 migrate.sh)

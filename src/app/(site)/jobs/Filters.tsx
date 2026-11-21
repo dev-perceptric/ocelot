@@ -162,6 +162,12 @@ export function FilterBar({ filters: fromUrl }: { filters: F }) {
             picked={[filters.posted ? String(filters.posted) : ""]} onPick={(v) => { go({ posted: v ? Number(v) : null }); close(); }} />
         )}
       </Filter>
+      {/* Some people prefer to deal with the hiring company directly. */}
+      <button type="button" aria-pressed={filters.noAgency} onClick={() => go({ noAgency: !filters.noAgency })}
+        className={`inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap border px-3 text-body rounded-[var(--radius-control)] ${filters.noAgency ? "border-ink bg-brand font-bold" : "border-border bg-surface hover:border-ink"}`}>
+        {filters.noAgency ? <Check size={16} strokeWidth={2.5} aria-hidden /> : null}
+        Hide agency jobs
+      </button>
     </div>
   );
 }

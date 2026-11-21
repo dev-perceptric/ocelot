@@ -65,7 +65,7 @@ export default async function JobPage({ params }: Props) {
         <section className="mt-16">
           <h2 className="text-section-sm font-bold">More jobs at {job.org.name}</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {related.company.map((j) => <JobCard key={j.id} job={j} company={job.org.name} logo={job.org.logo_url} state={states[j.id] ?? null} signedIn={Boolean(user)} />)}
+            {related.company.map((j) => <JobCard key={j.id} job={j} company={job.org.name} agency={job.org.agency?.name} logo={job.org.logo_url} state={states[j.id] ?? null} signedIn={Boolean(user)} />)}
           </div>
         </section>
       ) : null}
@@ -73,7 +73,7 @@ export default async function JobPage({ params }: Props) {
         <section className="mt-16">
           <h2 className="text-section-sm font-bold">Similar jobs</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {related.similar.map((j) => <JobCard key={j.id} job={j} company={j.org?.name ?? ""} logo={j.org?.logo_url} state={states[j.id] ?? null} signedIn={Boolean(user)} />)}
+            {related.similar.map((j) => <JobCard key={j.id} job={j} company={j.org?.name ?? ""} agency={j.org?.agency?.name} logo={j.org?.logo_url} state={states[j.id] ?? null} signedIn={Boolean(user)} />)}
           </div>
         </section>
       ) : null}

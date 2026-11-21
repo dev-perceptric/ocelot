@@ -40,6 +40,9 @@ export default async function CompanyPage({ params }: Props) {
         {org.business_verified_at ? <Tag tone="success">Company verified</Tag> : null}
         {org.email_verified_domain ? <Tag tone="info">Email verified</Tag> : null}
       </div>
+      {org.agency ? (
+        <p className="mt-3 text-body">Hiring through <Link href={`/agencies/${org.agency.slug}`} className="font-bold underline">{org.agency.name}</Link>, a recruiting agency. It posts these jobs and receives applications for {org.name}.</p>
+      ) : null}
       {org.website ? (
         <a href={org.website} target="_blank" rel="noopener nofollow" className="mt-3 inline-block underline">{org.website.replace(/^https?:\/\//, "")}</a>
       ) : null}
@@ -56,7 +59,7 @@ export default async function CompanyPage({ params }: Props) {
       ) : null}
       <h2 className="mt-12 text-card font-bold">{jobs.length === 1 ? "1 open job" : `${jobs.length} open jobs`}</h2>
       <div className="mt-4 grid gap-4">
-        {jobs.map((job) => <JobCard key={job.id} job={job} company={org.name} logo={org.logo_url} />)}
+        {jobs.map((job) => <JobCard key={job.id} job={job} company={org.name} agency={org.agency?.name} logo={org.logo_url} />)}
       </div>
     </div>
   );

@@ -116,7 +116,7 @@ export default async function Home() {
               <Link href="/jobs?sort=new" className="whitespace-nowrap font-bold underline">See all new jobs</Link>
             </div>
             <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {jobs.map((job) => <JobCard key={job.id} job={job} company={job.org?.name ?? ""} logo={job.org?.logo_url} />)}
+              {jobs.map((job) => <JobCard key={job.id} job={job} company={job.org?.name ?? ""} agency={job.org?.agency?.name} logo={job.org?.logo_url} />)}
             </div>
           </div>
         </section>

@@ -25,7 +25,7 @@ export default async function EditJob({ params, searchParams }: { params: Promis
   const [{ data: org }, { count: applicants }, { data: credit }, { data: settings }] = await Promise.all([
     supabase.from("orgs").select("trusted").eq("id", current.id).single(),
     supabase.from("applications").select("id", { count: "exact", head: true }).eq("job_id", job.id),
-    supabase.from("entitlements").select("package").eq("job_id", job.id).maybeSingle(),
+    supabase.from("entitlements").select("package, agency_id").eq("job_id", job.id).maybeSingle(),
     supabase.from("app_settings").select("payments_on").maybeSingle(),
   ]);
   const waitingToSend = job.status === "draft" || job.status === "rejected";
@@ -53,7 +53,7 @@ export default async function EditJob({ params, searchParams }: { params: Promis
       </div>
       {paid && waitingToSend ? <PaymentWait /> : null}
       {paid && !waitingToSend ? <p className="mt-4 border border-border bg-surface p-4 text-body rounded-[var(--radius-card)]" role="status">{job.status === "published" ? "Payment received. Your job is live." : "Payment received. Sent for review. You'll get an email when it's live."}</p> : null}
-      {credit ? <p className="mt-2 text-meta text-muted">{PACKAGE_LABEL[credit.package]} listing</p> : null}
+      {credit ? <p className="mt-2 text-meta text-muted">{PACKAGE_LABEL[credit.package]} listing{credit.agency_id ? `, paid by ${current.agency?.name ?? "the agency"}` : ""}</p> : null}
       {pay && needsListing ? (
         <section className="mt-6 border border-border bg-surface p-5 rounded-[var(--radius-card)]">
           <h2 className="mb-4 text-card font-bold">Choose a listing to send this job for review</h2>

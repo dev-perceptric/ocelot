@@ -36,6 +36,76 @@ export function inviteAccepted(o: { company: string; member: string; teamUrl: st
   };
 }
 
+const AGENCY_ROLE: Record<string, string> = { owner: "an owner", admin: "an admin", recruiter: "a recruiter" };
+
+export function agencyInvite(o: { agency: string; inviter: string; role: string; url: string; expiresDays: number }): Email {
+  return {
+    subject: `${o.inviter} invited you to ${o.agency} on Ocelot`,
+    pref: null,
+    ...layout({
+      title: `Join ${o.agency} on Ocelot`,
+      preview: `${o.inviter} invited you to recruit with ${o.agency}.`,
+      blocks: [
+        { p: `${o.inviter} invited you to join the agency ${o.agency} as ${AGENCY_ROLE[o.role] ?? "a recruiter"}. You'll see the jobs and applicants of the agency's clients.` },
+        { button: { label: "Accept invite", url: o.url } },
+        { small: `This invite works for ${o.expiresDays} days. Sign in with this email address to accept it.` },
+      ],
+    }),
+  };
+}
+
+export function agencyJoined(o: { agency: string; member: string; teamUrl: string }): Email {
+  return {
+    subject: `${o.member} joined ${o.agency} on Ocelot`,
+    pref: null,
+    ...layout({
+      title: `${o.member} joined ${o.agency}`,
+      preview: `${o.member} accepted your invite.`,
+      blocks: [
+        { p: `${o.member} accepted your invite and can now work on ${o.agency}'s clients.` },
+        { button: { label: "View team", url: o.teamUrl } },
+      ],
+    }),
+  };
+}
+
+// To a company's owners: an agency asks to run its hiring.
+export function clientRequest(o: { agency: string; company: string; asker: string; url: string }): Email {
+  return {
+    subject: `${o.agency} asked to manage ${o.company}'s hiring on Ocelot`,
+    pref: null,
+    ...layout({
+      title: `${o.agency} wants to manage ${o.company}'s hiring`,
+      preview: `Say yes or no on your Team page.`,
+      blocks: [
+        { p: `${o.asker} at the recruiting agency ${o.agency} asked to manage ${o.company} on Ocelot.` },
+        { p: `If you say yes, the agency's staff can post jobs for ${o.company} and see its applicants and hiring notes. They can't change your team or delete the company, and you can remove the agency at any time.` },
+        { button: { label: "Answer the request", url: o.url } },
+        { small: "Nothing changes until you say yes." },
+      ],
+    }),
+  };
+}
+
+// To the person who asked: the company's answer.
+export function clientRequestAnswered(o: { agency: string; company: string; accepted: boolean; url: string }): Email {
+  const title = o.accepted ? `${o.company} is now a client of ${o.agency}` : `${o.company} said no to ${o.agency}`;
+  return {
+    subject: `${title} on Ocelot`,
+    pref: null,
+    ...layout({
+      title,
+      preview: o.accepted ? "You can post jobs for them now." : "Nothing changed.",
+      blocks: [
+        { p: o.accepted
+          ? `${o.company} accepted your request. Your agency can post jobs for ${o.company} and see its applicants.`
+          : `${o.company} declined your request. Your agency has no access to ${o.company}.` },
+        { button: { label: "View clients", url: o.url } },
+      ],
+    }),
+  };
+}
+
 export function jobPublished(o: { company: string; title: string; jobUrl: string; manageUrl: string; until: string }): Email {
   return {
     subject: `${o.title} is live on Ocelot`,
@@ -94,7 +164,8 @@ export function reportReceived(o: { job: string; company: string; reason: string
   };
 }
 
-export function applicationSent(o: { job: string; company: string; cardUrl: string }): Email {
+// agency: the recruiting agency that posted the job for the company, when there is one.
+export function applicationSent(o: { job: string; company: string; cardUrl: string; agency?: string | null }): Email {
   return {
     subject: `Your application to ${o.company} was sent`,
     pref: null,
@@ -102,7 +173,9 @@ export function applicationSent(o: { job: string; company: string; cardUrl: stri
       title: "Application sent",
       preview: `${o.job} at ${o.company}`,
       blocks: [
-        { p: `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
+        { p: o.agency
+          ? `We sent your application for ${o.job} at ${o.company} to ${o.agency}, the recruiting agency hiring for ${o.company}. Both can see it. When they move it forward, you'll see it on the job's card in your tracker.`
+          : `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
         { button: { label: "View in My search", url: o.cardUrl } },
       ],
     }),
@@ -129,7 +202,7 @@ export function newApplicant(o: { company: string; job: string; name: string; ur
 export const STAGE_EMAIL = ["interviewing", "offer", "hired", "rejected"] as const;
 export type StageEmail = (typeof STAGE_EMAIL)[number];
 
-export function stageUpdate(o: { company: string; job: string; stage: StageEmail; cardUrl: string; siteUrl: string }): Email {
+export function stageUpdate(o: { company: string; job: string; stage: StageEmail; cardUrl: string; siteUrl: string; agency?: string | null }): Email {
   const copy: Record<StageEmail, { subject: string; title: string; p: string }> = {
     interviewing: {
       subject: `${o.company} would like to interview you`,
@@ -159,7 +232,11 @@ export function stageUpdate(o: { company: string; job: string; stage: StageEmail
     ...layout({
       title: c.title,
       preview: c.p,
-      blocks: [{ p: c.p }, { button: { label: "View in My search", url: o.cardUrl } }],
+      blocks: [
+        { p: c.p },
+        ...(o.agency ? [{ small: `${o.agency}, a recruiting agency, handles this hiring for ${o.company}.` }] : []),
+        { button: { label: "View in My search", url: o.cardUrl } },
+      ],
       footer: optionalFooter(o.siteUrl),
     }),
   };

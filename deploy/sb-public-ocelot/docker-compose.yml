@@ -1,4 +1,4 @@
-# /docker/sb-public-ocelot on the Hostinger VPS: db.joinocelot.com (Traefik, Let's Encrypt) in front of the sb-ocelot
+# /docker/sb-public-ocelot on the OVH server: db.joinocelot.com (Traefik, Let's Encrypt) in front of the sb-ocelot
 # API gateway. Its own project, so adding Ocelot never restarts the shared sb-public Caddy the other apps use.
 name: sb-public-ocelot
 

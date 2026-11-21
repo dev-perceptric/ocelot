@@ -103,7 +103,7 @@ export function parseSeoPath(slug: string): Filters | null {
 // The clean address for a search, when it is one of these pages: an area, a place, remote, or a mix of them, plus at
 // most one extra, and nothing else. Remote pages don't take a city.
 export function seoPath(f: Filters): string | null {
-  if (f.q || f.pay || f.posted || f.sort !== "best") return null;
+  if (f.q || f.pay || f.posted || f.sort !== "best" || f.noAgency) return null;
   const extraKey = extraOf(f);
   if (extraKey === null) return null;
   const extra = extraKey ? extraByKey(extraKey) : null;

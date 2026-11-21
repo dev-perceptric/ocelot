@@ -52,10 +52,58 @@ export async function suspendCompany(orgId: string, reason: string): Promise<Res
 
 export async function unsuspendCompany(orgId: string): Promise<Result> {
   const { user } = await requireAdmin();
-  const { error } = await createAdmin().from("orgs").update({ suspended_at: null, suspended_reason: null }).eq("id", orgId);
+  const { error } = await createAdmin().from("orgs").update({ suspended_at: null, suspended_reason: null, suspended_by_agency: false }).eq("id", orgId);
   if (error) return { ok: false, message: error.message };
   await audit(user.id, "company.unsuspend", { table: "orgs", id: orgId });
   return done([`/admin/companies/${orgId}`, "/admin/companies", "/jobs", "/"]);
+}
+
+// ---------- Agencies ----------
+
+export async function verifyAgency(agencyId: string, note: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  if (!note.trim()) return { ok: false, message: "Say what you checked." };
+  const { error } = await createAdmin().from("agencies")
+    .update({ business_verified_at: new Date().toISOString(), business_verified_note: note.trim() }).eq("id", agencyId);
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "agency.verify", { table: "agencies", id: agencyId }, { note: note.trim() });
+  return done([`/admin/agencies/${agencyId}`, "/admin/agencies"]);
+}
+
+export async function unverifyAgency(agencyId: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const { error } = await createAdmin().from("agencies").update({ business_verified_at: null, business_verified_note: null }).eq("id", agencyId);
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "agency.unverify", { table: "agencies", id: agencyId });
+  return done([`/admin/agencies/${agencyId}`, "/admin/agencies"]);
+}
+
+// Suspends the agency and every client with it (suspend_agency, 039_agencies.sql): their jobs leave public pages.
+export async function suspendAgency(agencyId: string, reason: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  if (reason.trim().length < 5) return { ok: false, message: "Give a reason." };
+  const { error } = await createAdmin().rpc("suspend_agency", { p_agency: agencyId, p_reason: reason.trim() });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "agency.suspend", { table: "agencies", id: agencyId }, { reason: reason.trim() });
+  return done([`/admin/agencies/${agencyId}`, "/admin/agencies", "/admin/companies", "/jobs", "/"]);
+}
+
+// Lifts it, and the client suspensions that came from it. A company an admin suspended on its own stays suspended.
+export async function unsuspendAgency(agencyId: string): Promise<Result> {
+  const { user } = await requireAdmin();
+  const { error } = await createAdmin().rpc("unsuspend_agency", { p_agency: agencyId });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "agency.unsuspend", { table: "agencies", id: agencyId });
+  return done([`/admin/agencies/${agencyId}`, "/admin/agencies", "/admin/companies", "/jobs", "/"]);
+}
+
+export async function grantAgencyCredits(agencyId: string, count: number): Promise<Result> {
+  const { user } = await requireAdmin();
+  if (!Number.isInteger(count) || count < 1 || count > 50) return { ok: false, message: "Give between 1 and 50 credits." };
+  const { error } = await createAdmin().rpc("grant_agency_credits", { p_agency: agencyId, p_count: count, p_admin: user.id });
+  if (error) return { ok: false, message: error.message };
+  await audit(user.id, "billing.grant_agency_credits", { table: "agencies", id: agencyId }, { count });
+  return done([`/admin/agencies/${agencyId}`]);
 }
 
 // ---------- People ----------

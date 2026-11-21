@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // Jobs waiting for review, oldest first. Open one to publish it or send it back.
 export default async function Review() {
   await requireAdmin();
-  const { data: jobs } = await createAdmin().from("jobs").select("id, title, updated_at, org:orgs(name)")
+  const { data: jobs } = await createAdmin().from("jobs").select("id, title, updated_at, org:orgs(name, agency:agencies(name))")
     .eq("status", "pending_review").order("updated_at");
   return (
     <>
@@ -20,7 +20,7 @@ export default async function Review() {
             <thead><tr><Th>Job</Th><Th>Company</Th><Th>Sent for review</Th></tr></thead>
             <tbody>
               {jobs.map((j) => (
-                <tr key={j.id}><Td><Link href={`/admin/review/${j.id}`} className="font-bold underline">{j.title}</Link></Td><Td>{(j.org as unknown as { name: string })?.name}</Td><Td className="text-meta">{when(j.updated_at)}</Td></tr>
+                <tr key={j.id}><Td><Link href={`/admin/review/${j.id}`} className="font-bold underline">{j.title}</Link></Td><Td>{(j.org as unknown as { name: string })?.name}{(j.org as unknown as { agency: { name: string } | null })?.agency ? <span className="block text-meta text-muted">Posted by {(j.org as unknown as { agency: { name: string } }).agency.name}</span> : null}</Td><Td className="text-meta">{when(j.updated_at)}</Td></tr>
               ))}
             </tbody>
           </Table>

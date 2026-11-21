@@ -1,4 +1,4 @@
-# /docker/ocelot-web on the Hostinger VPS. The site and app at joinocelot.com, routed by the shared Traefik.
+# /docker/ocelot-web on the OVH server. The site and app at joinocelot.com, routed by the shared Traefik.
 # Secrets live in /docker/ocelot-web/.env on the server (see .env.example at the repo root), never in the repo.
 # autodeploy pulls :latest every 5 minutes and restarts it when the image changed.
 # Like pulsearr-web and arrowsterr-web, this joins no named network.

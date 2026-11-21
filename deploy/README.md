@@ -1,6 +1,6 @@
-# Running Ocelot on the Hostinger VPS
+# Running Ocelot on the OVH server
 
-Ocelot runs on the shared Hostinger VPS (`45.90.109.7`) the same way as PulseARR, Arrowsterr and the other apps. It
+Ocelot runs on the shared OVH SYS-1 (`149.56.19.140`, Beauharnois, Canada: 6 cores, 32 GB) the same way as PulseARR, Arrowsterr and the other apps. It
 changes a production server that runs the other apps, so read each step before running it. Every secret goes into a
 `.env` file on the server (chmod 600), never into the repo, chat or a ticket.
 
@@ -12,28 +12,28 @@ Each folder here is one Docker Compose project in `/docker` on the server:
 | `sb-public-ocelot/` | `db.joinocelot.com` through Traefik to the gateway | 64 MB |
 | `ocelot-migrate/` | Applies new `supabase/migrations/NNN_*.sql` from `main` every 2 minutes, recorded in `ops.schema_migrations` | 128 MB |
 | `ocelot-web/` | `joinocelot.com` (and `www`), image `ghcr.io/dev-perceptric/ocelot-web`. Only serves visitors (`CRON_DISABLED=1`), with twice the default CPU weight | 768 MB |
-| `ocelot-jobs/` | The same image with no public address: runs the hourly alerts and job board sync, discovery and logos, so that work never slows the site. At most half a CPU core | 1 GB |
+| `ocelot-jobs/` | The same image with no public address: runs the hourly alerts and job board sync, discovery and logos, so that work never slows the site. At most one CPU core | 1 GB |
 | `ocelot-worker/` | The background worker, image `ghcr.io/dev-perceptric/ocelot-worker`. Calls `ocelot-jobs` hourly over the `ocelot-jobs` network | 256 MB |
 | `ocelot-backup/` | Nightly `pg_dump` at 03:15 UTC into `/opt/backups/ocelot`, 14 days; copies to Backblaze B2 when set | 128 MB |
 | `ocelot-move/` | The one-time data move from Supabase Cloud | runs once |
 | `uptime/gatus-endpoint.yaml` | The health checks for the `uptime` project's Gatus | |
 
 Real use is about 1.5 – 2 GB (the database grows with the job count: about 0.5 – 1 GB at 25,000 jobs). `migrate.sh` and `backup.sh` are embedded in their compose files as base64, because
-Hostinger's Docker manager can't place files next to a project: after editing one, run `build.sh` in its folder.
+Hostinger's Docker manager couldn't place files next to a project (kept since the move to OVH): after editing one, run `build.sh` in its folder.
 
 ## 1. DNS (Namecheap, joinocelot.com, Advanced DNS)
 
-- `A` `@` → `45.90.109.7`
-- `A` `db` → `45.90.109.7`
+- `A` `@` → `149.56.19.140`
+- `A` `db` → `149.56.19.140`
 - `CNAME` `www` → `joinocelot.com.`
 - No `AAAA` record (the old one pointed at Fly). Keep the Resend records (`send`, `rsend`, `resend._domainkey`,
   `_dmarc`).
 
-Check: `dig +short joinocelot.com db.joinocelot.com` prints `45.90.109.7` twice.
+Check: `dig +short joinocelot.com db.joinocelot.com` prints `149.56.19.140` twice.
 
 ## 2 to 5. The server, in one command
 
-In hPanel → VPS → **Browser terminal** (as root):
+On the server as root (`ssh ubuntu@149.56.19.140`, then `sudo -i`):
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/dev-perceptric/ocelot/main/deploy/install.sh)
@@ -102,6 +102,11 @@ the other apps, then `docker compose restart` in `/docker/uptime`.
 `/docker/autodeploy/docker-compose.yml`), and point
 DNS elsewhere.
 
-## Keeping CPU low
+## Server size
 
-KVM 2 is throttled when the server's 24-hour CPU average stays above 30%. `deploy/trim-server.sh` trims every stack on the server (weekly health checks with a 5-minute start window, PostgREST keeps idle connections for 10 minutes, Supabase Studio helpers off, Ocelot discovery paused and boards synced twice a week), backs up each compose file first and restarts one stack at a time. Run it with `nohup bash trim-server.sh > /dev/null 2>&1 &` and watch `/root/trim.log`. Safe to run again.
+The OVH SYS-1 has 6 cores and 32 GB, shared with the other apps. On the old Hostinger KVM 2, `deploy/trim-server.sh`
+slowed Ocelot down to stay under its CPU limit (discovery paused, boards synced twice a week). Migration
+`038_ovh_limits.sql` undid that, and `ocelot-jobs` now gets one full core. Don't run `trim-server.sh` on OVH.
+
+After pulling a compose change from the repo (such as the `ocelot-jobs` CPU limit), copy the file to its folder in
+`/docker` and run `docker compose up -d` there. autodeploy only updates images.

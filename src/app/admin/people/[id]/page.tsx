@@ -14,12 +14,13 @@ export default async function Person({ params }: { params: Promise<{ id: string 
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const db = createAdmin();
-  const [{ data: auth }, { data: p }, { data: orgs }, { data: emails }, { data: admin }] = await Promise.all([
+  const [{ data: auth }, { data: p }, { data: orgs }, { data: emails }, { data: admin }, { data: agencies }] = await Promise.all([
     db.auth.admin.getUserById(id),
     db.from("profiles").select("*").eq("id", id).maybeSingle(),
     db.from("org_members").select("role, org:orgs(id, name)").eq("user_id", id),
     db.from("email_log").select("*").eq("user_id", id).order("created_at", { ascending: false }).limit(10),
     db.from("platform_admins").select("user_id").eq("user_id", id).maybeSingle(),
+    db.from("agency_members").select("role, agency:agencies(id, name)").eq("user_id", id),
   ]);
   const u = auth.user;
   if (!u) notFound();
@@ -49,6 +50,14 @@ export default async function Person({ params }: { params: Promise<{ id: string 
             })}
           </ul>
         ) : <p className="text-body text-muted">Not in any company.</p>}
+        {agencies?.length ? (
+          <ul className="mt-3 flex flex-col gap-2">
+            {agencies.map((m) => {
+              const a = m.agency as unknown as { id: string; name: string };
+              return <li key={a.id}><Link href={`/admin/agencies/${a.id}`} className="font-bold underline">{a.name}</Link> <Tag>Agency {m.role}</Tag></li>;
+            })}
+          </ul>
+        ) : null}
       </section>
 
       <section>

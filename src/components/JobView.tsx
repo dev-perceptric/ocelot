@@ -8,7 +8,7 @@ import { roleName } from "@/lib/taxonomy";
 // so all three always match.
 export function JobView({ job, org, questions, mode = "public", aside, apply, save }: {
   job: Job;
-  org: Pick<Org, "name" | "slug" | "logo_url" | "business_verified_at" | "email_verified_domain">;
+  org: Pick<Org, "name" | "slug" | "logo_url" | "business_verified_at" | "email_verified_domain" | "agency">;
   questions: string[];
   mode?: "public" | "preview";
   aside?: React.ReactNode; // extra controls under the apply box (e.g. Report)
@@ -36,6 +36,13 @@ export function JobView({ job, org, questions, mode = "public", aside, apply, sa
           {org.business_verified_at ? <Tag tone="success">Company verified</Tag> : null}
           {org.email_verified_domain ? <Tag tone="info">Email verified</Tag> : null}
         </div>
+        {org.agency ? (
+          <p className="mt-3 text-body text-muted">
+            Posted by {mode === "public"
+              ? <Link href={`/agencies/${org.agency.slug}`} className="font-bold text-ink underline">{org.agency.name}</Link>
+              : <span className="font-bold text-ink">{org.agency.name}</span>}, a recruiting agency, for {org.name}.
+          </p>
+        ) : null}
         <h1 className="mt-4 text-section-sm font-bold md:text-section">{job.title || "Untitled job"}</h1>
         <p className="mt-3 text-body">{formatWhere(job) || "Where you can work isn't set yet"}</p>
         {salary ? <p className="mt-1 text-body font-bold">{salary}</p> : null}
