@@ -98,7 +98,7 @@ const cron = async (key) => {
   ok(await p.getByRole("link", { name: "Remote in Vietnam" }).getAttribute("href") === "/jobs?where=remote&country=VN", "Settings links each search");
   await p.getByRole("combobox", { name: "How often for Remote in Vietnam" }).click();
   await p.getByRole("option", { name: "Weekly" }).click();
-  await p.waitForSelector("text=Saved");
+  await p.getByRole("status").getByText("Saved", { exact: true }).waitFor();
   ok(sql(`select frequency from saved_searches where user_id = '${uid}'`) === "weekly", "frequency can be changed");
   await p.getByLabel("Reminders the morning a task is due").click();
   await p.waitForSelector("text=Saved >> nth=-1");
