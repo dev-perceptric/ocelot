@@ -8,13 +8,18 @@ export const dynamic = "force-dynamic";
 
 
 export default async function EmployerHome() {
-  const { supabase, current: org } = await myOrgs();
+  const { supabase, current: org, agency } = await myOrgs();
 
   if (!org) {
     return (
       <>
         <h1 className="text-title font-bold">Set up your company</h1>
         <div className="mt-6"><CreateCompany /></div>
+        <p className="mt-10 text-body text-muted">
+          {agency
+            ? <>Hiring for clients? <Link href="/employer/agency" className="font-bold text-ink underline">Add a client to {agency.name}</Link>.</>
+            : <>Recruiting for other companies? <Link href="/employer/agency" className="font-bold text-ink underline">Set up an agency</Link> instead.</>}
+        </p>
       </>
     );
   }
@@ -25,6 +30,7 @@ export default async function EmployerHome() {
   return (
     <>
       <h1 className="text-title font-bold">{org.name}</h1>
+      {org.agency ? <p className="mt-2 text-body text-muted">Managed by {org.agency.name}</p> : null}
       <h2 className="mt-8 text-card font-bold">Jobs</h2>
       {jobs?.length ? (
         <ul className="mt-4 divide-y divide-border border border-border bg-surface rounded-[var(--radius-card)]">

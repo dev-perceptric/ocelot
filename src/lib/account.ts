@@ -9,3 +9,13 @@ export function deletionPlan(memberships: Membership[]) {
   const companiesToDelete = memberships.filter((m) => m.members === 1);
   return { blockers, companiesToDelete };
 }
+
+// The same rule for agencies. An agency with nobody else in it goes with the account, and takes the clients it
+// ran alone with it (the database does that part).
+export type AgencyMembership = { agencyId: string; name: string; role: "owner" | "admin" | "recruiter"; members: number; owners: number };
+
+export function agencyDeletionPlan(memberships: AgencyMembership[]) {
+  const blockers = memberships.filter((m) => m.role === "owner" && m.owners === 1 && m.members > 1);
+  const agenciesToDelete = memberships.filter((m) => m.members === 1);
+  return { blockers, agenciesToDelete };
+}

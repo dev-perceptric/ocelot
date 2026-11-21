@@ -71,6 +71,7 @@ NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=<p
 cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 (cd .next/standalone && PORT=3100 HOSTNAME=localhost SUPABASE_SERVICE_ROLE_KEY=<secret> STRIPE_SECRET_KEY=sk_test_local STRIPE_WEBHOOK_SECRET=whsec_local STRIPE_API_URL=http://127.0.0.1:4243 ATS_TEST_URL=http://127.0.0.1:4244 node server.js) &
 node tests/e2e/team.cjs
+node tests/e2e/agency.cjs
 node tests/e2e/admin.cjs
 node tests/e2e/jobs.cjs
 node tests/e2e/search.cjs

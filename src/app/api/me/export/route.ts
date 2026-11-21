@@ -12,11 +12,12 @@ export async function GET() {
     const { data } = await supabase.from(table).select("*").eq(col, user.id);
     return data ?? [];
   };
-  const [profile, prefs, applications, memberships] = await Promise.all([
+  const [profile, prefs, applications, memberships, agencies] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("notification_prefs").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("applications").select("id, job_id, submitted_at, hiring_stage, snapshot, job:jobs(title), org:orgs(name), events:application_events(kind, to_stage, created_at)").eq("candidate_id", user.id),
     supabase.from("org_members").select("role, created_at, org:orgs(name, slug)").eq("user_id", user.id),
+    supabase.from("agency_members").select("role, created_at, agency:agencies(name, slug)").eq("user_id", user.id),
   ]);
 
   const data = {
@@ -30,6 +31,7 @@ export async function GET() {
     documents: await own("documents"),
     applications: applications.data ?? [],
     companies: memberships.data ?? [],
+    agencies: agencies.data ?? [],
     reports: await own("reports", "reporter_id"),
   };
 

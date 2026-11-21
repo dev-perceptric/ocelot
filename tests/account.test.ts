@@ -23,3 +23,14 @@ test("a company with nobody else in it is deleted too", () => {
   assert.deepEqual(p.blockers, []);
   assert.deepEqual(p.companiesToDelete.map((c) => c.name), ["Solo"]);
 });
+
+test("agencies follow the same rule: the only owner hands over first, a solo agency goes too", async () => {
+  const { agencyDeletionPlan } = await import("../src/lib/account.ts");
+  const p = agencyDeletionPlan([
+    { agencyId: "a", name: "Hire Co", role: "owner", members: 3, owners: 1 },
+    { agencyId: "b", name: "Solo Search", role: "owner", members: 1, owners: 1 },
+    { agencyId: "c", name: "Big Agency", role: "recruiter", members: 9, owners: 2 },
+  ]);
+  assert.deepEqual(p.blockers.map((b) => b.name), ["Hire Co"]);
+  assert.deepEqual(p.agenciesToDelete.map((a) => a.name), ["Solo Search"]);
+});

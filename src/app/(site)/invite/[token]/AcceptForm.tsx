@@ -5,11 +5,12 @@ import { keepValues } from "@/components/forms";
 import { Button } from "@/components/ui";
 import { accept, type AcceptState } from "./actions";
 
-export function AcceptForm({ token, company }: { token: string; company: string }) {
+export function AcceptForm({ token, company, kind }: { token: string; company: string; kind: "company" | "agency" }) {
   const [state, action, pending] = useActionState<AcceptState, FormData>(accept, {});
   return (
     <form onSubmit={keepValues(action)} className="flex flex-col items-start gap-4">
       <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="kind" value={kind} />
       {state.error ? <p className="text-meta text-danger" role="alert">{state.error}</p> : null}
       <Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Joining" : `Join ${company}`}</Button>
     </form>

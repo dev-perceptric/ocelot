@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { EMAIL_COLORS } from "../src/lib/email/colors.ts";
 import { esc, layout, optionalFooter } from "../src/lib/email/layout.ts";
-import { applicationSent, newApplicant, stageUpdate, STAGE_EMAIL, jobAlert, weeklyDigest, taskReminder, inviteAccepted, jobPublished, jobSentBack, teamInvite } from "../src/lib/email/templates.ts";
+import { applicationSent, newApplicant, stageUpdate, STAGE_EMAIL, jobAlert, weeklyDigest, taskReminder, inviteAccepted, jobPublished, jobSentBack, teamInvite, agencyInvite, agencyJoined, clientRequest, clientRequestAnswered } from "../src/lib/email/templates.ts";
 import { oneClickUrl, sign, signingKey, unsubscribeUrl, verify } from "../src/lib/email/unsubscribe.ts";
 
 test("email colors match the brand tokens", () => {
@@ -22,6 +22,10 @@ test("templates fill every value and escape what people typed", () => {
   for (const m of [
     e,
     inviteAccepted({ company: "Acme", member: "Ben", teamUrl: "https://joinocelot.com/employer/team" }),
+    agencyInvite({ agency: "Hire Co", inviter: "Ana", role: "recruiter", url: "https://joinocelot.com/invite/abc", expiresDays: 7 }),
+    agencyJoined({ agency: "Hire Co", member: "Ben", teamUrl: "https://joinocelot.com/employer/agency/team" }),
+    clientRequest({ agency: "Hire Co", company: "Acme", asker: "Ana", url: "https://joinocelot.com/employer/team" }),
+    clientRequestAnswered({ agency: "Hire Co", company: "Acme", accepted: false, url: "https://joinocelot.com/employer/agency" }),
     jobPublished({ company: "Acme", title: "SDR", jobUrl: "https://joinocelot.com/jobs/sdr", manageUrl: "https://joinocelot.com/employer/jobs", until: "28 November" }),
     jobSentBack({ title: "SDR", note: "Add pay <please>", editUrl: "https://joinocelot.com/employer/jobs/1" }),
     applicationSent({ job: "SDR", company: "Acme", cardUrl: "https://joinocelot.com/app/tracker/1" }),

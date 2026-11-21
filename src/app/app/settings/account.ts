@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { deletionPlan, type Membership } from "@/lib/account";
+import { agencyDeletionPlan, deletionPlan, type AgencyMembership, type Membership } from "@/lib/account";
 import { audit } from "@/lib/admin";
 import { createAdmin, currentUser } from "@/lib/supabase/server";
 
@@ -44,15 +44,42 @@ export async function deleteAccount(_: DeleteState, form: FormData): Promise<Del
     return { error: `You're the only owner of ${blockers.map((b) => b.name).join(", ")}. Make someone else an owner first, in Team.` };
   }
 
+  const { data: staffRows } = await db.from("agency_members").select("agency_id, role, agency:agencies(name)").eq("user_id", user.id);
+  const agencyMemberships: AgencyMembership[] = await Promise.all((staffRows ?? []).map(async (r) => {
+    const { data: all } = await db.from("agency_members").select("role").eq("agency_id", r.agency_id);
+    return {
+      agencyId: r.agency_id,
+      name: (r.agency as unknown as { name: string } | null)?.name ?? "an agency",
+      role: r.role as AgencyMembership["role"],
+      members: all?.length ?? 1,
+      owners: (all ?? []).filter((m) => m.role === "owner").length,
+    };
+  }));
+  const agencyPlan = agencyDeletionPlan(agencyMemberships);
+  if (agencyPlan.blockers.length) {
+    return { error: `You're the only owner of the agency ${agencyPlan.blockers.map((b) => b.name).join(", ")}. Make someone else an owner first, in Agency team.` };
+  }
+
   try {
     for (const c of companiesToDelete) {
       await removeFolder("logos", c.orgId);
       const { error } = await db.from("orgs").delete().eq("id", c.orgId);
       if (error) throw error;
     }
+    // A solo agency goes too, with the clients it ran alone (the database deletes those with the agency).
+    for (const a of agencyPlan.agenciesToDelete) {
+      const { data: clients } = await db.from("orgs").select("id").eq("agency_id", a.agencyId);
+      for (const c of clients ?? []) {
+        const { count } = await db.from("org_members").select("user_id", { count: "exact", head: true }).eq("org_id", c.id);
+        if (!count) await removeFolder("logos", c.id);
+      }
+      await removeFolder("logos", `agencies/${a.agencyId}`);
+      const { error } = await db.from("agencies").delete().eq("id", a.agencyId);
+      if (error) throw error;
+    }
     await removeFolder("resumes", user.id);
     // Logged before the account goes; no name or email, only what happened.
-    await audit(user.id, "account.delete", { table: "auth.users", id: user.id }, { companies_deleted: companiesToDelete.length });
+    await audit(user.id, "account.delete", { table: "auth.users", id: user.id }, { companies_deleted: companiesToDelete.length, agencies_deleted: agencyPlan.agenciesToDelete.length });
     const { error } = await db.auth.admin.deleteUser(user.id);
     if (error) throw error;
   } catch (e) {
