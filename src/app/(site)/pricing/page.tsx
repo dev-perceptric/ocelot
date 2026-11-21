@@ -22,9 +22,9 @@ const STEPS = [
 ];
 
 export default async function Pricing() {
-  // Signed in: straight to the job form. Signed out: one email code, then the form.
+  // Signed in: straight to the job form. Signed out: create an account (or log in from there), then the form.
   const { user } = await currentUser();
-  const post = user ? "/employer/jobs/new" : `/login?next=${encodeURIComponent("/employer/jobs/new")}`;
+  const post = user ? "/employer/jobs/new" : `/signup?next=${encodeURIComponent("/employer/jobs/new")}`;
 
   return (
     <>

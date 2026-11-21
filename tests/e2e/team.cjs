@@ -40,7 +40,7 @@ async function login(page, email) {
   ana.on("pageerror", (e) => errors.push("ana: " + e.message));
 
   // Ana signs up, picks Hire, creates a company.
-  await ana.goto(`${APP}/login`);
+  await ana.goto(`${APP}/login?method=code`);
   await login(ana, "ana@acme.test");
   ok(ana.url().includes("/welcome"), "new person lands on the first-run question");
   await ana.getByText("Hire for my company").click();
@@ -55,13 +55,14 @@ async function login(page, email) {
   // Company settings: website on her email's domain gives Email verified. Logo upload.
   await ana.goto(`${APP}/employer/company`);
   await ana.fill("#website", "acme.test");
-  await ana.fill("#industry", "Software");
+  await ana.click("#industry");
+  await ana.getByRole("option", { name: "Software and SaaS" }).click();
   await ana.click("#office_places"); await ana.keyboard.type("hanoi"); await ana.keyboard.press("Enter"); await ana.keyboard.press("Escape");
   await ana.getByRole("button", { name: "Save company" }).click();
   await ana.waitForSelector("text=Company saved");
   await ana.reload();
   ok(await ana.isVisible("text=Email verified"), "website on the members' email domain shows Email verified");
-  ok((await ana.inputValue("#industry")) === "Software", "company details saved");
+  ok((await ana.textContent("#industry")).includes("Software and SaaS"), "company details saved");
   const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
   await ana.setInputFiles("input[type=file]", { name: "logo.png", mimeType: "image/png", buffer: png });
   await ana.waitForSelector("text=Logo saved", { timeout: 10000 }).catch(() => {});
@@ -98,7 +99,7 @@ async function login(page, email) {
   const fay = await (await b.newContext()).newPage();
   fay.on("pageerror", (e) => errors.push("fay: " + e.message));
   await fay.goto(link.replace(/^https?:\/\/[^/]+/, APP));
-  ok(fay.url().includes("/login?next=%2Finvite%2F"), "invite link asks to sign in first");
+  ok(fay.url().includes("/login?method=code&next=%2Finvite%2F"), "invite link asks to sign in first, with an emailed code");
   await login(fay, "fay@acme.test");
   await fay.getByText("Hire for my company").click();
   await fay.getByRole("button", { name: "Continue" }).click();

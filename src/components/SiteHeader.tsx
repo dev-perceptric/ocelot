@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { AccountLinks } from "@/components/AccountLinks";
 import { Wordmark } from "@/components/ui";
 import { readFilters, type Filters } from "@/lib/search";
 import { seoHeading, seoPath } from "@/lib/seo";
@@ -13,7 +14,7 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1 text-meta font-bold sm:gap-4 sm:text-body">
           <Link href="/companies" className="hidden px-2 py-2 hover:underline md:inline">Companies</Link>
-          <Link href="/app" className="px-2 py-2 hover:underline">My search</Link>
+          <AccountLinks />
           {/* Employers go straight to the prices, and from there straight to the job form. */}
           <Link href="/pricing"
             className="ml-1 inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap border border-ink px-3 hover:bg-ink hover:text-surface rounded-[var(--radius-control)] sm:px-4">
@@ -66,6 +67,7 @@ export function SiteFooter() {
           <Link href="/companies" className="hover:text-ink">Companies</Link>
           <Link href="/pricing" className="hover:text-ink">Post a job</Link>
           <Link href="/login" className="hover:text-ink">Log in</Link>
+          <Link href="/signup" className="hover:text-ink">Sign up</Link>
           <Link href="/terms" className="hover:text-ink">Terms</Link>
           <Link href="/privacy" className="hover:text-ink">Privacy</Link>
         </nav>

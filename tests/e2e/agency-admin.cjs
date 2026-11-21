@@ -23,7 +23,7 @@ async function code(email, after) {
 }
 
 async function login(page, email, intent) {
-  await page.goto(`${APP}/login`);
+  await page.goto(`${APP}/login?method=code`);
   const at = new Date(Date.now() - 1000);
   await page.fill("#email", email);
   await page.click("button[type=submit]");

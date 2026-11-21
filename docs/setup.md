@@ -51,6 +51,14 @@ self-hosted Supabase loads them from the app (`public/email-templates/`, set in 
 there is nothing to paste. `supabase/templates/` holds the same files for local Supabase; `tests/email-templates.test.ts`
 keeps both copies the same. After changing one, copy it to the other and redeploy.
 
+## Log in, Sign up and passwords
+
+People can sign up and log in with an email and password (`/signup`, `/login`), with Google once it's on (below), or
+with a 6-digit code emailed to them (`/login?method=code`, which also creates an account; invite links use it).
+Forgot password (`/forgot-password`) emails a link that lands on `/reset-password`. The live sign-in server sends that
+email with Ocelot's own template after `deploy/sb-ocelot/docker-compose.yml` is copied to `/docker/sb-ocelot` and
+`docker compose up -d auth` is run there; until then it sends Supabase's plain reset email, which works the same.
+
 ## Google sign-in
 
 1. console.cloud.google.com → project `Ocelot` → Credentials → its OAuth client (Web application). Authorized redirect
@@ -74,6 +82,7 @@ node tests/e2e/team.cjs
 node tests/e2e/agency.cjs
 node tests/e2e/admin.cjs
 node tests/e2e/agency-admin.cjs
+node tests/e2e/auth.cjs
 node tests/e2e/jobs.cjs
 node tests/e2e/search.cjs
 node tests/e2e/reports.cjs

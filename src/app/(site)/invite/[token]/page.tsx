@@ -17,7 +17,7 @@ const CLOSED: Record<string, string> = {
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { supabase, user } = await currentUser();
-  if (!user) redirect(`/login?next=/invite/${encodeURIComponent(token)}`);
+  if (!user) redirect(`/login?method=code&next=/invite/${encodeURIComponent(token)}`);
   // A link is for a company team or an agency team; the token says which.
   const { data } = await supabase.rpc("invite_preview", { p_token: token });
   const company = data?.[0];

@@ -56,7 +56,7 @@ async function login(page, email) {
 
   // Ava sets up an agency from the empty For employers page.
   const ava = await page("ava");
-  await ava.goto(`${APP}/login`);
+  await ava.goto(`${APP}/login?method=code`);
   await login(ava, "ava@hireco.test");
   await hire(ava);
   await ava.goto(`${APP}/employer`);
@@ -137,7 +137,7 @@ async function login(page, email) {
 
   // Oli owns Omega. Ava asks to manage it; Oli says yes on his Team page.
   const oli = await page("oli");
-  await oli.goto(`${APP}/login`);
+  await oli.goto(`${APP}/login?method=code`);
   await login(oli, "oli@omega.test");
   await hire(oli);
   await oli.goto(`${APP}/employer`);

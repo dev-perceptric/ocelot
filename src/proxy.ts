@@ -57,7 +57,8 @@ export async function proxy(request: NextRequest) {
   if (!data.user && PRIVATE.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
-    login.search = `?next=${encodeURIComponent(pathname + search)}`;
+    // An invite is often for someone new: the emailed code signs in or creates the account in one step.
+    login.search = `?${pathname.startsWith("/invite/") ? "method=code&" : ""}next=${encodeURIComponent(pathname + search)}`;
     return NextResponse.redirect(login);
   }
   return response;
