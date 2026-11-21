@@ -14,6 +14,8 @@
 #   - a 4 GB swap file, a cap on system logs, and the /docker and /opt folders
 set -euo pipefail
 export DEBIAN_FRONTEND=noninteractive
+# Wait up to 10 minutes when the nightly updater (or the first-boot one) is using apt.
+apt-get() { command apt-get -o DPkg::Lock::Timeout=600 "$@"; }
 [ "$(id -u)" = 0 ] || { echo "Run it with sudo: sudo bash setup.sh"; exit 1; }
 step() { echo; echo "== $*"; }
 
