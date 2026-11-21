@@ -103,7 +103,7 @@ Added to `tests/db/boundaries.sql`:
 | 2 | Agency pages, staff, invites, client requests (done; end-to-end test `tests/e2e/agency.cjs`) | 3–4 days |
 | 3 | Labels on jobs, companies, apply form, tracker, filter (done; migration `040_agency_labels.sql`) | 2 days |
 | 4 | Shared credits and the webhook (done; migration `041_agency_credits.sql`, end-to-end test `tests/e2e/agency-billing.cjs`) | 1–2 days |
-| 5 | Admin review and suspend, emails, end-to-end test | 2 days |
+| 5 | Admin review and suspend, emails, end-to-end test (done; end-to-end test `tests/e2e/agency-admin.cjs`) | 2 days |
 | | **Total** | **11–14 working days** |
 
 ## Done when

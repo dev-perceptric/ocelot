@@ -29,6 +29,8 @@ test("templates fill every value and escape what people typed", () => {
     jobPublished({ company: "Acme", title: "SDR", jobUrl: "https://joinocelot.com/jobs/sdr", manageUrl: "https://joinocelot.com/employer/jobs", until: "28 November" }),
     jobSentBack({ title: "SDR", note: "Add pay <please>", editUrl: "https://joinocelot.com/employer/jobs/1" }),
     applicationSent({ job: "SDR", company: "Acme", cardUrl: "https://joinocelot.com/app/tracker/1" }),
+    applicationSent({ job: "SDR", company: "Acme", agency: "Hire Co", cardUrl: "https://joinocelot.com/app/tracker/1" }),
+    stageUpdate({ company: "Acme", agency: "Hire Co", job: "SDR", stage: "offer", cardUrl: "https://joinocelot.com/app/tracker/1", siteUrl: "https://joinocelot.com" }),
     newApplicant({ company: "Acme", job: "SDR", name: "Mai", url: "https://joinocelot.com/employer/applicants/1", siteUrl: "https://joinocelot.com" }),
     ...STAGE_EMAIL.map((stage) => stageUpdate({ company: "Acme", job: "SDR", stage, cardUrl: "https://joinocelot.com/app/tracker/1", siteUrl: "https://joinocelot.com" })),
     jobAlert({ name: "Remote", jobs: [{ title: "SEO <Lead>", company: "Acme", where: "Remote", url: "https://joinocelot.com/jobs/a" }], searchUrl: "https://joinocelot.com/jobs", siteUrl: "https://joinocelot.com" }),
@@ -82,4 +84,12 @@ test("alerts list each job with a link and escape what companies typed", () => {
   assert.ok(e.html.includes('href="https://joinocelot.com/jobs/a"') && e.html.includes("SEO &lt;Lead&gt;"));
   assert.match(e.text, /SEO <Lead>, Acme, Remote: https:\/\/joinocelot.com\/jobs\/a/);
   assert.equal(taskReminder({ tasks: [{ title: "Call", when: "10:00", job: null }], tasksUrl: "x", siteUrl: "y" }).subject, "Today: Call");
+});
+
+test("emails about agency jobs name the agency and the company", () => {
+  const sent = applicationSent({ job: "SDR", company: "Acme", agency: "Hire Co", cardUrl: "https://joinocelot.com/app/tracker/1" });
+  assert.match(sent.text, /to Hire Co, the recruiting agency hiring for Acme/);
+  const stage = stageUpdate({ company: "Acme", agency: "Hire Co", job: "SDR", stage: "interviewing", cardUrl: "https://joinocelot.com/app/tracker/1", siteUrl: "https://joinocelot.com" });
+  assert.match(stage.text, /Hire Co, a recruiting agency, handles this hiring for Acme/);
+  assert.ok(!/agency/i.test(applicationSent({ job: "SDR", company: "Acme", cardUrl: "x" }).text), "no agency, no agency line");
 });

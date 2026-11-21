@@ -73,6 +73,7 @@ cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/
 node tests/e2e/team.cjs
 node tests/e2e/agency.cjs
 node tests/e2e/admin.cjs
+node tests/e2e/agency-admin.cjs
 node tests/e2e/jobs.cjs
 node tests/e2e/search.cjs
 node tests/e2e/reports.cjs

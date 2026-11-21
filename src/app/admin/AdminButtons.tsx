@@ -98,3 +98,37 @@ export function RefundOrder({ id, what }: { id: string; what: string }) {
       (await askConfirm({ title: `Refund ${what}?`, body: "Stripe returns the money. The credit is removed and the job goes back to draft.", confirm: "Refund", danger: true })) ? A.refundOrder(id) : null} />
   );
 }
+
+export function AgencyActions({ id, name, verified, suspended }: { id: string; name: string; verified: boolean; suspended: boolean }) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      {verified ? (
+        <Act label="Remove Agency verified" okText="Label removed" run={async () =>
+          (await askConfirm({ title: `Remove Agency verified from ${name}?`, confirm: "Remove label", danger: true })) ? A.unverifyAgency(id) : null} />
+      ) : (
+        <Act label="Mark Agency verified" okText="Marked Agency verified" run={async () => {
+          const note = await askText({ title: `Verify ${name}`, label: "What did you check?", confirm: "Mark verified" });
+          return note ? A.verifyAgency(id, note) : null;
+        }} />
+      )}
+      {suspended ? (
+        <Act label="Lift suspension" okText="Suspension lifted" run={async () =>
+          (await askConfirm({ title: `Lift the suspension on ${name}?`, body: "Its clients' live jobs show on Ocelot again, unless a client was suspended on its own.", confirm: "Lift suspension" })) ? A.unsuspendAgency(id) : null} />
+      ) : (
+        <Act label="Suspend agency" variant="danger" okText="Agency suspended" run={async () => {
+          const reason = await askText({ title: `Suspend ${name}`, label: "Reason (kept in the audit log). Every client's jobs are hidden too.", confirm: "Suspend agency" });
+          return reason ? A.suspendAgency(id, reason) : null;
+        }} />
+      )}
+    </div>
+  );
+}
+
+export function GrantAgencyCredits({ agencyId, name }: { agencyId: string; name: string }) {
+  return (
+    <Act label="Give founding credits" okText="Credits added" run={async () => {
+      const n = await askText({ title: `Founding credits for ${name}`, label: "How many (1 to 50)", initial: "5", confirm: "Give credits" });
+      return n ? A.grantAgencyCredits(agencyId, Number(n)) : null;
+    }} />
+  );
+}

@@ -164,7 +164,8 @@ export function reportReceived(o: { job: string; company: string; reason: string
   };
 }
 
-export function applicationSent(o: { job: string; company: string; cardUrl: string }): Email {
+// agency: the recruiting agency that posted the job for the company, when there is one.
+export function applicationSent(o: { job: string; company: string; cardUrl: string; agency?: string | null }): Email {
   return {
     subject: `Your application to ${o.company} was sent`,
     pref: null,
@@ -172,7 +173,9 @@ export function applicationSent(o: { job: string; company: string; cardUrl: stri
       title: "Application sent",
       preview: `${o.job} at ${o.company}`,
       blocks: [
-        { p: `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
+        { p: o.agency
+          ? `We sent your application for ${o.job} at ${o.company} to ${o.agency}, the recruiting agency hiring for ${o.company}. Both can see it. When they move it forward, you'll see it on the job's card in your tracker.`
+          : `We sent your application for ${o.job} to ${o.company}. When they move it forward, you'll see it on the job's card in your tracker.` },
         { button: { label: "View in My search", url: o.cardUrl } },
       ],
     }),
@@ -199,7 +202,7 @@ export function newApplicant(o: { company: string; job: string; name: string; ur
 export const STAGE_EMAIL = ["interviewing", "offer", "hired", "rejected"] as const;
 export type StageEmail = (typeof STAGE_EMAIL)[number];
 
-export function stageUpdate(o: { company: string; job: string; stage: StageEmail; cardUrl: string; siteUrl: string }): Email {
+export function stageUpdate(o: { company: string; job: string; stage: StageEmail; cardUrl: string; siteUrl: string; agency?: string | null }): Email {
   const copy: Record<StageEmail, { subject: string; title: string; p: string }> = {
     interviewing: {
       subject: `${o.company} would like to interview you`,
@@ -229,7 +232,11 @@ export function stageUpdate(o: { company: string; job: string; stage: StageEmail
     ...layout({
       title: c.title,
       preview: c.p,
-      blocks: [{ p: c.p }, { button: { label: "View in My search", url: o.cardUrl } }],
+      blocks: [
+        { p: c.p },
+        ...(o.agency ? [{ small: `${o.agency}, a recruiting agency, handles this hiring for ${o.company}.` }] : []),
+        { button: { label: "View in My search", url: o.cardUrl } },
+      ],
       footer: optionalFooter(o.siteUrl),
     }),
   };

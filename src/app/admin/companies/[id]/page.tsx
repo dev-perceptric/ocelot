@@ -16,7 +16,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const db = createAdmin();
-  const { data: org } = await db.from("orgs").select("*").eq("id", id).maybeSingle();
+  const { data: org } = await db.from("orgs").select("*, agency:agencies(id, name)").eq("id", id).maybeSingle();
   if (!org) notFound();
   const [{ data: members }, { data: jobs }, { data: log }, { data: credits }] = await Promise.all([
     db.from("org_members").select("role, created_at, user_id, profile:profiles(full_name, email)").eq("org_id", id).order("created_at"),
@@ -42,6 +42,10 @@ export default async function Company({ params }: { params: Promise<{ id: string
         </div>
         <p className="mt-2 text-body text-muted">{facts.join(" / ")}</p>
         <p className="mt-1 text-meta text-muted">joinocelot.com/companies/{org.slug}, created {day(org.created_at)}</p>
+        {org.agency ? (
+          <p className="mt-3 text-body">Managed by the agency <Link href={`/admin/agencies/${(org.agency as unknown as { id: string }).id}`} className="font-bold underline">{(org.agency as unknown as { name: string }).name}</Link>
+            {org.suspended_by_agency ? ". Suspended because the agency is." : ""}</p>
+        ) : null}
         {org.suspended_at ? <p className="mt-3 text-body">Suspended {when(org.suspended_at)}: {org.suspended_reason}</p> : null}
         {org.business_verified_at ? <p className="mt-3 text-body">Verified {when(org.business_verified_at)}: {org.business_verified_note}</p> : null}
         <div className="mt-6">
