@@ -22,7 +22,7 @@ async function code(email, after) {
 }
 
 async function login(page, email, intent) {
-  await page.goto(`${APP}/login`);
+  await page.goto(`${APP}/login?method=code`);
   const at = new Date(Date.now() - 1000);
   await page.fill("#email", email);
   await page.click("button[type=submit]");
@@ -102,7 +102,7 @@ const ask = async (page, button, label, text, confirm = button) => {
   await ask(vi, "Suspend sign-in", "Reason (kept in the audit log)", "Spam");
   await vi.waitForSelector("text=Sign-in suspended");
   const ben2 = await (await b.newContext()).newPage();
-  await ben2.goto(`${APP}/login`);
+  await ben2.goto(`${APP}/login?method=code`);
   await ben2.fill("#email", "ben@beta.test");
   await ben2.click("button[type=submit]");
   await ben2.waitForTimeout(1500);

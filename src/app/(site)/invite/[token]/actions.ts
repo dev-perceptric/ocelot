@@ -13,7 +13,7 @@ export type AcceptState = { error?: string };
 export async function accept(_: AcceptState, form: FormData): Promise<AcceptState> {
   const token = String(form.get("token") ?? "");
   const { supabase, user } = await currentUser();
-  if (!user) redirect(`/login?next=/invite/${encodeURIComponent(token)}`);
+  if (!user) redirect(`/login?method=code&next=/invite/${encodeURIComponent(token)}`);
   if (form.get("kind") === "agency") return acceptAgency(token, user.id, user.email ?? null);
   const { data: orgId, error } = await supabase.rpc("accept_invite", { p_token: token });
   if (error || !orgId) return { error: error?.message ?? "This invite didn't work. Ask for a new one." };

@@ -98,9 +98,11 @@ services:
       GOTRUE_MAILER_SUBJECTS_MAGIC_LINK: Your Ocelot code
       GOTRUE_MAILER_SUBJECTS_CONFIRMATION: Your Ocelot code
       GOTRUE_MAILER_SUBJECTS_EMAIL_CHANGE: Confirm your new email
+      GOTRUE_MAILER_SUBJECTS_RECOVERY: Set a new Ocelot password
       GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: https://joinocelot.com/email-templates/magic_link.html
       GOTRUE_MAILER_TEMPLATES_CONFIRMATION: https://joinocelot.com/email-templates/confirm_signup.html
       GOTRUE_MAILER_TEMPLATES_EMAIL_CHANGE: https://joinocelot.com/email-templates/email_change.html
+      GOTRUE_MAILER_TEMPLATES_RECOVERY: https://joinocelot.com/email-templates/recovery.html
       # Google sign-in, once a Google OAuth client exists. Empty means off.
       GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ENABLED:-false}
       GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
