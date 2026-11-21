@@ -107,9 +107,9 @@ Monthly totals. Anything not confirmed on the vendor's own page is marked "check
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Self-hosted Supabase on the VPS (`/docker/sb-ocelot`) | $0 | $0 |
+| Self-hosted Supabase on the server (`/docker/sb-ocelot`) | $0 | $0 |
 | Nightly backups (`ocelot-backup`, on the server; Backblaze B2 copy optional) | $0, B2 under $1 (check) | $0, B2 about $1 (check) |
-| Hostinger VPS KVM 2 (2 CPUs, 8 GB): web app (768 MB), `ocelot-jobs` for the job board sync (1 GB, half a core), worker (256 MB) and Supabase, already paid and shared with other projects; KVM 4 if memory runs short | $0 extra (check) | $0 extra, or the KVM 4 difference (check) |
+| OVH SYS-1 (6 cores, 32 GB, Beauharnois, Canada): web app (768 MB), `ocelot-jobs` for the job board sync (1 GB, one core), worker (256 MB) and Supabase, already paid and shared with other projects | $0 extra (check the OVH invoice) | $0 extra (check the OVH invoice) |
 | Resend email (Pro $20 for 50,000 a month at Beta once alerts start, Scale $90 for 100,000 at Growth) | $20 (check) | $90 (check) |
 | Stripe fees (Singapore account, about 3.4% + S$0.50 per card payment) | about $5 on $100 of sales (check) | about $140 on $3,000 of sales (check) |
 | Sentry errors (free tier) | $0 | $26 (check) |

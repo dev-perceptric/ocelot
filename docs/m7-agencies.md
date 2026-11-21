@@ -18,14 +18,16 @@ Ocelot is a job marketplace and a private job search workspace in one (`docs/pla
 
 Every app now runs on the OVH SYS-1 (6 cores, 32 GB). The Hostinger CPU limits that slowed Ocelot no longer apply.
 
-| Task | Where |
+| Task | Status |
 |---|---|
-| Start Ocelot on OVH if it is still stopped from the move | `/docker` on `149.56.19.140` |
-| Point `db.joinocelot.com`, `@` and `www` at `149.56.19.140` | Namecheap |
-| Update the docs from Hostinger to OVH | `CLAUDE.md`, `deploy/README.md`, `docs/job-boards.md`, `docs/plan.md` |
-| Undo the Hostinger trim: imported job cap back to 25,000, board sync back to daily | `update app_settings set max_imported_jobs = 25000 where id;` and `update job_sources set sync_hours = 24 where sync_hours = 84;` |
-| Give `ocelot-jobs` a full CPU core (it was capped at half) | `deploy/ocelot-jobs/docker-compose.yml` |
-| Backups and the uptime check on OVH | `ocelot-backup`, `uptime/gatus-endpoint.yaml` |
+| Docs moved from Hostinger to OVH (`CLAUDE.md`, `deploy/README.md`, `docs/setup.md`, `docs/plan.md`, `docs/job-boards.md`, `docs/legal.md`) | Done |
+| Privacy page names OVHcloud and says data is stored in Canada | Done (needs the lawyer's read in `docs/legal.md`) |
+| Migration `038_ovh_limits.sql`: imported job cap back to 25,000, boards sync every 6 hours (name list) or daily (crawl) | Done. `ocelot-migrate` applies it once it's on `main` |
+| New boards found by discovery use the same intervals (`src/lib/ats/discover.ts`) | Done |
+| `ocelot-jobs` gets one full CPU core | Done in the repo. Copy `deploy/ocelot-jobs/docker-compose.yml` to `/docker/ocelot-jobs` and run `docker compose up -d` |
+| Start Ocelot on OVH if it is still stopped from the move | On the server |
+| Point `@`, `www` and `db` for joinocelot.com at `149.56.19.140` | Namecheap |
+| Backups and the uptime check on OVH (`deploy/ovh/README.md`, step 6) | On the server |
 
 ## Names
 
@@ -33,7 +35,7 @@ Every app now runs on the OVH SYS-1 (6 cores, 32 GB). The Hostinger CPU limits t
 
 ## Data model
 
-New migration `038_agencies.sql`.
+New migration `039_agencies.sql`.
 
 | Table | Holds | Who can read | Who can write |
 |---|---|---|---|

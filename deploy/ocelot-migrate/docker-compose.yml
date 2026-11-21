@@ -1,5 +1,5 @@
-# /docker/ocelot-migrate on the Hostinger VPS: runs new supabase/migrations/NNN_*.sql files from main on their own.
-# migrate.sh (next to this file) has the rules. Hostinger's Docker manager can't place files next to a project, so the
+# /docker/ocelot-migrate on the OVH server: runs new supabase/migrations/NNN_*.sql files from main on their own.
+# migrate.sh (next to this file) has the rules. Hostinger's Docker manager couldn't place files next to a project (kept since the move to OVH), so the
 # script is embedded below as base64: after editing migrate.sh, regenerate this file with deploy/ocelot-migrate/build.sh.
 # PGPASSWORD (the sb-ocelot Postgres password) is in this project's .env. The repo is public, so no GitHub token.
 # Logs: docker logs ocelot-migrate-migrate-1

@@ -1,6 +1,6 @@
 # Setup
 
-Ocelot runs on the shared Hostinger VPS with its own self-hosted Supabase, laid out like the other apps there.
+Ocelot runs on the shared OVH server (SYS-1, Beauharnois, Canada) with its own self-hosted Supabase, laid out like the other apps there.
 **The runbook is `deploy/README.md`**: DNS, the one-command server install (`deploy/install.sh`), the data move from
 Supabase Cloud, the GitHub variables and the checks. This page covers local development, payments, Google sign-in,
 the email templates and the running cost.
@@ -35,8 +35,8 @@ Billing runs from Ocelot's Singapore company. Prices (USD) live in `src/lib/pack
 
 | Item | Beta (50 employers, 1,000 candidates) | Growth (500 employers, 20,000 candidates) |
 |---|---:|---:|
-| Hostinger VPS KVM 2, already paid and shared with the other apps (KVM 4 if memory runs short) | $0 extra (check) | $0 extra, or the KVM 4 difference (check) |
-| Self-hosted Supabase on the VPS | $0 | $0 |
+| OVH SYS-1 (6 cores, 32 GB), already paid and shared with the other apps | $0 extra (check the OVH invoice) | $0 extra (check the OVH invoice) |
+| Self-hosted Supabase on the server | $0 | $0 |
 | Backups (on the server; Backblaze B2 copy optional) | $0, B2 under $1 (check) | $0, B2 about $1 (check) |
 | Resend | $0 (free up to 3,000 emails) | $20 |
 | Domain | $1 | $1 |

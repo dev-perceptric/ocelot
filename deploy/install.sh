@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Sets up Ocelot on the Hostinger VPS the same way as PulseARR and the other apps (deploy/README.md, steps 1 to 5):
+# Sets up Ocelot on the OVH server the same way as PulseARR and the other apps (deploy/README.md, steps 1 to 5):
 #   /docker/sb-ocelot         Ocelot's own Supabase stack (Postgres, GoTrue, PostgREST, Storage, Envoy gateway)
 #   /docker/sb-public-ocelot  db.joinocelot.com through Traefik
 #   /docker/ocelot-migrate    runs new supabase/migrations files from main
 #   /docker/ocelot-web        joinocelot.com (image from ghcr.io, kept current by autodeploy)
-#   /docker/ocelot-jobs       a private copy of the app that runs the hourly job board work (same; half a CPU core)
+#   /docker/ocelot-jobs       a private copy of the app that runs the hourly job board work (same; one CPU core)
 #   /docker/ocelot-worker     the background worker; calls ocelot-jobs hourly (same)
 #   /docker/ocelot-backup     nightly database dump to /opt/backups/ocelot
 #   /docker/ocelot-move       the one-time data move from Supabase Cloud (step 6)
-# Run as root in hPanel's browser terminal:
+# Run as root on the server (ssh ubuntu@149.56.19.140, then sudo -i):
 #
 #   bash <(curl -fsSL https://raw.githubusercontent.com/dev-perceptric/ocelot/main/deploy/install.sh)
 #

@@ -1,6 +1,6 @@
-# /docker/ocelot-jobs on the Hostinger VPS. A second copy of the Ocelot app that only does the hourly run: alerts,
+# /docker/ocelot-jobs on the OVH server. A second copy of the Ocelot app that only does the hourly run: alerts,
 # reminders and digests, then job board sync, discovery and logos (src/app/api/cron/route.ts). It has no public
-# address (Traefik ignores it), so that work never slows joinocelot.com, and it may use at most half a CPU core so it
+# address (Traefik ignores it), so that work never slows joinocelot.com, and it may use at most one CPU core (of 6) so it
 # never starves the other apps. ocelot-worker calls it at http://ocelot-jobs:3000 on the ocelot-jobs network.
 # Its .env is the same as ocelot-web's. autodeploy keeps it on :latest.
 name: ocelot-jobs
@@ -11,7 +11,7 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    cpus: 0.5
+    cpus: 1
     mem_limit: 1g
     networks:
       default:

@@ -1,5 +1,6 @@
 #!/bin/bash
 # Lowers CPU use on the shared Hostinger VPS (KVM 2 is throttled when the 24-hour average stays above 30%).
+# Not needed on the OVH SYS-1. Don't run it there: migration 038 undid its Ocelot limits.
 # Safe to run again: every change is skipped when it's already there.
 #
 #   curl -fsSL https://raw.githubusercontent.com/dev-perceptric/ocelot/main/deploy/trim-server.sh -o /root/trim.sh

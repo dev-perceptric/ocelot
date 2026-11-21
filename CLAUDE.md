@@ -2,9 +2,9 @@
 
 A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Launch market: marketing, sales and customer success roles in the United States and Canada (job board sync pulls these first; `docs/job-boards.md`). Southeast Asia stays supported.
 
-Start with `docs/plan.md` (what to build and in what order), `deploy/README.md` (the VPS, its Supabase and the deploy) and `docs/brand.md` (look and copy).
+Start with `docs/plan.md` (what to build and in what order), `deploy/README.md` (the VPS, its Supabase and the deploy; `deploy/ovh/README.md` for the move from Hostinger) and `docs/brand.md` (look and copy).
 
-Stack: Next.js 16 and TypeScript on the shared Hostinger VPS (`ocelot-web` behind Traefik, `ocelot-jobs` for the hourly job board work with no public address, `ocelot-worker`; images from ghcr.io kept current by the server's autodeploy), Ocelot's own self-hosted Supabase on the same VPS (`sb-ocelot` at `db.joinocelot.com`: Postgres, GoTrue, PostgREST, Storage, Envoy), laid out like the other apps' stacks in `deploy/`, Stripe Checkout, Resend for email.
+Stack: Next.js 16 and TypeScript on the shared OVH server (SYS-1 in Beauharnois, Canada, `149.56.19.140`; `ocelot-web` behind Traefik, `ocelot-jobs` for the hourly job board work with no public address, `ocelot-worker`; images from ghcr.io kept current by the server's autodeploy), Ocelot's own self-hosted Supabase on the same VPS (`sb-ocelot` at `db.joinocelot.com`: Postgres, GoTrue, PostgREST, Storage, Envoy), laid out like the other apps' stacks in `deploy/`, Stripe Checkout, Resend for email.
 
 Commands: `npm run dev`, `npm run lint`, `npm run typecheck`, `npm test` (unit), `npm run test:db` (access boundary tests on a local Postgres, `DATABASE_URL`), `npm run build`. CI runs all of them, then pushes the web and worker images to ghcr.io; on the VPS, `ocelot-migrate` applies new files in `supabase/migrations` from `main` and autodeploy restarts the containers.
 

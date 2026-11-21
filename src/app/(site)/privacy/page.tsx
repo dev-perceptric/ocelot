@@ -10,7 +10,7 @@ export default function Privacy() {
   return (
     <LegalPage
       title="Privacy"
-      updated="29 October 2026"
+      updated="21 November 2026"
       intro={<p>Ocelot is a job marketplace and a private job search workspace at joinocelot.com. This page explains what we collect, why, who can see it, and how you stay in control. Questions: <a href={`mailto:${CONTACT}`}>{CONTACT}</a>.</p>}
       sections={[
         {
@@ -47,7 +47,7 @@ export default function Privacy() {
               </ul>
               <p>We use these service providers to run Ocelot, under contracts that limit how they use data:</p>
               <ul>
-                <li>Hostinger: the server that runs the website, the database, sign-in and file storage.</li>
+                <li>OVHcloud: the server that runs the website, the database, sign-in and file storage.</li>
                 <li>Resend: sending email.</li>
                 <li>Google: only if you choose to sign in with Google.</li>
               </ul>
@@ -57,7 +57,7 @@ export default function Privacy() {
         },
         {
           id: "where", title: "Where your data is kept", body: (
-            <p>Ocelot&apos;s data is stored in Singapore. Some providers, such as our email provider, may process data in other countries. When data moves across borders, we use providers with appropriate safeguards and follow the rules that apply to those transfers.</p>
+            <p>Ocelot&apos;s data is stored in Canada. Some providers, such as our email provider, may process data in other countries. When data moves across borders, we use providers with appropriate safeguards and follow the rules that apply to those transfers.</p>
           ),
         },
         {
