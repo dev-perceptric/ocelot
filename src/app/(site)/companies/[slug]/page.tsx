@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { industryName } from "@/lib/taxonomy";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { JobCard } from "@/components/JobCard";
@@ -28,7 +29,7 @@ export default async function CompanyPage({ params }: Props) {
   const byArea = (await companyAreas()).filter((c) => c.slug === org.slug && c.jobs >= MIN_JOBS_EXTRA)
     .map((c) => ({ ...c, a: AREAS.find((x) => (x.role ? `r:${x.role}` : `c:${x.category}`) === c.area) }))
     .filter((c) => c.a).sort((x, y) => y.jobs - x.jobs);
-  const facts = [org.industry, org.size ? SIZE_LABEL[org.size] : null, org.office_places.map(placeName).join(", ") || null].filter(Boolean);
+  const facts = [org.industry ? industryName(org.industry) : null, org.size ? SIZE_LABEL[org.size] : null, org.office_places.map(placeName).join(", ") || null].filter(Boolean);
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10 md:px-8 md:py-16">
       <div className="flex items-center gap-4">

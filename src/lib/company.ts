@@ -1,6 +1,7 @@
 // Reads and checks the company settings form. Plain functions, so tests can load them.
 
 import { CITIES } from "./places.ts";
+import { INDUSTRIES } from "./taxonomy.ts";
 
 export const SIZES = ["1-10", "11-50", "51-200", "201-1000", "1000+"] as const;
 export const SIZE_LABEL: Record<string, string> = {
@@ -44,7 +45,7 @@ export function readCompany(f: FormLike): { data?: CompanyInput; errors: Company
   if (size && !(SIZES as readonly string[]).includes(size)) errors.size = "Choose a size from the list.";
 
   const industry = text(f, "industry");
-  if (industry.length > 80) errors.industry = "Keep this under 80 characters.";
+  if (industry && !INDUSTRIES.some((i) => i.slug === industry)) errors.industry = "Choose an industry from the list.";
 
   const cities = new Set(CITIES.map((c) => c.slug));
   const office_places = f.getAll("office_places").map(String).filter(Boolean);

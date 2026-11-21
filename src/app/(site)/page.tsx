@@ -9,17 +9,6 @@ import { FilterBar } from "./jobs/Filters";
 
 const n = (x: number) => x.toLocaleString("en-US");
 
-// One-tap searches under the search box. Each one is a Find jobs page with its own address.
-const QUICK: { label: string; href: string }[] = [
-  { label: "Sales", href: "/sales-jobs" },
-  { label: "Marketing", href: "/marketing-jobs" },
-  { label: "Customer success", href: "/customer-success-jobs" },
-  { label: "Account executive", href: "/account-executive-jobs" },
-  { label: "Sales development", href: "/sales-development-jobs" },
-  { label: "Remote", href: "/remote-jobs" },
-  { label: "Canada", href: "/jobs-in-canada" },
-];
-
 // The home page is the job board: search at the top, filters that stay in view, and every live job in one list that
 // keeps loading as you scroll. Picking a filter opens Find jobs with it.
 export default async function Home() {
@@ -46,14 +35,6 @@ export default async function Home() {
             </div>
             <Button type="submit" className="h-12 sm:w-48">Search</Button>
           </form>
-          <nav aria-label="Popular searches" className="mt-5 flex flex-wrap gap-2">
-            {QUICK.map((q) => (
-              <Link key={q.href} href={q.href}
-                className="inline-flex min-h-11 items-center border border-border bg-surface px-4 text-body hover:border-ink rounded-[var(--radius-control)]">
-                {q.label}
-              </Link>
-            ))}
-          </nav>
           <Link href="/app" className="mt-6 inline-flex items-center gap-2 text-body font-bold underline-offset-2 hover:underline">
             Save jobs and track your applications in My search <ArrowRight size={18} strokeWidth={1.75} aria-hidden />
           </Link>

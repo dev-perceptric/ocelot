@@ -2,7 +2,7 @@
 // lists, and written back for links. Plain functions, so tests can load them.
 
 import { CITIES, COUNTRIES } from "./places.ts";
-import { CATEGORIES, ROLES } from "./taxonomy.ts";
+import { CATEGORIES, INDUSTRIES, ROLES } from "./taxonomy.ts";
 import { isRegion, REGIONS } from "./regions.ts";
 
 export type Filters = {
@@ -13,6 +13,7 @@ export type Filters = {
   region: string | null; // a US state or Canadian province, "US-TX"
   category: string | null;
   role: string | null;
+  industry: string | null; // the hiring company's industry
   level: string[]; // seniorities
   type: string[]; // employment types
   pay: boolean;
@@ -53,6 +54,7 @@ export function readFilters(p: Params): Filters {
     // A role implies its category, so the two never disagree.
     category: roleRow?.category ?? (CATEGORIES.some((c) => c.slug === category) ? category : null),
     role: roleRow?.slug ?? null,
+    industry: INDUSTRIES.some((i) => i.slug === one(p.industry)) ? one(p.industry) : null,
     level: all(p.level).filter((l) => LEVELS.includes(l)),
     type: all(p.type).filter((t) => TYPES.includes(t)),
     pay: one(p.pay) === "1",
@@ -72,6 +74,7 @@ export function filtersQuery(f: Filters, page = 1): string {
   if (f.region) s.set("region", f.region);
   if (f.role) s.set("role", f.role);
   else if (f.category) s.set("category", f.category);
+  if (f.industry) s.set("industry", f.industry);
   if (f.level.length) s.set("level", f.level.join(","));
   if (f.type.length) s.set("type", f.type.join(","));
   if (f.pay) s.set("pay", "1");
@@ -85,14 +88,14 @@ export function filtersQuery(f: Filters, page = 1): string {
 }
 
 export const activeCount = (f: Filters) =>
-  f.where.length + (f.country ? 1 : 0) + (f.city ? 1 : 0) + (f.region ? 1 : 0) + (f.role || f.category ? 1 : 0) + f.level.length + f.type.length + (f.pay ? 1 : 0)
+  f.where.length + (f.country ? 1 : 0) + (f.city ? 1 : 0) + (f.region ? 1 : 0) + (f.role || f.category ? 1 : 0) + (f.industry ? 1 : 0) + f.level.length + f.type.length + (f.pay ? 1 : 0)
   + (f.posted ? 1 : 0) + (f.minPay ? 1 : 0) + (f.noAgency ? 1 : 0);
 
 // Saved searches keep the filters (without the words) as JSON; the words go in their own column. When a job was
 // posted and the order don't apply to alerts, which only send new jobs.
 export type SavedFilters = Omit<Filters, "q" | "posted" | "sort" | "minPay" | "noAgency"> & { min_pay: number | null; no_agency?: boolean };
 export const toSaved = (f: Filters): SavedFilters =>
-  ({ where: f.where, country: f.country, city: f.city, region: f.region, category: f.category, role: f.role, level: f.level, type: f.type, pay: f.pay, min_pay: f.minPay, ...(f.noAgency ? { no_agency: true } : {}) });
+  ({ where: f.where, country: f.country, city: f.city, region: f.region, category: f.category, role: f.role, industry: f.industry, level: f.level, type: f.type, pay: f.pay, min_pay: f.minPay, ...(f.noAgency ? { no_agency: true } : {}) });
 
 // Reads saved filters back through readFilters, so anything stale or unknown is dropped.
 export function fromSaved(query: string, json: unknown): Filters {
@@ -100,7 +103,7 @@ export function fromSaved(query: string, json: unknown): Filters {
   const list = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").join(",") : undefined);
   const str = (v: unknown) => (typeof v === "string" ? v : undefined);
   return readFilters({
-    q: query, where: list(s.where), country: str(s.country), city: str(s.city), region: str(s.region), category: str(s.category), role: str(s.role),
+    q: query, where: list(s.where), country: str(s.country), city: str(s.city), region: str(s.region), category: str(s.category), role: str(s.role), industry: str(s.industry),
     level: list(s.level), type: list(s.type), pay: s.pay === true ? "1" : undefined,
     min_pay: typeof s.min_pay === "number" ? String(s.min_pay) : undefined,
     no_agency: s.no_agency === true ? "1" : undefined,

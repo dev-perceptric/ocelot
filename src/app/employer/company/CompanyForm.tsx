@@ -9,6 +9,7 @@ import { toast } from "@/components/Toast";
 import { Button, CompanyLogo, Field, inputClass, textAreaClass } from "@/components/ui";
 import { SIZE_LABEL, SIZES } from "@/lib/company";
 import { CITIES, COUNTRIES } from "@/lib/places";
+import { INDUSTRIES } from "@/lib/taxonomy";
 import { createClient } from "@/lib/supabase/browser";
 import { saveCompany, setLogo, type CompanyState } from "./actions";
 
@@ -82,7 +83,7 @@ export function CompanyForm({ values, canEdit }: { values: CompanyValues; canEdi
               <Select id="size" name="size" options={SIZES.map((s) => ({ value: s, label: SIZE_LABEL[s] }))} defaultValue={values.size} placeholder="Choose a size" disabled={!canEdit} />
             </Field>
             <Field label="Industry" htmlFor="industry" error={e.industry}>
-              <input id="industry" name="industry" defaultValue={values.industry} maxLength={80} placeholder="Software" className={inputClass} {...err("industry")} />
+              <Select id="industry" name="industry" options={INDUSTRIES.map((i) => ({ value: i.slug, label: i.name }))} defaultValue={values.industry || null} placeholder="Choose an industry" disabled={!canEdit} />
             </Field>
           </div>
           <Field label="Office cities" htmlFor="office_places" error={e.office_places}>

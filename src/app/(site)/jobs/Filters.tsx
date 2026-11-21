@@ -9,7 +9,7 @@ import { CITIES, COUNTRIES, countryName, placeName } from "@/lib/places";
 import { REGIONS, regionName } from "@/lib/regions";
 import { filtersQuery, MIN_PAY, payLabel, POSTED, POSTED_LABEL, type Filters as F } from "@/lib/search";
 import { searchHref } from "@/lib/seo";
-import { CATEGORIES, categoryName, ROLES, roleName } from "@/lib/taxonomy";
+import { CATEGORIES, categoryName, INDUSTRIES, industryName, ROLES, roleName } from "@/lib/taxonomy";
 
 type Option = { value: string; label: string; group?: string };
 
@@ -20,6 +20,9 @@ const AREAS: Option[] = [
   ...CATEGORIES.filter((c) => c.slug !== "other").map((c) => ({ value: `c:${c.slug}`, label: `All ${c.name.toLowerCase()}`, group: c.name })),
   ...ROLES.map((r) => ({ value: `r:${r.slug}`, label: r.name, group: CATEGORIES.find((c) => c.slug === r.category)?.name })),
 ].sort((a, b) => (a.group ?? "").localeCompare(b.group ?? "") || (a.value.startsWith("c:") ? -1 : 1));
+// The Industries filter: the hiring company's industry first, then the job areas and their roles. One of each can
+// be picked: an industry and an area work together (sales jobs at healthcare companies).
+const INDUSTRY_OPTIONS: Option[] = INDUSTRIES.map((i) => ({ value: `i:${i.slug}`, label: i.name, group: "Company industry" }));
 // One place at a time: a country people can be hired from, a state or province, or an office city.
 const PLACES: Option[] = [
   ...COUNTRIES.map((c) => ({ value: `country:${c.country_code}`, label: c.name, group: "Countries" })),
@@ -134,12 +137,15 @@ export function FilterBar({ filters: fromUrl }: { filters: F }) {
           }} />
         )}
       </Filter>
-      <Filter label="Area" summary={filters.role ? roleName(filters.role) : filters.category ? categoryName(filters.category) : null}>
+      <Filter label="Industries" summary={several([filters.industry ? industryName(filters.industry) : "", filters.role ? roleName(filters.role) : filters.category ? categoryName(filters.category) : ""].filter(Boolean))}>
         {(close) => (
-          <List label="Area" options={[{ value: "", label: "Any area" }, ...AREAS]} picked={[area]} onPick={(v) => {
-            go(v.startsWith("r:") ? { role: v.slice(2), category: null } : { role: null, category: v ? v.slice(2) : null });
-            close();
-          }} />
+          <List label="Industries" options={[{ value: "", label: "Any industry" }, ...INDUSTRY_OPTIONS, ...AREAS]}
+            picked={[filters.industry ? `i:${filters.industry}` : "", area].filter(Boolean)} onPick={(v) => {
+              if (!v) go({ industry: null, role: null, category: null });
+              else if (v.startsWith("i:")) go({ industry: v.slice(2) === filters.industry ? null : v.slice(2) });
+              else go(v.startsWith("r:") ? { role: v.slice(2), category: null } : { role: null, category: v.slice(2) });
+              close();
+            }} />
         )}
       </Filter>
       <Filter label="Seniority" summary={several(LEVELS.filter((l) => filters.level.includes(l.value)).map((l) => l.label))}>

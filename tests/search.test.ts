@@ -73,3 +73,15 @@ test("hiding agency jobs reads from the address, writes back, counts as a filter
   assert.equal(readFilters({ no_agency: "yes" }).noAgency, false);
   assert.ok(!("no_agency" in toSaved(readFilters({}))), "searches that show agency jobs save nothing extra");
 });
+
+test("the company industry reads from the address, writes back, counts as a filter, is saved and has no clean address", async () => {
+  const { activeCount, fromSaved, toSaved } = await import("../src/lib/search.ts");
+  const { seoPath } = await import("../src/lib/seo.ts");
+  const f = readFilters({ industry: "healthcare", category: "sales" });
+  assert.equal(f.industry, "healthcare");
+  assert.equal(filtersQuery(f), "?category=sales&industry=healthcare");
+  assert.equal(activeCount(f), 2);
+  assert.equal(fromSaved("", JSON.parse(JSON.stringify(toSaved(f)))).industry, "healthcare");
+  assert.equal(readFilters({ industry: "spaceships" }).industry, null);
+  assert.equal(seoPath(f), null, "sales jobs at healthcare companies stay on Find jobs");
+});

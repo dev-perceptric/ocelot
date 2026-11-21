@@ -2,32 +2,15 @@ import Link from "next/link";
 import { CompanyLogo } from "@/components/ui";
 import { countJobs, hiringCompanies, type HiringCompany } from "@/lib/queries";
 
-// Under the search box on Find jobs (no search yet): one-tap searches, how many jobs and companies are live, and the
-// companies with the most jobs.
-const QUICK: { label: string; href: string }[] = [
-  { label: "Sales", href: "/sales-jobs" },
-  { label: "Marketing", href: "/marketing-jobs" },
-  { label: "Customer success", href: "/customer-success-jobs" },
-  { label: "Account executive", href: "/account-executive-jobs" },
-  { label: "Sales development", href: "/sales-development-jobs" },
-  { label: "Remote", href: "/remote-jobs" },
-  { label: "Canada", href: "/jobs-in-canada" },
-];
+// Under the search box on Find jobs (no search yet): how many jobs and companies are live, and the companies with the
+// most jobs. The Industries, Workplace and Location filters cover what the old one-tap searches did.
 
 export async function QuickStart() {
   const [jobs, companies] = await Promise.all([countJobs({}), hiringCompanies()]);
   return (
     <div className="mt-5">
-      <nav aria-label="Popular searches" className="flex flex-wrap gap-2">
-        {QUICK.map((q) => (
-          <Link key={q.href} href={q.href}
-            className="inline-flex min-h-10 items-center border border-border bg-surface px-4 text-body hover:border-ink rounded-[var(--radius-control)]">
-            {q.label}
-          </Link>
-        ))}
-      </nav>
       {jobs ? (
-        <p className="mt-4 text-body text-muted">
+        <p className="text-body text-muted">
           <span className="font-bold text-ink">{jobs.toLocaleString("en-US")}</span> live jobs from{" "}
           <Link href="/companies" className="font-bold text-ink underline">{companies.length.toLocaleString("en-US")} companies</Link>
         </p>
