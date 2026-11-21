@@ -261,17 +261,23 @@ isOneToOne: false
                   ]
                 },"entitlements": {
                   Row: {
-                    "created_at": string,"granted_by": string | null,"id": string,"job_id": string | null,"order_id": string | null,"org_id": string,"package": string,"used_at": string | null
+                    "agency_id": string | null,"created_at": string,"granted_by": string | null,"id": string,"job_id": string | null,"order_id": string | null,"org_id": string | null,"package": string,"used_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id": string,"package": string,"used_at"?: string | null
+                    "agency_id"?: string | null,"created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id"?: string | null,"package": string,"used_at"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id"?: string,"package"?: string,"used_at"?: string | null
+                    "agency_id"?: string | null,"created_at"?: string,"granted_by"?: string | null,"id"?: string,"job_id"?: string | null,"order_id"?: string | null,"org_id"?: string | null,"package"?: string,"used_at"?: string | null
                   }
                   Relationships: [
                     {
+      foreignKeyName: "entitlements_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "entitlements_job_id_fkey"
       columns: ["job_id"]
 isOneToOne: false
@@ -413,17 +419,23 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "amount_cents": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"job_id": string | null,"org_id": string | null,"org_name": string | null,"package": string,"paid_at": string | null,"receipt_url": string | null,"refunded_at": string | null,"status": string,"stripe_payment_intent": string | null,"stripe_session_id": string | null
+                    "agency_id": string | null,"agency_name": string | null,"amount_cents": number,"created_at": string,"created_by": string | null,"currency": string,"id": string,"job_id": string | null,"org_id": string | null,"org_name": string | null,"package": string,"paid_at": string | null,"receipt_url": string | null,"refunded_at": string | null,"status": string,"stripe_payment_intent": string | null,"stripe_session_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package": string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
+                    "agency_id"?: string | null,"agency_name"?: string | null,"amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package": string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
                   }
                   Update: {
-                    "amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package"?: string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
+                    "agency_id"?: string | null,"agency_name"?: string | null,"amount_cents"?: number,"created_at"?: string,"created_by"?: string | null,"currency"?: string,"id"?: string,"job_id"?: string | null,"org_id"?: string | null,"org_name"?: string | null,"package"?: string,"paid_at"?: string | null,"receipt_url"?: string | null,"refunded_at"?: string | null,"status"?: string,"stripe_payment_intent"?: string | null,"stripe_session_id"?: string | null
                   }
                   Relationships: [
                     {
+      foreignKeyName: "orders_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "orders_job_id_fkey"
       columns: ["job_id"]
 isOneToOne: false
@@ -956,6 +968,9 @@ isOneToOne: false
                            },
 "gen_salt":
 { Args: { "": string }; Returns: string
+                           },
+"grant_agency_credits":
+{ Args: { "p_admin": string,"p_agency": string,"p_count": number }; Returns: undefined
                            },
 "grant_credits":
 { Args: { "p_admin": string,"p_count": number,"p_org": string }; Returns: undefined

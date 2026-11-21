@@ -1241,4 +1241,110 @@ select pg_temp.expect(not exists (select 1 from search_jobs(agency => 'hire-co')
 select pg_temp.expect(not exists (select 1 from hiring_agencies() where slug = 'hire-co'), 'and leaves the sitemap');
 reset role;
 select unsuspend_agency(:'hireco');
+-- ---------- Agency credits (041_agency_credits.sql) ----------
+-- Hire Co buys credits once and spends them on any client. A company's own credits go first, and a company's own
+-- team never spends its agency's credits.
+reset role;
+select set_payments(true);
+create or replace function pg_temp.client_job(p_org uuid, p_slug text) returns uuid language sql as $$
+  insert into jobs (org_id, slug, title, created_by, role, seniority, employment_type, workplace, eligible_countries, description)
+  values (p_org, p_slug, 'Sales Lead', auth.uid(), 'growth', 'mid', 'full_time', 'remote', '{US}', repeat('Lead a sales team. ', 14)) returning id $$;
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.fails(format($$insert into entitlements (agency_id, package) values (%L, 'founding')$$, :'hireco'), 'an agency can''t give itself credits');
+select pg_temp.fails(format($$select grant_agency_credits(%L, 5, auth.uid())$$, :'hireco'), 'or call the founding credit function');
+select pg_temp.fails(format($$insert into orders (agency_id, package) values (%L, 'standard')$$, :'hireco'), 'or write orders');
+reset role;
+select grant_agency_credits(:'hireco', 2, null);
+select pg_temp.fails(format($$insert into orders (org_id, agency_id, package) values (%L, %L, 'standard')$$, :'client4', :'hireco'), 'an order belongs to a company or an agency, not both');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.expect((select count(*) from entitlements where agency_id = :'hireco') = 0, 'another agency can''t see Hire Co''s credits');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.expect((select count(*) from entitlements where agency_id = :'hireco' and job_id is null) = 2, 'a recruiter sees the agency''s credits');
+select pg_temp.client_job(:'client4', 'client-four-lead') as c4job \gset
+select pg_temp.expect(attach_credit(:'c4job') = 'founding', 'a recruiter spends an agency credit on a client''s job');
+select pg_temp.expect((select agency_id from entitlements where job_id = :'c4job') = :'hireco', 'the credit stays recorded as the agency''s');
+delete from jobs where id = :'c4job';
+select pg_temp.expect((select count(*) from entitlements where agency_id = :'hireco' and job_id is null) = 2, 'deleting the draft gives the credit back to the agency');
+select pg_temp.client_job(:'client4', 'client-four-lead-1') as c4job1 \gset
+select attach_credit(:'c4job1');
+update jobs set status = 'pending_review' where id = :'c4job1';
+select pg_temp.expect((select status from jobs where id = :'c4job1') = 'pending_review', 'with an agency credit, the client''s job goes to review');
+
+-- Omega (its own team) joins Hire Co again and has one credit of its own.
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select request_agency_client(:'hireco', 'omega') as omega_req2 \gset
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select answer_agency_client_request(:'omega_req2', true);
+reset role;
+select grant_credits(:'omega', 1, null);
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select pg_temp.client_job(:'omega', 'omega-lead-1') as om1 \gset
+select pg_temp.client_job(:'omega', 'omega-lead-2') as om2 \gset
+select attach_credit(:'om1');
+select pg_temp.expect((select org_id from entitlements where job_id = :'om1') = :'omega', 'the company''s own credit goes first');
+select attach_credit(:'om2');
+select pg_temp.expect((select agency_id from entitlements where job_id = :'om2') = :'hireco', 'then the agency''s');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select pg_temp.client_job(:'omega', 'omega-lead-3') as om3 \gset
+select pg_temp.fails(format($$select attach_credit(%L)$$, :'om3'), 'the company''s own team never spends its agency''s credits');
+select pg_temp.expect((select count(*) from entitlements where job_id in (:'om1', :'om2')) = 2, 'the company sees the listing on each of its jobs, whoever paid');
+select pg_temp.expect((select count(*) from entitlements where agency_id = :'hireco' and job_id is null) = 0, 'but not the agency''s unused credits');
+
+-- The webhook: an agency order for a client's job sends it to review; for any other company's job, the credit
+-- stays with the agency.
+reset role;
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.client_job(:'client4', 'client-four-lead-2') as c4job2 \gset
+reset role;
+insert into orders (agency_id, job_id, package, amount_cents, currency, stripe_session_id)
+  values (:'hireco', :'c4job2', 'standard', 4900, 'USD', 'cs_ag1') returning id as ag1 \gset
+select pg_temp.expect(record_payment('evt_ag1', 'checkout.session.completed', :'ag1', 'cs_ag1', 4900, 'usd', 'pi_ag1') = 'sent', 'an agency payment for a client''s job sends it to review');
+select pg_temp.expect((select agency_id = :'hireco' and org_id is null from entitlements where job_id = :'c4job2'), 'and the credit is the agency''s');
+select pg_temp.expect((select agency_name from orders where id = :'ag1') = 'Hire Co', 'the order keeps the agency''s name');
+insert into orders (agency_id, job_id, package, amount_cents, currency, stripe_session_id)
+  values (:'hireco', :'z6', 'standard', 4900, 'USD', 'cs_ag2') returning id as ag2 \gset
+select pg_temp.expect(record_payment('evt_ag2', 'checkout.session.completed', :'ag2', 'cs_ag2', 4900, 'usd', 'pi_ag2') = 'credit added', 'an agency payment never attaches to a company that isn''t its client');
+select pg_temp.expect((select job_id is null and agency_id = :'hireco' from entitlements where order_id = :'ag2'), 'the credit waits with the agency');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c2');
+select pg_temp.expect((select count(*) from orders where agency_id = :'hireco') = 2, 'agency staff see the agency''s orders');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select pg_temp.expect((select count(*) from orders where agency_id = :'hireco') = 0, 'another agency can''t');
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select pg_temp.expect((select count(*) from orders where agency_id = :'hireco') = 0, 'and neither can a client''s own team');
+
+-- When Omega leaves, the agency keeps its unused credits and Omega keeps the listings already on its jobs.
+select remove_agency_client(:'omega');
+select pg_temp.expect((select count(*) from entitlements where job_id = :'om2') = 1, 'a listing paid by the agency stays on the company''s job');
+reset role;
+select pg_temp.expect((select count(*) from entitlements where agency_id = :'hireco' and job_id is null) = 1, 'and the agency keeps its unused credit');
+
+-- A deleted agency's credit on a job of a company with its own team becomes that company's.
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select request_agency_client(:'other', 'omega') as other_req2 \gset
+select pg_temp.act('00000000-0000-0000-0000-0000000000c4');
+select answer_agency_client_request(:'other_req2', true);
+reset role;
+select grant_agency_credits(:'other', 1, null);
+select pg_temp.act('00000000-0000-0000-0000-0000000000c3');
+select attach_credit(:'om3');
+reset role;
+delete from agencies where id = :'other';
+select pg_temp.expect((select org_id = :'omega' and agency_id is null from entitlements where job_id = :'om3'), 'a deleted agency''s credit on a job stays there as the company''s');
+select pg_temp.expect((select agency_id is null from orgs where id = :'omega'), 'and the company is on its own again');
+-- Deleting an agency with a credit on a job of a client it ran alone: the client, its job and the credit go.
+select create_agency('Short Lived', 'short-lived') as short_lived \gset
+select grant_agency_credits(:'short_lived', 1, null);
+insert into orgs (name, slug, agency_id) values ('Solo Client', 'solo-client', :'short_lived') returning id as solo_client \gset
+insert into jobs (org_id, slug, title) values (:'solo_client', 'solo-client-job', 'Solo') returning id as solo_job \gset
+update entitlements set job_id = :'solo_job', used_at = now() where agency_id = :'short_lived';
+delete from agencies where id = :'short_lived';
+select pg_temp.expect(not exists (select 1 from orgs where id = :'solo_client') and not exists (select 1 from entitlements where job_id = :'solo_job'),
+  'deleting an agency removes the clients it ran alone, with their jobs and credits');
+select set_payments(false);
 \echo 'All boundary tests passed.'

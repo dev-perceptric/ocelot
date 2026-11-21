@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Table, Tag, Td, Th } from "@/components/ui";
 import { myTimeZone } from "@/lib/myTz";
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 const STATUS = { paid: { label: "Paid", tone: "success" }, refunded: { label: "Refunded", tone: "warning" }, failed: { label: "Not completed", tone: "neutral" } } as const;
 
 export default async function Billing({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
-  const { supabase, user, current } = await myOrgs();
+  const { supabase, user, current, agencies } = await myOrgs();
   if (!user || !current) redirect("/employer");
   const { paid } = await searchParams;
   const [{ data: credits }, { data: orders }, { data: settings }, tz] = await Promise.all([
@@ -23,6 +24,11 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
     supabase.from("app_settings").select("payments_on").maybeSingle(),
     myTimeZone(supabase, user.id),
   ]);
+  // Agency staff working on a client: their agency's credits are used after the client's own.
+  const staffOf = current.agency && agencies.some((a) => a.id === current.agency?.id) ? current.agency : null;
+  const { count: agencyCredits } = staffOf
+    ? await supabase.from("entitlements").select("id", { count: "exact", head: true }).eq("agency_id", staffOf.id).is("job_id", null)
+    : { count: null };
   const free = new Map<string, number>();
   for (const c of credits ?? []) free.set(c.package, (free.get(c.package) ?? 0) + 1);
   const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { timeZone: tz, day: "numeric", month: "short", year: "numeric" });
@@ -37,7 +43,13 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
       <section>
         <h2 className="text-card font-bold">Listing credits</h2>
         <p className="mt-2 text-body">{free.size ? [...free].map(([k, n]) => `${n} ${PACKAGE_LABEL[k] ?? k}`).join(", ") : "None left"}</p>
-        {settings?.payments_on ? <div className="mt-6"><BuyListing label="Buy listing" /></div> : null}
+        {staffOf ? (
+          <p className="mt-2 text-body">
+            {staffOf.name} has {agencyCredits === 1 ? "1 credit" : `${agencyCredits ?? 0} credits`} for its clients, used after {current.name}&apos;s own.{" "}
+            <Link href="/employer/agency/billing" className="font-bold underline">Agency billing</Link>
+          </p>
+        ) : null}
+        {settings?.payments_on && current.teamRole ? <div className="mt-6"><BuyListing label="Buy listing" /></div> : null}
       </section>
       {orders?.length ? (
         <section>

@@ -82,6 +82,7 @@ node tests/e2e/resumes.cjs
 node tests/e2e/apply.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/pipeline.cjs
 node tests/e2e/billing.cjs
+node tests/e2e/agency-billing.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/alerts.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/boards.cjs
 SUPABASE_SECRET=<secret> node tests/e2e/account.cjs

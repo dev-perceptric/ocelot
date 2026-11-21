@@ -8,11 +8,12 @@ import { PACKAGES, dollars } from "@/lib/packages";
 import { startCheckout, type BuyState } from "./actions";
 
 // Pick Standard or Featured and pay in Stripe Checkout. With a job, paying also sends it for review.
-export function BuyListing({ jobId, label }: { jobId?: string; label: string }) {
+export function BuyListing({ jobId, label, forAgency = false }: { jobId?: string; label: string; forAgency?: boolean }) {
   const [state, action, pending] = useActionState<BuyState, FormData>(startCheckout, {});
   return (
     <form onSubmit={keepValues(action)} className="flex flex-col gap-4">
       {jobId ? <input type="hidden" name="job_id" value={jobId} /> : null}
+      {forAgency ? <input type="hidden" name="for" value="agency" /> : null}
       <RadioCards name="package" legend="Listing" defaultValue="standard" required options={[
         { value: "standard", label: `Standard, ${dollars(PACKAGES.standard.cents)}`, line: PACKAGES.standard.line },
         { value: "featured", label: `Featured, ${dollars(PACKAGES.featured.cents)}`, line: PACKAGES.featured.line },
