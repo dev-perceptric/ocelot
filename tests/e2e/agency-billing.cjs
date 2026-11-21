@@ -45,7 +45,6 @@ const one = (q) => sql(q).split("\n")[0];
 
 // Stand-in for the Stripe API: checkout sessions, payment intents (receipts) and refunds.
 const sessions = new Map();
-let refunds = 0;
 const stripe = http.createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
@@ -59,7 +58,7 @@ const stripe = http.createServer((req, res) => {
       return json({ id, url: `${FAKE}/pay/${id}` });
     }
     if (req.method === "GET" && req.url.startsWith("/v1/payment_intents/")) return json({ id: "pi_x", latest_charge: { receipt_url: "https://pay.stripe.com/receipts/test" } });
-    if (req.method === "POST" && req.url === "/v1/refunds") { refunds++; return json({ id: "re_1" }); }
+    if (req.method === "POST" && req.url === "/v1/refunds") return json({ id: "re_1" });
     if (req.method === "GET" && req.url.startsWith("/pay/")) { res.setHeader("Content-Type", "text/html"); return res.end("<h1>Stripe Checkout (stand-in)</h1>"); }
     res.statusCode = 404; json({ error: { message: "not here" } });
   });
