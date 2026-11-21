@@ -42,7 +42,10 @@ export type Org = {
   industry: string | null;
   email_verified_domain: string | null;
   business_verified_at: string | null;
+  agency?: AgencyLabel | null; // the recruiting agency that posts for this company, when there is one
 };
+
+export type AgencyLabel = { name: string; slug: string };
 
 export const WORKPLACE: Record<string, string> = { on_site: "On-site", hybrid: "Hybrid", remote: "Remote" };
 export const EMPLOYMENT: Record<string, string> = {

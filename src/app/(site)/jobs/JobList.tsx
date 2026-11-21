@@ -78,7 +78,7 @@ export function JobList({ jobs, states, signedIn }: { jobs: JobWithOrg[]; states
       <div ref={listRef} className={`grid content-start gap-4 ${open ? "" : "md:grid-cols-1"}`}>
         {jobs.map((job) => (
           <div key={job.id} data-slug={job.slug}>
-            <JobCard job={job} company={job.org?.name ?? ""} logo={job.org?.logo_url} state={states[job.id] ?? null} signedIn={signedIn}
+            <JobCard job={job} company={job.org?.name ?? ""} agency={job.org?.agency?.name} logo={job.org?.logo_url} state={states[job.id] ?? null} signedIn={signedIn}
               selected={open === job.slug}
               onOpen={(e) => {
                 if (!window.matchMedia(WIDE).matches || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;

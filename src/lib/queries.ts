@@ -2,24 +2,25 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { supabaseReady } from "@/lib/env";
 import { createClient, createVisitor } from "@/lib/supabase/server";
-import type { Job, Org } from "@/lib/jobs";
+import type { AgencyLabel, Job, Org } from "@/lib/jobs";
 import type { Filters } from "@/lib/search";
 
-export type JobWithOrg = Job & { org: Pick<Org, "name" | "slug" | "logo_url"> };
+export type JobWithOrg = Job & { org: Pick<Org, "name" | "slug" | "logo_url"> & { agency?: AgencyLabel | null } };
+export type SearchInput = Partial<Filters> & { company?: string; agency?: string };
 
 export const PAGE_SIZE = 50;
 
 // The columns a job list needs: everything but the description (cards don't show it; the panel and job page load it).
 const LIST_COLUMNS = "id, org_id, slug, title, dupe_key, category, seniority, employment_type, workplace, office_places, role, " +
   "eligible_countries, time_zones, salary_min, salary_max, salary_currency, salary_period, apply_method, apply_url, status, " +
-  "featured_until, published_at, expires_at, org:orgs(name, slug, logo_url)";
+  "featured_until, published_at, expires_at, org:orgs(name, slug, logo_url, agency:agencies(name, slug))";
 
 // Job search through search_jobs and search_jobs_count (supabase/migrations/036_search_speed.sql): only live jobs
 // from companies that aren't suspended, one copy of each, promoted first, then taking turns between companies. Every visitor sees the
 // same results, so each search and page is kept for 5 minutes and shared: most visits, crawlers included, never reach
 // the database. A database hiccup shows an empty list instead of an error page, and isn't kept.
 const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWithOrg[]; total: number }> => {
-  const { f, page, size } = JSON.parse(key) as { f: Partial<Filters> & { company?: string }; page: number; size: number };
+  const { f, page, size } = JSON.parse(key) as { f: SearchInput; page: number; size: number };
   const filters = {
     q: f.q || undefined,
     workplaces: f.where?.length ? f.where : undefined,
@@ -34,6 +35,8 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
     posted_days: f.posted ?? undefined,
     min_pay: f.minPay ?? undefined,
     company: f.company ?? undefined,
+    no_agency: f.noAgency || undefined,
+    agency: f.agency ?? undefined,
   };
   const db = createVisitor();
   // The page and the total are separate calls: the database sorts only to find the page, and counts without sorting.
@@ -45,10 +48,11 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
   if (counted.error) throw new Error(`searchJobs count: ${counted.error.message}`);
   const jobs = ((list.data ?? []) as unknown as Omit<JobWithOrg, "description">[]).map((j) => ({ ...j, description: "" }) as JobWithOrg);
   return { jobs, total: Number(counted.data ?? 0) };
-}, ["search-jobs-v2"], { revalidate: 300 });
+}, ["search-jobs-v3"], { revalidate: 300 });
 
-// company (a company slug) keeps to one company: the company pages by area.
-export async function searchJobs(f: Partial<Filters> & { company?: string } = {}, page = 1, size = PAGE_SIZE): Promise<{ jobs: JobWithOrg[]; total: number }> {
+// company (a company slug) keeps to one company: the company pages by area. agency (an agency slug) keeps to its
+// clients: the agency page.
+export async function searchJobs(f: SearchInput = {}, page = 1, size = PAGE_SIZE): Promise<{ jobs: JobWithOrg[]; total: number }> {
   if (!supabaseReady) return { jobs: [], total: 0 };
   // The same search always makes the same key, whatever order the filters came in.
   const clean = Object.fromEntries(Object.entries(f).filter(([, v]) => v !== undefined && v !== null && v !== "" && v !== false && !(Array.isArray(v) && !v.length)).sort(([a], [b]) => a.localeCompare(b)));
@@ -77,7 +81,7 @@ export async function getJob(slug: string): Promise<(Job & { org: Org; questions
   if (!supabaseReady) return null;
   const supabase = await createClient();
   const { data, error } = await supabase.from("jobs")
-    .select("*, org:orgs(*), job_questions(prompt, position)").eq("slug", slug).maybeSingle();
+    .select("*, org:orgs(*, agency:agencies(name, slug)), job_questions(prompt, position)").eq("slug", slug).maybeSingle();
   if (error) throw error;
   if (!data || !data.org) return null;
   const questions = [...(data.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
@@ -94,7 +98,7 @@ export async function shownCopy(dupeKey: string | null): Promise<string | null> 
 export async function getOrg(slug: string): Promise<{ org: Org; jobs: Job[] } | { movedTo: string } | null> {
   if (!supabaseReady) return null;
   const supabase = await createClient();
-  const { data: org } = await supabase.from("orgs").select("*").eq("slug", slug).maybeSingle();
+  const { data: org } = await supabase.from("orgs").select("*, agency:agencies(name, slug)").eq("slug", slug).maybeSingle();
   if (!org) {
     // An old address: send people (and search engines) to the company's current one.
     const { data: old } = await supabase.from("org_slug_history").select("org:orgs(slug)").eq("slug", slug).maybeSingle();
@@ -162,4 +166,25 @@ export async function cardStates(jobIds: string[]): Promise<Record<string, CardS
   const out: Record<string, CardState> = {};
   for (const c of data ?? []) if (c.job_id && !out[c.job_id]) out[c.job_id] = { id: c.id, stage: c.stage };
   return out;
+}
+
+export type PublicAgency = { id: string; name: string; slug: string; logo_url: string | null; website: string | null; about: string | null; business_verified_at: string | null };
+
+// An agency's public page: the agency (visible while a client has a public job and it isn't suspended) and its
+// clients' live jobs.
+export async function getAgency(slug: string): Promise<{ agency: PublicAgency; jobs: JobWithOrg[]; total: number } | null> {
+  if (!supabaseReady) return null;
+  const { data: agency } = await createVisitor().from("agencies")
+    .select("id, name, slug, logo_url, website, about, business_verified_at").eq("slug", slug).maybeSingle();
+  if (!agency) return null;
+  const { jobs, total } = await searchJobs({ agency: slug, sort: "new" }, 1, PAGE_SIZE);
+  return { agency, jobs, total };
+}
+
+// Agencies with live jobs, for the sitemap.
+export async function hiringAgencies(): Promise<{ name: string; slug: string; jobs: number }[]> {
+  if (!supabaseReady) return [];
+  const { data, error } = await createVisitor().rpc("hiring_agencies");
+  if (error) console.error("hiringAgencies", error);
+  return (data ?? []).map((a) => ({ ...a, jobs: Number(a.jobs) }));
 }

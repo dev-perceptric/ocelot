@@ -19,9 +19,10 @@ export function isNew(publishedAt: string | null, now = Date.now()) {
 // Order: role, company, where you can be hired from, pay, then short facts and how recent. Promoted listings say so.
 // The whole card opens the job; on Find jobs a wide screen opens it in the panel beside the list (onOpen).
 // The bookmark saves the job to My search; jobs already there say Saved or their stage.
-export function JobCard({ job, company, logo, state = null, signedIn = false, selected = false, onOpen }: {
+export function JobCard({ job, company, agency = null, logo, state = null, signedIn = false, selected = false, onOpen }: {
   job: Job;
   company: string;
+  agency?: string | null; // the recruiting agency that posted it for the company
   logo?: string | null;
   state?: CardState | null;
   signedIn?: boolean;
@@ -77,6 +78,7 @@ export function JobCard({ job, company, logo, state = null, signedIn = false, se
           </div>
         </div>
         <p className="text-body">{[company, formatWhere(job)].filter(Boolean).join(" / ")}</p>
+        {agency ? <p className="text-meta text-muted">Posted by {agency} for {company}</p> : null}
         {salary ? <p className="text-body font-bold">{salary}</p> : null}
         {facts.length || stage || job.apply_method === "ocelot" || isNew(job.published_at) ? (
           <div className="mt-1 flex flex-wrap gap-2">

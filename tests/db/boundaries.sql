@@ -1201,4 +1201,44 @@ select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
 select delete_agency_client(:'client1');
 reset role;
 select pg_temp.expect(not exists (select 1 from orgs where id = :'client1'), 'an agency owner deletes a client it runs alone');
+-- ---------- Agency labels (040_agency_labels.sql) ----------
+-- Ava's agency posts for a new client; Cy applies. Search can hide agency jobs or show one agency's.
+select pg_temp.act('00000000-0000-0000-0000-0000000000c1');
+select create_agency_client(:'hireco', 'Client Four', 'client-four') as client4 \gset
+insert into jobs (org_id, slug, title, created_by, workplace, eligible_countries, role, seniority, employment_type, description)
+  values (:'client4', 'client-four-ae', 'Account Executive', auth.uid(), 'remote', '{US}', 'growth', 'mid', 'full_time', repeat('Close new business. ', 10));
+reset role;
+set role service_role;
+update jobs set status = 'published', published_at = now(), expires_at = now() + interval '30 days' where org_id = :'client4';
+reset role;
+
+select pg_temp.act(null);
+select pg_temp.expect(exists (select 1 from search_jobs() where org_id = :'client4'), 'agency jobs show in search');
+select pg_temp.expect(not exists (select 1 from search_jobs(no_agency => true) where org_id = :'client4'), '"Hide agency jobs" leaves them out');
+select pg_temp.expect(not exists (select 1 from search_jobs(no_agency => true) j join orgs o on o.id = j.org_id where o.agency_id is not null), 'and leaves out every agency client');
+select pg_temp.expect(search_jobs_count(no_agency => true) = (select count(*) from search_jobs(no_agency => true)), 'the count matches the list without agency jobs');
+select pg_temp.expect((select count(*) from search_jobs(agency => 'hire-co')) = 1
+  and not exists (select 1 from search_jobs(agency => 'hire-co') where org_id <> :'client4'), 'an agency''s page lists only its clients'' jobs');
+select pg_temp.expect(exists (select 1 from hiring_agencies() where slug = 'hire-co'), 'an agency with live jobs is listed for the sitemap');
+select pg_temp.expect((select name from agencies where slug = 'hire-co') = 'Hire Co', 'visitors can read the agency name for the job label');
+
+select pg_temp.act('00000000-0000-0000-0000-0000000000c5');
+select apply_to_job((select id from jobs where org_id = :'client4'), :'cy_cv', '{}', 'Hello again');
+select pg_temp.expect((select agency_name from applications where org_id = :'client4') = 'Hire Co', 'the application records the agency that received it');
+insert into saved_searches (user_id, name, query, filters) values (auth.uid(), 'No agencies', '', '{"no_agency": true}') returning id as no_agency_search \gset
+
+reset role;
+update saved_searches set checked_at = now() - interval '1 day' where id = :'no_agency_search';
+select pg_temp.expect(not exists (select 1 from alert_jobs(:'no_agency_search') where org_id = :'client4'), 'alerts honor "Hide agency jobs"');
+update agencies set name = 'Hire Co Renamed' where id = :'hireco';
+update applications set agency_name = 'Edited', agency_id = null where org_id = :'client4';
+select pg_temp.expect((select agency_name from applications where org_id = :'client4') = 'Hire Co', 'renaming the agency or editing the row never changes what the application recorded');
+update agencies set name = 'Hire Co' where id = :'hireco';
+
+select suspend_agency(:'hireco', 'Checking the agency filter');
+select pg_temp.act(null);
+select pg_temp.expect(not exists (select 1 from search_jobs(agency => 'hire-co')), 'a suspended agency''s page lists no jobs');
+select pg_temp.expect(not exists (select 1 from hiring_agencies() where slug = 'hire-co'), 'and leaves the sitemap');
+reset role;
+select unsuspend_agency(:'hireco');
 \echo 'All boundary tests passed.'

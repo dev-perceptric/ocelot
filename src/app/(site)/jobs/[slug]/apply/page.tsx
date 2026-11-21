@@ -32,7 +32,7 @@ export default async function Apply({ params }: { params: Promise<{ slug: string
       <Link href={`/jobs/${slug}`} className="text-meta underline">{job.title}</Link>
       <h1 className="mt-3 text-section-sm font-bold md:text-section">Apply to {job.org.name}</h1>
       {open ? (
-        <ApplyForm slug={slug} userId={user.id} email={profile?.email ?? user.email ?? ""}
+        <ApplyForm slug={slug} userId={user.id} company={job.org.name} agency={job.org.agency?.name ?? null} email={profile?.email ?? user.email ?? ""}
           profile={{ full_name: profile?.full_name ?? "", phone: profile?.phone ?? "" }}
           resumes={resumes ?? []} questions={questions ?? []} />
       ) : (

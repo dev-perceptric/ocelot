@@ -13,7 +13,7 @@ export default async function Preview({ params }: { params: Promise<{ id: string
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
   const { supabase, current } = await myOrgs();
   if (!current) redirect("/employer");
-  const { data: job } = await supabase.from("jobs").select("*, job_questions(prompt, position), org:orgs(*)").eq("id", id).eq("org_id", current.id).maybeSingle();
+  const { data: job } = await supabase.from("jobs").select("*, job_questions(prompt, position), org:orgs(*, agency:agencies(name, slug))").eq("id", id).eq("org_id", current.id).maybeSingle();
   if (!job || !job.org) notFound();
   const questions = [...(job.job_questions ?? [])].sort((a, b) => a.position - b.position).map((q) => q.prompt);
   return (

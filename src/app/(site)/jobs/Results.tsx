@@ -31,6 +31,7 @@ export function chips(f: F) {
   if (f.pay) out.push({ label: "Shows pay", without: { pay: false } });
   if (f.posted) out.push({ label: POSTED_LABEL[f.posted], without: { posted: null } });
   if (f.minPay) out.push({ label: payLabel(f.minPay), without: { minPay: null } });
+  if (f.noAgency) out.push({ label: "Posted by companies", without: { noAgency: false } });
   return out;
 }
 

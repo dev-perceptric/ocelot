@@ -48,6 +48,12 @@ async function login(page, email) {
     return payload.html.match(/href="(http[^"]+\/invite\/[0-9a-f]+)"/)[1].replace(/^https?:\/\/[^/]+/, APP);
   };
 
+  // Start clean, so the test can run again on the same local database.
+  sql("delete from agencies where name = 'Hire Co Test'");
+  sql("delete from orgs where name in ('Omega Test', 'Client One Test')");
+  sql("delete from jobs_queue where payload->>'to' in ('ava@hireco.test', 'rex@hireco.test', 'oli@omega.test')");
+  sql("delete from auth.users where email in ('ava@hireco.test', 'rex@hireco.test', 'oli@omega.test')");
+
   // Ava sets up an agency from the empty For employers page.
   const ava = await page("ava");
   await ava.goto(`${APP}/login`);
@@ -105,6 +111,30 @@ async function login(page, email) {
   await rex.goto(`${APP}/employer/agency/team`);
   ok(await rex.isVisible("text=Recruiter") && !(await rex.isVisible("button:has-text('Invite people')")), "Rex is a recruiter and can't invite staff");
 
+  // A live job for the client says who posted it, everywhere candidates see it.
+  const clientId = sql("select id from orgs where name = 'Client One Test'");
+  sql(`insert into jobs (org_id, slug, title, created_by, status, published_at, expires_at, workplace, eligible_countries, role, seniority, employment_type, description, apply_method)
+       values ('${clientId}', 'zebra-agency-sdr', 'Zebra Agency SDR', (select id from auth.users where email = 'ava@hireco.test'), 'published', now(), now() + interval '30 days',
+               'remote', '{US}', 'growth', 'mid', 'full_time', repeat('Book meetings with new customers. ', 10), 'ocelot')`);
+  const visitor = await page("visitor");
+  await visitor.goto(`${APP}/jobs/zebra-agency-sdr`);
+  ok(await visitor.isVisible("text=Posted by Hire Co Test, a recruiting agency, for Client One Test"), "the job page says the agency posted it for the client");
+  await visitor.goto(`${APP}/jobs?q=zebra`);
+  await visitor.waitForSelector("text=Zebra Agency SDR");
+  ok(await visitor.isVisible("text=Posted by Hire Co Test for Client One Test"), "the job card says who posted it");
+  await visitor.getByRole("button", { name: "Hide agency jobs" }).click();
+  await visitor.waitForURL(/no_agency=1/);
+  await visitor.waitForSelector("text=Posted by companies");
+  ok(!(await visitor.isVisible("text=Zebra Agency SDR")), "Hide agency jobs takes it out of search");
+  await visitor.screenshot({ path: out + "/e2e-agency-filter.png" });
+  const agencySlug = sql("select slug from agencies where name = 'Hire Co Test'");
+  await visitor.goto(`${APP}/agencies/${agencySlug}`);
+  ok(await visitor.isVisible("h1:has-text('Hire Co Test')") && await visitor.isVisible("text=Zebra Agency SDR"), "the agency's public page lists its clients' jobs");
+  await visitor.screenshot({ path: out + "/e2e-agency-public.png", fullPage: true });
+  const clientSlug = sql(`select slug from orgs where id = '${clientId}'`);
+  await visitor.goto(`${APP}/companies/${clientSlug}`);
+  ok(await visitor.isVisible("text=Hiring through"), "the client's company page names its agency");
+
   // Oli owns Omega. Ava asks to manage it; Oli says yes on his Team page.
   const oli = await page("oli");
   await oli.goto(`${APP}/login`);
@@ -114,6 +144,11 @@ async function login(page, email) {
   await oli.fill("#name", "Omega Test");
   await oli.getByRole("button", { name: "Create company" }).click();
   await oli.waitForSelector("h1:has-text('Omega Test')");
+  // Before applying, a candidate sees who receives the application.
+  await oli.goto(`${APP}/jobs/zebra-agency-sdr/apply`);
+  ok(await oli.isVisible("text=Your application goes to"), "the apply form says the agency and the client receive the application");
+  await oli.screenshot({ path: out + "/e2e-agency-apply.png", fullPage: true });
+
   const omegaSlug = sql("select slug from orgs where name = 'Omega Test'");
 
   await ava.goto(`${APP}/employer/agency`);

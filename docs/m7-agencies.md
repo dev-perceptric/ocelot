@@ -101,7 +101,7 @@ Added to `tests/db/boundaries.sql`:
 | 0 | Finish the OVH move for Ocelot, update docs, raise limits (repo part done) | 1 day |
 | 1 | Migration, `is_org_member` change, boundary tests (done) | 2–3 days |
 | 2 | Agency pages, staff, invites, client requests (done; end-to-end test `tests/e2e/agency.cjs`) | 3–4 days |
-| 3 | Labels on jobs, companies, apply form, tracker, filter | 2 days |
+| 3 | Labels on jobs, companies, apply form, tracker, filter (done; migration `040_agency_labels.sql`) | 2 days |
 | 4 | Shared credits and the webhook | 1–2 days |
 | 5 | Admin review and suspend, emails, end-to-end test | 2 days |
 | | **Total** | **11–14 working days** |

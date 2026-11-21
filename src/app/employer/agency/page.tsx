@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Tag } from "@/components/ui";
 import { canManageAgency, myOrgs } from "@/lib/org";
 import { minutesAgo } from "@/lib/when";
@@ -51,6 +52,10 @@ export default async function AgencyPage() {
           <Tag>Agency</Tag>
           {row?.business_verified_at ? <Tag tone="success">Agency verified</Tag> : null}
         </div>
+        <p className="text-body text-muted">
+          Public page: <Link href={`/agencies/${agency.slug}`} className="underline">joinocelot.com/agencies/{agency.slug}</Link>
+          {" "}(shows once a client has a live job)
+        </p>
         {agency.suspended ? (
           <p className="border border-danger bg-danger-bg p-4 text-body text-danger rounded-[var(--radius-card)]" role="alert">
             Ocelot suspended this agency, and its clients&apos; jobs are hidden. Email hello@joinocelot.com to talk about it.

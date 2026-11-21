@@ -147,17 +147,23 @@ isOneToOne: false
                   ]
                 },"applications": {
                   Row: {
-                    "candidate_deleted_at": string | null,"candidate_id": string | null,"hiring_stage": string,"id": string,"job_id": string,"org_id": string,"resume_id": string | null,"snapshot": NonNullable<Json>,"snapshot_version": number,"submitted_at": string
+                    "agency_id": string | null,"agency_name": string | null,"candidate_deleted_at": string | null,"candidate_id": string | null,"hiring_stage": string,"id": string,"job_id": string,"org_id": string,"resume_id": string | null,"snapshot": NonNullable<Json>,"snapshot_version": number,"submitted_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "candidate_deleted_at"?: string | null,"candidate_id"?: string | null,"hiring_stage"?: string,"id"?: string,"job_id": string,"org_id": string,"resume_id"?: string | null,"snapshot"?: NonNullable<Json>,"snapshot_version"?: number,"submitted_at"?: string
+                    "agency_id"?: string | null,"agency_name"?: string | null,"candidate_deleted_at"?: string | null,"candidate_id"?: string | null,"hiring_stage"?: string,"id"?: string,"job_id": string,"org_id": string,"resume_id"?: string | null,"snapshot"?: NonNullable<Json>,"snapshot_version"?: number,"submitted_at"?: string
                   }
                   Update: {
-                    "candidate_deleted_at"?: string | null,"candidate_id"?: string | null,"hiring_stage"?: string,"id"?: string,"job_id"?: string,"org_id"?: string,"resume_id"?: string | null,"snapshot"?: NonNullable<Json>,"snapshot_version"?: number,"submitted_at"?: string
+                    "agency_id"?: string | null,"agency_name"?: string | null,"candidate_deleted_at"?: string | null,"candidate_id"?: string | null,"hiring_stage"?: string,"id"?: string,"job_id"?: string,"org_id"?: string,"resume_id"?: string | null,"snapshot"?: NonNullable<Json>,"snapshot_version"?: number,"submitted_at"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "applications_agency_id_fkey"
+      columns: ["agency_id"]
+isOneToOne: false
+      referencedRelation: "agencies"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "applications_job_id_fkey"
       columns: ["job_id"]
 isOneToOne: false
@@ -954,6 +960,11 @@ isOneToOne: false
 "grant_credits":
 { Args: { "p_admin": string,"p_count": number,"p_org": string }; Returns: undefined
                            },
+"hiring_agencies":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "jobs": number,"name": string,"slug": string
+            }[]
+                           },
 "hiring_companies":
 { Args: { "p_limit"?: number }; Returns: {
               "jobs": number,"logo_url": string,"name": string,"slug": string
@@ -1048,7 +1059,7 @@ isOneToOne: false
 { Args: { "p_job": string }; Returns: string
                            },
 "search_jobs":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"p_limit"?: number,"p_offset"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"p_limit"?: number,"p_offset"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "apply_method": string,
 "apply_url": string | null,
 "category": string | null,
@@ -1094,10 +1105,10 @@ isOneToOne: false
         isSetofReturn: true
       } },
 "search_jobs_count":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
                            },
 "search_matches":
-{ Args: { "category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "featured": boolean,"id": string,"org_id": string,"published_at": string,"rank": number
             }[]
                            },

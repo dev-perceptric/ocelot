@@ -10,8 +10,8 @@ import { applyToJob, type ApplyState } from "./actions";
 
 type Question = { id: string; prompt: string; required: boolean };
 
-export function ApplyForm({ slug, userId, email, profile, resumes, questions }: {
-  slug: string; userId: string; email: string; profile: { full_name: string; phone: string };
+export function ApplyForm({ slug, userId, company, agency, email, profile, resumes, questions }: {
+  slug: string; userId: string; company: string; agency: string | null; email: string; profile: { full_name: string; phone: string };
   resumes: { id: string; name: string }[]; questions: Question[];
 }) {
   const [state, action, pending] = useActionState<ApplyState, FormData>(applyToJob, {});
@@ -33,7 +33,7 @@ export function ApplyForm({ slug, userId, email, profile, resumes, questions }: 
         <Field label="Phone (optional)" htmlFor="phone" error={e.phone}>
           <input id="phone" name="phone" type="tel" defaultValue={profile.phone} autoComplete="tel" className={inputClass} {...err("phone")} />
         </Field>
-        <p className="text-meta text-muted">The company also gets {email} and your <Link href="/app/profile" className="underline">profile</Link>: headline, city, experience, languages and links.</p>
+        <p className="text-meta text-muted">{agency ? `${agency} and ${company} also get` : "The company also gets"} {email} and your <Link href="/app/profile" className="underline">profile</Link>: headline, city, experience, languages and links.</p>
       </section>
 
       <section className="flex flex-col gap-3 border border-border bg-surface p-5 rounded-[var(--radius-card)]">
@@ -63,6 +63,11 @@ export function ApplyForm({ slug, userId, email, profile, resumes, questions }: 
       </Field>
 
       {state.error ? <p className="text-body text-danger" role="alert">{state.error}</p> : null}
+      {agency ? (
+        <p className="border border-border bg-surface p-4 text-body rounded-[var(--radius-card)]">
+          Your application goes to <strong>{agency}</strong>, a recruiting agency hiring for <strong>{company}</strong>. Both can see what you send.
+        </p>
+      ) : null}
       <div><Button type="submit" disabled={pending} aria-busy={pending}>{pending ? "Sending" : "Send application"}</Button></div>
     </form>
   );
