@@ -25,7 +25,7 @@ export default async function sitemap({ id }: { id: Promise<string> }): Promise<
     return [
       { url: `${SITE_URL}/`, changeFrequency: "daily" },
       { url: `${SITE_URL}/jobs`, changeFrequency: "hourly" },
-      { url: `${SITE_URL}/for-employers`, changeFrequency: "monthly" },
+      { url: `${SITE_URL}/pricing`, changeFrequency: "monthly" },
       { url: `${SITE_URL}/terms`, changeFrequency: "yearly" },
       { url: `${SITE_URL}/privacy`, changeFrequency: "yearly" },
       ...pages.map((p) => ({ url: `${SITE_URL}${p.href}`, changeFrequency: "daily" as const })),

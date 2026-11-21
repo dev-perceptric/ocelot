@@ -46,14 +46,15 @@ export function JobCard({ job, company, agency = null, logo, state = null, signe
       <CompanyLogo name={company} src={logo} size={44} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="text-card font-bold">
+          <h3 className="min-w-0 break-words text-card font-bold">
             {/* The link covers the card, so the whole card opens the job. */}
             <Link href={`/jobs/${job.slug}`} onClick={onOpen} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
               {job.title}
             </Link>
           </h3>
           <div className="relative z-10 -mr-2 -mt-2 flex shrink-0 items-center gap-1">
-            {promoted ? <Tag tone="brand">Promoted listing</Tag> : null}
+            {/* On a phone the label goes with the other tags below, so the title keeps room. */}
+            {promoted ? <span className="hidden sm:contents"><Tag tone="brand">Promoted listing</Tag></span> : null}
             {!signedIn ? (
               <Link href={`/login?next=/jobs/${job.slug}`} aria-label={`Log in to save ${job.title}`} title="Save job"
                 className="flex size-11 items-center justify-center hover:bg-canvas rounded-[var(--radius-control)]">
@@ -80,8 +81,9 @@ export function JobCard({ job, company, agency = null, logo, state = null, signe
         <p className="text-body">{[company, formatWhere(job)].filter(Boolean).join(" / ")}</p>
         {agency ? <p className="text-meta text-muted">Posted by {agency} for {company}</p> : null}
         {salary ? <p className="text-body font-bold">{salary}</p> : null}
-        {facts.length || stage || job.apply_method === "ocelot" || isNew(job.published_at) ? (
+        {facts.length || stage || promoted || job.apply_method === "ocelot" || isNew(job.published_at) ? (
           <div className="mt-1 flex flex-wrap gap-2">
+            {promoted ? <span className="contents sm:hidden"><Tag tone="brand">Promoted listing</Tag></span> : null}
             {isNew(job.published_at) ? <Tag tone="info">New</Tag> : null}
             {stage ? <Tag tone={card?.stage === "saved" ? "neutral" : "progress"}>{stage}</Tag> : null}
             {job.apply_method === "ocelot" ? <Tag tone="success">Apply on Ocelot</Tag> : null}

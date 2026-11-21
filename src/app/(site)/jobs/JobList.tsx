@@ -25,7 +25,10 @@ function setJobParam(slug: string | null, replace = false) {
   window.history[replace ? "replaceState" : "pushState"](null, "", url.pathname + url.search);
 }
 
-export function JobList({ jobs, states, signedIn }: { jobs: JobWithOrg[]; states: Record<string, CardState>; signedIn: boolean }) {
+// panelTop keeps the open job's panel clear of a sticky bar above the list; end goes under the last card.
+export function JobList({ jobs, states, signedIn, panelTop = "top-6 max-h-[calc(100vh-3rem)]", end }: {
+  jobs: JobWithOrg[]; states: Record<string, CardState>; signedIn: boolean; panelTop?: string; end?: React.ReactNode;
+}) {
   const params = useSearchParams();
   const pathname = usePathname();
   const [wide, setWide] = useState(false);
@@ -74,8 +77,9 @@ export function JobList({ jobs, states, signedIn }: { jobs: JobWithOrg[]; states
   }, [wide, open, jobs, select, listKey]);
 
   return (
-    <div className={`mt-4 grid gap-6 ${open ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : ""}`}>
-      <div ref={listRef} className={`grid content-start gap-4 ${open ? "" : "md:grid-cols-1"}`}>
+    // minmax(0, ...) columns keep a long title or place from pushing a card past the edge of a phone screen.
+    <div className={`mt-4 grid grid-cols-[minmax(0,1fr)] gap-6 ${open ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : ""}`}>
+      <div ref={listRef} className="grid grid-cols-[minmax(0,1fr)] content-start gap-4">
         {jobs.map((job) => (
           <div key={job.id} data-slug={job.slug}>
             <JobCard job={job} company={job.org?.name ?? ""} agency={job.org?.agency?.name} logo={job.org?.logo_url} state={states[job.id] ?? null} signedIn={signedIn}
@@ -87,10 +91,11 @@ export function JobList({ jobs, states, signedIn }: { jobs: JobWithOrg[]; states
               }} />
           </div>
         ))}
+        {end}
       </div>
       {open ? (
         <aside aria-label="Job details" className="hidden lg:block">
-          <div className="sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto overscroll-contain border border-border bg-surface rounded-[var(--radius-card)]">
+          <div className={`sticky ${panelTop} overflow-y-auto overscroll-contain border border-border bg-surface rounded-[var(--radius-card)]`}>
             <JobPanel slug={open} onClose={() => { setClosed(true); setJobParam(null, true); }} />
           </div>
         </aside>

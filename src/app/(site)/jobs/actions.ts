@@ -3,7 +3,8 @@
 import type { Job, Org } from "@/lib/jobs";
 import { myTimeZone } from "@/lib/myTz";
 import { DEFAULT_TZ } from "@/lib/profile";
-import { getJob } from "@/lib/queries";
+import { cardStates, getJob, searchJobs, type JobWithOrg } from "@/lib/queries";
+import type { CardState } from "@/components/JobCard";
 import { unstable_cache } from "next/cache";
 import { createVisitor, currentUser } from "@/lib/supabase/server";
 import { supabaseReady } from "@/lib/env";
@@ -63,4 +64,12 @@ export async function suggest(q: string): Promise<Suggestion[]> {
     console.error(e);
     return [];
   }
+}
+
+// The next page of the home page's endless job list (every live job, in the Find jobs order), with the person's own
+// tracker states for those jobs.
+export async function moreJobs(page: number): Promise<{ jobs: JobWithOrg[]; states: Record<string, CardState> }> {
+  if (!Number.isInteger(page) || page < 2 || page > 1000) return { jobs: [], states: {} };
+  const { jobs } = await searchJobs({}, page);
+  return { jobs, states: await cardStates(jobs.map((j) => j.id)) };
 }
