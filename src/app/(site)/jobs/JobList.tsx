@@ -25,9 +25,10 @@ function setJobParam(slug: string | null, replace = false) {
   window.history[replace ? "replaceState" : "pushState"](null, "", url.pathname + url.search);
 }
 
-// panelTop keeps the open job's panel clear of a sticky bar above the list; end goes under the last card.
-export function JobList({ jobs, states, signedIn, panelTop = "top-6 max-h-[calc(100vh-3rem)]", end }: {
-  jobs: JobWithOrg[]; states: Record<string, CardState>; signedIn: boolean; panelTop?: string; end?: React.ReactNode;
+// panelTop keeps the open job's panel clear of a sticky bar above the list; end goes under the last card. With
+// autoOpen off, the list fills the width and the panel opens only when someone picks a job.
+export function JobList({ jobs, states, signedIn, panelTop = "top-6 max-h-[calc(100vh-3rem)]", end, autoOpen = true }: {
+  jobs: JobWithOrg[]; states: Record<string, CardState>; signedIn: boolean; panelTop?: string; end?: React.ReactNode; autoOpen?: boolean;
 }) {
   const params = useSearchParams();
   const pathname = usePathname();
@@ -40,7 +41,7 @@ export function JobList({ jobs, states, signedIn, panelTop = "top-6 max-h-[calc(
   const closed = closedFor === listKey;
   const setClosed = (on: boolean) => setClosedFor(on ? listKey : null);
   const asked = params.get("job");
-  const open = wide && !closed && jobs.length ? (asked ?? jobs[0].slug) : null;
+  const open = wide && !closed && jobs.length ? (asked ?? (autoOpen ? jobs[0].slug : null)) : null;
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +68,8 @@ export function JobList({ jobs, states, signedIn, panelTop = "top-6 max-h-[calc(
       if (e.metaKey || e.ctrlKey || e.altKey || (t && (t.closest("input, textarea, select, [contenteditable], [role=dialog], [role=listbox], [data-panel]")))) return;
       if (e.key === "Escape" && open) { setClosedFor(listKey); setJobParam(null, true); return; }
       const down = e.key === "ArrowDown" || e.key === "j", up = e.key === "ArrowUp" || e.key === "k";
-      if (!down && !up) return;
+      // Arrows move between jobs only while one is open; otherwise they scroll the page as usual.
+      if ((!down && !up) || !open) return;
       const i = Math.max(0, jobs.findIndex((j) => j.slug === open));
       const next = jobs[Math.min(jobs.length - 1, Math.max(0, i + (down ? 1 : -1)))];
       if (next && next.slug !== open) { e.preventDefault(); select(next.slug, true); }
