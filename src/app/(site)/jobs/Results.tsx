@@ -6,7 +6,7 @@ import { regionName } from "@/lib/regions";
 import { cardStates, countJobs, PAGE_SIZE, searchJobs } from "@/lib/queries";
 import { filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } from "@/lib/search";
 import { searchHref } from "@/lib/seo";
-import { categoryName, roleName } from "@/lib/taxonomy";
+import { categoryName, industryName, roleName } from "@/lib/taxonomy";
 import { currentUser } from "@/lib/supabase/server";
 import { FilterBar, SortPicker } from "./Filters";
 import { JobList } from "./JobList";
@@ -26,6 +26,7 @@ export function chips(f: F) {
   if (f.city) out.push({ label: placeName(f.city), without: { city: null } });
   if (f.role) out.push({ label: roleName(f.role), without: { role: null, category: null } });
   else if (f.category) out.push({ label: categoryName(f.category), without: { category: null } });
+  if (f.industry) out.push({ label: industryName(f.industry), without: { industry: null } });
   f.level.forEach((l) => out.push({ label: SENIORITY[l], without: { level: f.level.filter((x) => x !== l) } }));
   f.type.forEach((t) => out.push({ label: EMPLOYMENT[t], without: { type: f.type.filter((x) => x !== t) } }));
   if (f.pay) out.push({ label: "Shows pay", without: { pay: false } });

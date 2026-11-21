@@ -66,7 +66,7 @@ sql(`insert into jobs (org_id, slug, title, role, category, workplace, office_pl
   await p.waitForSelector("text=17 jobs");
   ok(await count() === "17 jobs", "Singapore: remote SEO jobs plus on-site Singapore jobs");
   await p.keyboard.press("Escape");
-  await pick("Area", null, "Customer success manager");
+  await pick("Industries", null, "Customer success manager");
   await p.waitForURL(/role=cs_manager/);
   ok(await count() === "8 jobs", "area filter by role");
   ok(await p.isVisible("text=Hiring in Singapore") && await p.isVisible("a[aria-label='Remove filter Customer success manager']"), "active filters show as removable tags");

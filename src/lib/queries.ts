@@ -37,6 +37,7 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
     company: f.company ?? undefined,
     no_agency: f.noAgency || undefined,
     agency: f.agency ?? undefined,
+    industry: f.industry ?? undefined,
   };
   const db = createVisitor();
   // The page and the total are separate calls: the database sorts only to find the page, and counts without sorting.
@@ -48,7 +49,7 @@ const cachedSearch = unstable_cache(async (key: string): Promise<{ jobs: JobWith
   if (counted.error) throw new Error(`searchJobs count: ${counted.error.message}`);
   const jobs = ((list.data ?? []) as unknown as Omit<JobWithOrg, "description">[]).map((j) => ({ ...j, description: "" }) as JobWithOrg);
   return { jobs, total: Number(counted.data ?? 0) };
-}, ["search-jobs-v3"], { revalidate: 300 });
+}, ["search-jobs-v4"], { revalidate: 300 });
 
 // company (a company slug) keeps to one company: the company pages by area. agency (an agency slug) keeps to its
 // clients: the agency page.

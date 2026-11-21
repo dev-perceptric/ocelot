@@ -297,6 +297,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"industries": {
+                  Row: {
+                    "name": string,"position": number,"slug": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "name": string,"position": number,"slug": string
+                  }
+                  Update: {
+                    "name"?: string,"position"?: number,"slug"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"interviews": {
                   Row: {
                     "created_at": string,"id": string,"item_id": string,"meeting_url": string | null,"notes": string,"starts_at": string,"title": string | null,"user_id": string
@@ -533,6 +547,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "agencies"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orgs_industry_fkey"
+      columns: ["industry"]
+isOneToOne: false
+      referencedRelation: "industries"
+      referencedColumns: ["slug"]
     }
                   ]
                 },"places": {
@@ -1074,7 +1094,7 @@ isOneToOne: false
 { Args: { "p_job": string }; Returns: string
                            },
 "search_jobs":
-{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"p_limit"?: number,"p_offset"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"industry"?: string,"min_pay"?: number,"no_agency"?: boolean,"p_limit"?: number,"p_offset"?: number,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"sort"?: string,"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "apply_method": string,
 "apply_url": string | null,
 "category": string | null,
@@ -1120,10 +1140,10 @@ isOneToOne: false
         isSetofReturn: true
       } },
 "search_jobs_count":
-{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"industry"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: number
                            },
 "search_matches":
-{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
+{ Args: { "agency"?: string,"category"?: string,"city"?: string,"company"?: string,"country"?: string,"industry"?: string,"min_pay"?: number,"no_agency"?: boolean,"pay_only"?: boolean,"posted_days"?: number,"q"?: string,"region"?: string,"role"?: string,"seniorities"?: (string)[],"types"?: (string)[],"workplaces"?: (string)[] }; Returns: {
               "featured": boolean,"id": string,"org_id": string,"published_at": string,"rank": number
             }[]
                            },

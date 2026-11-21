@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { PLACES } from "../src/lib/places.ts";
-import { CURRENCIES, ROLES } from "../src/lib/taxonomy.ts";
+import { CURRENCIES, INDUSTRIES, ROLES } from "../src/lib/taxonomy.ts";
 
 // The code's lists and the database's lists must match, or forms offer values the database refuses.
 const dir = new URL("../supabase/migrations/", import.meta.url);
@@ -33,4 +33,20 @@ test("currencies match the database", () => {
   for (const m of sql.matchAll(/(salary_currency|salary_hope_currency) in \(('[A-Z]{3}'(?:, '[A-Z]{3}')*)\)/g)) latest.set(m[1], m[2].replace(/'/g, "").split(", "));
   assert.equal(latest.size, 2);
   for (const list of latest.values()) assert.deepEqual(list, [...CURRENCIES]);
+});
+
+test("industries match the database, in the same order", () => {
+  const block = sql.slice(sql.indexOf("insert into public.industries"));
+  const rows = [...block.slice(0, block.indexOf(";")).matchAll(/\('([a-z_]+)', '([^']+)', (\d+)\)/g)]
+    .sort((a, b) => Number(a[3]) - Number(b[3])).map(([, slug, name]) => ({ slug, name }));
+  assert.equal(rows.length, 26);
+  assert.deepEqual(INDUSTRIES, rows);
+});
+
+test("every company industry set by a migration is on the list", () => {
+  const slugs = new Set(INDUSTRIES.map((i) => i.slug));
+  const block = sql.slice(sql.indexOf("update public.orgs o set industry = v.industry"));
+  const values = [...block.slice(0, block.indexOf(";")).matchAll(/\('[a-z0-9-]+', '([a-z_]+)'\)/g)].map((m) => m[1]);
+  assert.ok(values.length > 2000);
+  for (const v of values) assert.ok(slugs.has(v), v);
 });

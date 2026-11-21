@@ -37,6 +37,38 @@ export const ROLES: { slug: string; category: Category; name: string }[] = [
 export const CURRENCIES = ["USD", "CAD", "VND", "SGD", "THB", "MYR", "IDR", "PHP"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
+// Company industries, in the order the Industries filter and the company form show them. Mirrors the industries table
+// (supabase/migrations/042_industries.sql); tests/lists.test.ts checks they match.
+export const INDUSTRIES: { slug: string; name: string }[] = [
+  { slug: "software", name: "Software and SaaS" },
+  { slug: "ai_data", name: "AI and data" },
+  { slug: "security", name: "Cybersecurity" },
+  { slug: "fintech", name: "Finance and fintech" },
+  { slug: "insurance", name: "Insurance" },
+  { slug: "crypto", name: "Crypto and web3" },
+  { slug: "healthcare", name: "Healthcare" },
+  { slug: "biotech", name: "Biotech and pharma" },
+  { slug: "ecommerce", name: "E-commerce and retail" },
+  { slug: "consumer", name: "Consumer products" },
+  { slug: "food", name: "Food and restaurants" },
+  { slug: "marketing", name: "Marketing and advertising" },
+  { slug: "media", name: "Media and entertainment" },
+  { slug: "gaming", name: "Gaming" },
+  { slug: "education", name: "Education" },
+  { slug: "hr", name: "HR and recruiting" },
+  { slug: "travel", name: "Travel and hospitality" },
+  { slug: "real_estate", name: "Real estate and construction" },
+  { slug: "logistics", name: "Logistics and transportation" },
+  { slug: "manufacturing", name: "Manufacturing and hardware" },
+  { slug: "energy", name: "Energy and climate" },
+  { slug: "telecom", name: "Telecom" },
+  { slug: "automotive", name: "Automotive and mobility" },
+  { slug: "services", name: "Consulting and professional services" },
+  { slug: "nonprofit", name: "Nonprofit and government" },
+  { slug: "other", name: "Other" },
+];
+export const industryName = (slug: string) => INDUSTRIES.find((i) => i.slug === slug)?.name ?? slug;
+
 export const roleName = (slug: string) => ROLES.find((r) => r.slug === slug)?.name ?? slug;
 export const categoryName = (slug: string) => CATEGORIES.find((c) => c.slug === slug)?.name ?? slug;
 

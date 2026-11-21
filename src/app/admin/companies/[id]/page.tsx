@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { industryName } from "@/lib/taxonomy";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin";
 import { SIZE_LABEL } from "@/lib/company";
@@ -26,7 +27,7 @@ export default async function Company({ params }: { params: Promise<{ id: string
   ]);
   const free = new Map<string, number>();
   for (const c of credits ?? []) free.set(c.package, (free.get(c.package) ?? 0) + 1);
-  const facts = [org.website, org.industry, org.size ? SIZE_LABEL[org.size] : null, (org.office_places ?? []).map(placeName).join(", ")].filter(Boolean);
+  const facts = [org.website, org.industry ? industryName(org.industry) : null, org.size ? SIZE_LABEL[org.size] : null, (org.office_places ?? []).map(placeName).join(", ")].filter(Boolean);
 
   return (
     <div className="flex flex-col gap-10">
