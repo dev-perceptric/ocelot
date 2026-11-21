@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 
-// Log in and Sign up for visitors, My search for people signed in. Read in the browser from the sign-in cookie, so
+// Log in and Sign up for visitors, Dashboard (their own workspace) for people signed in. Read in the browser from the sign-in cookie, so
 // public pages stay the same for everyone and can be cached. Hidden (not removed) until known, so nothing jumps.
 export function AccountLinks() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -15,7 +15,7 @@ export function AccountLinks() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  if (signedIn) return <Link href="/app" className="px-2 py-2 hover:underline">My search</Link>;
+  if (signedIn) return <Link href="/dashboard" prefetch={false} className="px-2 py-2 hover:underline">Dashboard</Link>;
   return (
     <span className={`flex items-center gap-1 sm:gap-3 ${signedIn === null ? "invisible" : ""}`}>
       <Link href="/login" className="px-2 py-2 hover:underline">Log in</Link>
