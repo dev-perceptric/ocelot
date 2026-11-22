@@ -63,7 +63,8 @@ export async function JobResults({ filters: f, page, heading, intro, footer }: {
       <SearchBox key={f.q} q={f.q} keep={[...new URLSearchParams(filtersQuery({ ...f, q: "" }).slice(1))]} className="mt-6" />
       {intro}
 
-      <div className="mt-4"><FilterBar filters={f} /></div>
+      {/* The filters stay at the top of the screen while the list scrolls under them, like on the home page. */}
+      <div className="sticky top-0 z-30 -mx-5 mt-4 border-b border-border bg-surface px-5 py-3 md:-mx-8 md:px-8"><FilterBar filters={f} /></div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <p className="mr-2 text-meta text-muted" role="status">
@@ -83,7 +84,7 @@ export async function JobResults({ filters: f, page, heading, intro, footer }: {
         </div>
       </div>
       {jobs.length ? (
-        <JobList jobs={jobs} states={states} signedIn={Boolean(user)} />
+        <JobList jobs={jobs} states={states} signedIn={Boolean(user)} panelTop="top-24 max-h-[calc(100vh-7rem)]" />
       ) : (
         <div className="mt-4 border border-border bg-surface p-8 rounded-[var(--radius-card)]">
           <p className="text-card font-bold">{f.q || active.length ? `No jobs match${f.q ? ` "${f.q}"` : ""}${active.length ? ` with ${active.map((c) => c.label).join(", ")}` : ""}.` : "New jobs are on the way."}</p>
