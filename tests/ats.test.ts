@@ -108,7 +108,7 @@ test("only our roles in our countries come in", () => {
   assert.deepEqual(toJob({ ...base, title: "Senior Account Executive", places: ["Dublin"] }, SEA), { skip: "place" });
   assert.deepEqual(toJob({ ...base, title: "Backend Engineer", places: ["Singapore"] }, SEA), { skip: "role" });
   const any = toJob({ ...base, title: "Backend Engineer", places: ["Singapore"] }, { ...SEA, niche_only: false });
-  assert.ok("job" in any && any.job.category === "other");
+  assert.ok("job" in any && any.job.category === "engineering", "a board taking every role files it under its own area");
   const apac = toJob({ ...base, title: "Content Marketer", places: ["Remote - APAC"] }, SEA);
   assert.ok("job" in apac && apac.job.workplace === "remote" && apac.job.eligible_countries.length === 6);
   assert.deepEqual(toJob({ ...base, title: "Content Marketer", places: ["Remote from the US"] }, SEA), { skip: "place" });
@@ -174,7 +174,29 @@ test("trades, care and campus jobs stay out; their sales jobs stay in", () => {
 });
 
 test("a state code means the US only when the board doesn't name another country", () => {
-  assert.deepEqual(readPlaces({ places: ["Buenos Aires, AR"], countries: ["AR"], remote: null, hybrid: null }).countries, []);
+  assert.deepEqual(readPlaces({ places: ["Buenos Aires, AR"], countries: ["AR"], remote: null, hybrid: null }).countries, ["AR"]);
   assert.deepEqual(readPlaces({ places: ["Little Rock, AR"], countries: [], remote: null, hybrid: null }).countries, ["US"]);
   assert.deepEqual(readPlaces({ places: ["Austin, TX"], countries: ["United States of America"], remote: null, hybrid: null }).countries, ["US"]);
+});
+
+test("boards that take every role file each job under its area", async () => {
+  const { guessCategory } = await import("../src/lib/ats/normalize.ts");
+  const cases: [string, string][] = [
+    ["Senior Software Engineer", "engineering"], ["Data Scientist", "data"], ["Product Designer", "design"], ["Product Manager", "product"],
+    ["Account Executive", "sales"], ["Customer Success Manager", "customer_success"], ["Content Marketing Manager", "marketing"],
+    ["Registered Nurse", "healthcare"], ["Payroll Specialist", "finance"], ["Technical Recruiter", "people"], ["Office Manager", "operations"],
+    ["Corporate Counsel", "legal"], ["High School Teacher", "education"], ["Barista", "other"],
+  ];
+  for (const [title, area] of cases) assert.equal(guessCategory(title), area, title);
+});
+
+test("jobs abroad: new countries and regions, and pay only in a listed currency", () => {
+  const ALL = { countries: ["US", "CA", "GB", "DE", "ES", "BR", "MX", "ZA"], niche_only: false };
+  const base = { externalId: "1", applyUrl: "https://x.test/apply", postingUrl: "https://x.test", countries: [], remote: null, hybrid: null, employment: "Full-time", experience: null, html: "<p>Hi</p>", text: null, salary: null };
+  const berlin = toJob({ ...base, title: "Backend Engineer", places: ["Berlin, Germany"], salary: { min: 70000, max: 90000, currency: "EUR", period: "year" } }, ALL);
+  assert.ok("job" in berlin && berlin.job.eligible_countries.join() === "DE" && berlin.job.office_places.join() === "berlin" && berlin.job.salary_currency === "EUR");
+  const latam = toJob({ ...base, title: "Designer", places: ["Remote - LATAM"] }, ALL);
+  assert.ok("job" in latam && latam.job.eligible_countries.sort().join() === "BR,MX");
+  const chf = toJob({ ...base, title: "Designer", places: ["London"], salary: { min: 1, max: 2, currency: "CHF", period: "year" } }, ALL);
+  assert.ok("job" in chf && chf.job.salary_currency === null && chf.job.salary_min === null, "pay in a currency Ocelot doesn't list is left off");
 });

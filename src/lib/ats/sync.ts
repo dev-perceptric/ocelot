@@ -39,11 +39,12 @@ function getter(fetchImpl: typeof fetch): Get {
 
 // Titles Ocelot imports: marketing, sales and customer success, unless a board takes every role.
 export const ourTitle = (title: string) => Boolean(guessRole(title).category);
+export const anyTitle = () => true;
 
 // Every job on a board, following its pages, plus the company name when the feed gives one. Boards read through
 // several calls only open the jobs whose title is `wanted`.
-export async function loadBoard(provider: Provider, board: string, fetchImpl: typeof fetch = fetch, wanted: (title: string) => boolean = () => true): Promise<{ jobs: RawJob[]; company: string | null }> {
-  if (!isClassic(provider)) return READERS[provider](board, { get: getter(fetchImpl), wanted });
+export async function loadBoard(provider: Provider, board: string, fetchImpl: typeof fetch = fetch, wanted: (title: string) => boolean = anyTitle): Promise<{ jobs: RawJob[]; company: string | null }> {
+  if (!isClassic(provider)) return READERS[provider](board, { get: getter(fetchImpl), wanted, all: wanted === anyTitle });
   let url: string | null = feedUrl(provider, board, TEST_BASE);
   const jobs: RawJob[] = [];
   let company: string | null = null;
@@ -60,7 +61,7 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
   const db = createAdmin();
   const provider = src.provider as Provider;
   try {
-    const raw = (await loadBoard(provider, src.board, fetchImpl, src.niche_only ? ourTitle : () => true)).jobs;
+    const raw = (await loadBoard(provider, src.board, fetchImpl, src.niche_only ? ourTitle : anyTitle)).jobs;
     // Some boards list one job once per location under the same id: keep the first.
     const ids = new Set<string>();
     const picked = raw.flatMap((r) => {
@@ -154,14 +155,14 @@ export async function syncSource(src: Source, fetchImpl: typeof fetch = fetch): 
   }
 }
 
-// One hourly run: boards due a sync, six at a time, for at most 4 minutes.
-export async function runSources(budgetMs = 240_000): Promise<number> {
-  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 400 });
+// One hourly run: boards due a sync, eight at a time, for at most 10 minutes (enough to keep about 100,000 jobs fresh).
+export async function runSources(budgetMs = 600_000): Promise<number> {
+  const { data: due, error } = await createAdmin().rpc("due_sources", { p_limit: 1000 });
   if (error) throw error;
   const queue = [...(due ?? [])];
   const stopAt = Date.now() + budgetMs;
   let ok = 0;
-  await Promise.all(Array.from({ length: 6 }, async () => {
+  await Promise.all(Array.from({ length: 8 }, async () => {
     while (queue.length && Date.now() < stopAt) {
       const s = queue.shift()!;
       try { await syncSource(s); ok++; } catch (e) { console.error(`sync ${s.provider}/${s.board} failed`, e); }

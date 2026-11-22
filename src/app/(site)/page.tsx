@@ -24,8 +24,8 @@ export default async function Home() {
           </h1>
           <p className="mt-5 max-w-[640px] font-[family-name:var(--font-editorial)] text-lede">
             {total
-              ? <>{n(total)} marketing, sales and customer success jobs from {n(companies.length)} companies. Search for free, then track every application in one place.</>
-              : "Marketing, sales and customer success jobs. Search for free, then track every application in one place."}
+              ? <>{n(total)} jobs from {n(companies.length)} companies around the world. Search for free, then track every application in one place.</>
+              : "Jobs from companies around the world. Search for free, then track every application in one place."}
           </p>
           <form action="/jobs" className="mt-8 flex max-w-[760px] flex-col gap-3 sm:flex-row" role="search">
             <label htmlFor="q" className="sr-only">Role, company, place or keyword</label>

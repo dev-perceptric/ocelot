@@ -1,10 +1,20 @@
-// Job categories, roles and currencies. Mirrors the roles table and the currency checks in
-// supabase/migrations/003_lists_and_profiles.sql; tests/lists.test.ts fails if they drift apart.
+// Job categories, roles and currencies. Mirrors the category checks, the roles table and the currency checks in
+// supabase/migrations (latest: 044_open_up.sql); tests/lists.test.ts fails if they drift apart.
 
 export const CATEGORIES = [
   { slug: "marketing", name: "Marketing" },
   { slug: "sales", name: "Sales" },
   { slug: "customer_success", name: "Customer success" },
+  { slug: "engineering", name: "Engineering" },
+  { slug: "data", name: "Data and AI" },
+  { slug: "design", name: "Design" },
+  { slug: "product", name: "Product" },
+  { slug: "operations", name: "Operations" },
+  { slug: "finance", name: "Finance" },
+  { slug: "people", name: "People and HR" },
+  { slug: "legal", name: "Legal" },
+  { slug: "healthcare", name: "Healthcare" },
+  { slug: "education", name: "Education" },
   { slug: "other", name: "Other" },
 ] as const;
 
@@ -34,7 +44,7 @@ export const ROLES: { slug: string; category: Category; name: string }[] = [
   { slug: "cs_lead", category: "customer_success", name: "Customer success leadership" },
 ];
 
-export const CURRENCIES = ["USD", "CAD", "VND", "SGD", "THB", "MYR", "IDR", "PHP"] as const;
+export const CURRENCIES = ["USD", "CAD", "EUR", "GBP", "AUD", "INR", "VND", "SGD", "THB", "MYR", "IDR", "PHP"] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
 // Company industries, in the order the Industries filter and the company form show them. Mirrors the industries table

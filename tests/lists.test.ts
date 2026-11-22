@@ -50,3 +50,11 @@ test("every company industry set by a migration is on the list", () => {
   assert.ok(values.length > 2000);
   for (const v of values) assert.ok(slugs.has(v), v);
 });
+
+test("job areas match the database", async () => {
+  const { CATEGORIES } = await import("../src/lib/taxonomy.ts");
+  // The latest definition of the jobs category check is the one in force.
+  const checks = [...sql.matchAll(/jobs_category_check check \(category in \(([^)]*)\)\)/g)];
+  const latest = checks[checks.length - 1][1].replace(/'/g, "").split(", ");
+  assert.deepEqual(latest, CATEGORIES.map((c) => c.slug));
+});

@@ -34,7 +34,7 @@ export default async function Pricing() {
             Meet your next <span className="highlight">great hire.</span>
           </h1>
           <p className="mt-6 max-w-[60ch] font-[family-name:var(--font-editorial)] text-lede">
-            Reach people looking for marketing, sales and customer success jobs. Post now, no call or contract needed.
+            Reach people looking for their next job, wherever they are. Post now, no call or contract needed.
           </p>
 
           <div className="mt-10 grid max-w-[900px] gap-4 md:grid-cols-2">

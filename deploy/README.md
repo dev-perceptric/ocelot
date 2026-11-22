@@ -108,5 +108,11 @@ The OVH SYS-1 has 6 cores and 32 GB, shared with the other apps. On the old Host
 slowed Ocelot down to stay under its CPU limit (discovery paused, boards synced twice a week). Migration
 `038_ovh_limits.sql` undid that, and `ocelot-jobs` now gets one full core. Don't run `trim-server.sh` on OVH.
 
+Since migration `044_open_up.sql` (every role, every country, up to 100,000 imported jobs), `sb-ocelot`'s database gets
+2 GB with 512 MB of shared buffers, and `ocelot-jobs` gets two cores. Measured on 1 CPU and 1 GB: at 100,000 jobs the
+first page takes about 0.7 s and a keyword search about 1.2 s before the site's 5-minute cache; at 250,000 rows
+(150,000 shown after duplicates) about 1 s and 2 s, so about 150,000 is the practical top without more work on
+search. 100,000 jobs take about 350 MB.
+
 After pulling a compose change from the repo (such as the `ocelot-jobs` CPU limit), copy the file to its folder in
 `/docker` and run `docker compose up -d` there. autodeploy only updates images.

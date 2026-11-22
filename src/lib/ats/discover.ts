@@ -4,13 +4,15 @@ import { createAdmin } from "@/lib/supabase/server";
 import { PROVIDERS, type Provider } from "./boards";
 import { cleanCompanyName, sameCompany } from "./names";
 import { toJob } from "./normalize";
-import { loadBoard, ourTitle, syncSource } from "./sync";
+import { COUNTRIES } from "@/lib/places";
+import { anyTitle, loadBoard, syncSource } from "./sync";
 
 // Looks for companies' job boards by itself. Each name on the list is tried on every board type whose address is
 // the company's name (or its known board) once a week; a board with jobs that pass the default filters becomes a
 // source and syncs at once. Boards found in the public web crawl (found_by "crawl") are checked once a month.
 
-const DEFAULT = { countries: ["US", "CA"], niche_only: true };
+// New boards take every role from every country on the list (044_open_up.sql sets the same for the table).
+const DEFAULT = { countries: COUNTRIES.map((c) => c.country_code), niche_only: false };
 const ORDER: Provider[] = ["greenhouse", "lever", "ashby", "smartrecruiters", "recruitee", "workable", "bamboohr", "breezy", "rippling", "pinpoint", "teamtailor", "jazzhr"];
 
 type Candidate = { slug: string; name: string; provider: string | null; board: string | null; found_by?: string };
@@ -38,7 +40,7 @@ async function check(c: Candidate, fetchImpl: typeof fetch): Promise<boolean> {
   let found: { provider: Provider; board: string; company: string | null } | null = null;
   for (const [p, b] of tries) {
     try {
-      const { jobs, company } = await loadBoard(p, b, fetchImpl, ourTitle);
+      const { jobs, company } = await loadBoard(p, b, fetchImpl, anyTitle);
       if (!jobs.length) continue;
       // A board under this name that belongs to someone else ("wise" is Wise Benefits): keep looking. A board
       // found in the crawl is its own company.

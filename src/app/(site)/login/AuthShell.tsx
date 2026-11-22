@@ -8,7 +8,7 @@ import { signInWithGoogle } from "./actions";
 const SEEKER = {
   title: <>Land your next <span className="highlight text-ink">dream job.</span></>,
   points: [
-    { icon: Search, line: "Search marketing, sales and customer success jobs" },
+    { icon: Search, line: "Search jobs from companies around the world" },
     { icon: Bookmark, line: "Save jobs from Ocelot and anywhere else" },
     { icon: ListChecks, line: "Track every application, from saved to signed offer" },
   ],

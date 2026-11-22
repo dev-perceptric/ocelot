@@ -116,11 +116,12 @@ const server = http.createServer((req, res) => {
     ok(true, "a link that isn't a job board is refused");
 
     await add("https://boards.greenhouse.io/acmeasia", "Acme Asia");
-    await p.waitForSelector("text=Greenhouse board added. 2 of 4 jobs came in.");
+    await p.waitForSelector("text=Greenhouse board added. 4 of 4 jobs came in.");
     ok(true, "adding a board imports its jobs straight away");
     const org = one("select id from orgs where name = 'Acme Asia'");
     ok(sql(`select string_agg(title || ':' || array_to_string(eligible_countries, ',') || ':' || workplace || ':' || apply_method, '|' order by title) from jobs where org_id = '${org}' and status = 'published'`)
-      === "Account Executive:CA:on_site:external|Senior SEO Specialist:US:on_site:external", "only our roles in the US and Canada come in, applying on the company site");
+      === "Account Executive:CA:on_site:external|Backend Engineer:US:on_site:external|Marketing Manager:IE:on_site:external|Senior SEO Specialist:US:on_site:external", "every role from every country on the list comes in, applying on the company site");
+    ok(sql("select category from jobs where title = 'Backend Engineer'") === "engineering", "a job outside marketing, sales and customer success is filed under its area");
     ok(sql(`select description from jobs where title = 'Senior SEO Specialist'`) === "Join Senior SEO Specialist at Acme Asia.\n\n• Own the plan", "the description is clean text");
     ok(sql(`select role || '|' || seniority from jobs where title = 'Senior SEO Specialist'`) === "seo|senior", "role and level are read from the title");
 
@@ -139,7 +140,7 @@ const server = http.createServer((req, res) => {
     await p.goto(`${APP}/admin/sources`);
     await p.getByRole("button", { name: "Actions for Greenhouse acmeasia" }).click();
     await p.getByRole("menuitem", { name: "Sync now" }).click();
-    await p.waitForSelector("text=Synced: 1 of 2 jobs: 0 new, 1 closed");
+    await p.waitForSelector("text=Synced: 2 of 2 jobs: 0 new, 2 closed");
     ok(sql("select status from jobs where external_id = '1'") === "closed", "a job that left the board closes");
     ok(sql("select title from jobs where external_id = '2'") === "Senior Account Executive", "changes on the board come through");
 
@@ -166,7 +167,7 @@ const server = http.createServer((req, res) => {
     sql("delete from job_sources where board = 'acmeasia'");
     await add("boards.greenhouse.io/acmeasia", null);
     await p.waitForSelector("text=Greenhouse board added. 2 of 2 jobs came in.");
-    ok(sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia')") === "3" && sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia') and status = 'published' and source_id is not null") === "2",
+    ok(sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia')") === "5" && sql("select count(*) from jobs where org_id = (select id from orgs where name = 'Acme Asia') and status = 'published' and source_id is not null") === "2",
       "a board added again takes back its old jobs");
 
     // A sync where nothing changed on the board writes nothing (each write is logged against the plan).
@@ -188,7 +189,7 @@ const server = http.createServer((req, res) => {
     ok(sql("select provider || '/' || board || '|' || (select name from orgs where id = job_sources.org_id) from job_sources where board = 'lumenasia'") === "greenhouse/lumenasia|Lumen Asia", "adds it under the company's name from the board");
     ok(await until(() => sql("select checked_at is not null from board_candidates where slug = 'otherco'") === "t") && sql("select count(*) from job_sources where board = 'otherco'") === "0"
       && sql("select count(*) from orgs where name = 'Totally Different Benefits'") === "0", "a board under the name that belongs to another company is left out");
-    ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|') from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:US,CA", "and imports its jobs that fit");
+    ok(sql("select string_agg(title || ':' || array_to_string(eligible_countries, ','), '|' order by title) from jobs where source_id = (select id from job_sources where board = 'lumenasia') and status = 'published'") === "Growth Marketing Lead:US,CA|Staff Engineer:US", "and imports its jobs that fit");
     ok(sql("select provider || '/' || board from board_candidates where slug = 'lumenasia'") === "greenhouse/lumenasia" && sql("select checked_at is not null from board_candidates where slug = 'lumenasia'") === "t", "the board is remembered for next week's check");
 
     // Logos: the new company's website is found from its board, and its square icon becomes the logo.
