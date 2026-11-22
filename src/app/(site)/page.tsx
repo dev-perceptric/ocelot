@@ -5,7 +5,7 @@ import { cardStates, hiringCompanies, searchJobs } from "@/lib/queries";
 import { readFilters } from "@/lib/search";
 import { currentUser } from "@/lib/supabase/server";
 import { EndlessList } from "./jobs/EndlessList";
-import { FilterBar } from "./jobs/Filters";
+import { StickyFilters } from "./jobs/StickyFilters";
 
 const n = (x: number) => x.toLocaleString("en-US");
 
@@ -44,8 +44,9 @@ export default async function Home() {
       {/* The filters stay at the top of the screen while the list scrolls under them. */}
       <div className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-[1200px] items-center gap-4 px-5 py-3 md:px-8">
-          <div className="min-w-0 flex-1"><FilterBar filters={readFilters({})} /></div>
-          {total ? <p className="hidden shrink-0 text-meta text-muted lg:block">{n(total)} jobs</p> : null}
+          <div className="min-w-0 flex-1">
+            <StickyFilters filters={readFilters({})} end={total ? <p className="hidden shrink-0 text-meta text-muted lg:block">{n(total)} jobs</p> : null} />
+          </div>
         </div>
       </div>
 

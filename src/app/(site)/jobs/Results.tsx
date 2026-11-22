@@ -8,7 +8,8 @@ import { filtersQuery, payLabel, POSTED_LABEL, readFilters, type Filters as F } 
 import { searchHref } from "@/lib/seo";
 import { categoryName, industryName, roleName } from "@/lib/taxonomy";
 import { currentUser } from "@/lib/supabase/server";
-import { FilterBar, SortPicker } from "./Filters";
+import { SortPicker } from "./Filters";
+import { StickyFilters } from "./StickyFilters";
 import { JobList } from "./JobList";
 import { SearchBox } from "./SearchBox";
 import { SaveSearch } from "./SaveSearch";
@@ -64,7 +65,7 @@ export async function JobResults({ filters: f, page, heading, intro, footer }: {
       {intro}
 
       {/* The filters stay at the top of the screen while the list scrolls under them, like on the home page. */}
-      <div className="sticky top-0 z-30 -mx-5 mt-4 border-b border-border bg-surface px-5 py-3 md:-mx-8 md:px-8"><FilterBar filters={f} /></div>
+      <div className="sticky top-0 z-30 -mx-5 mt-4 border-b border-border bg-surface px-5 py-3 md:-mx-8 md:px-8"><StickyFilters filters={f} /></div>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
         <p className="mr-2 text-meta text-muted" role="status">

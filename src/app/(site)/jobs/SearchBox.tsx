@@ -25,7 +25,7 @@ function remember(q: string) {
 
 type Option = { key: string; label: string; meta?: string; kind: "title" | "company" | "recent"; go: () => void };
 
-export function SearchBox({ q = "", keep = [], className = "" }: { q?: string; keep?: [string, string][]; className?: string }) {
+export function SearchBox({ q = "", keep = [], className = "", autoFocus = false }: { q?: string; keep?: [string, string][]; className?: string; autoFocus?: boolean }) {
   const router = useRouter();
   const id = useId();
   const formRef = useRef<HTMLFormElement>(null);
@@ -72,6 +72,7 @@ export function SearchBox({ q = "", keep = [], className = "" }: { q?: string; k
           aria-activedescendant={showing && active >= 0 ? `${id}-o${active}` : undefined}
           className={inputClass}
           onChange={(e) => { setText(e.target.value); setOpen(true); setActive(-1); }}
+          autoFocus={autoFocus}
           onFocus={() => { setRecent(readRecent()); setOpen(true); }}
           onBlur={() => setTimeout(() => setOpen(false), 120)}
           onKeyDown={(e) => {
