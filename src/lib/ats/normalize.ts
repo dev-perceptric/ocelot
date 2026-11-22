@@ -4,6 +4,7 @@
 import { CITIES, COUNTRIES } from "../places.ts";
 import { CITY_REGION, regionsIn } from "../regions.ts";
 import { slugify } from "../jobs.ts";
+import { CURRENCIES } from "../taxonomy.ts";
 import type { RawJob } from "./boards.ts";
 
 // ---------- Text ----------
@@ -42,6 +43,8 @@ export function htmlToText(html: string): string {
 const COUNTRY_ALIASES: Record<string, string> = {
   "viet nam": "VN", "usa": "US", "u.s.": "US", "u.s": "US", "us": "US", "united states of america": "US", "uk": "GB", "england": "GB",
   "great britain": "GB", "uae": "AE", "korea": "KR", "republic of korea": "KR", "hong kong sar": "HK",
+  "scotland": "GB", "wales": "GB", "the netherlands": "NL", "holland": "NL", "deutschland": "DE", "españa": "ES", "brasil": "BR",
+  "méxico": "MX", "czech republic": "CZ", "türkiye": "TR", "ksa": "SA", "kingdom of saudi arabia": "SA", "prc": "CN",
   // States and provinces people write out in full (Georgia and Washington are left out: a country and a city).
   "california": "US", "texas": "US", "florida": "US", "illinois": "US", "massachusetts": "US", "colorado": "US", "arizona": "US",
   "oregon": "US", "utah": "US", "virginia": "US", "north carolina": "US", "pennsylvania": "US", "ohio": "US", "michigan": "US",
@@ -51,6 +54,8 @@ const COUNTRY_ALIASES: Record<string, string> = {
 const CITY_ALIASES: Record<string, string> = {
   "ho chi minh": "ho-chi-minh-city", "hcmc": "ho-chi-minh-city", "saigon": "ho-chi-minh-city", "ha noi": "hanoi", "bangalore": "bengaluru",
   "nyc": "new-york", "new york city": "new-york", "sf": "san-francisco", "bay area": "san-francisco", "sf bay area": "san-francisco",
+  "münchen": "munich", "tel aviv-yafo": "tel-aviv", "bombay": "mumbai", "cdmx": "mexico-city", "ciudad de méxico": "mexico-city",
+  "são paulo": "sao-paulo", "bogota": "bogota", "zürich": "zurich",
   "washington dc": "washington-dc", "washington d.c.": "washington-dc", "dc": "washington-dc", "montréal": "montreal", "kitchener-waterloo": "waterloo",
 };
 // "Austin, TX" or "Toronto, ON": a state or province code after a comma.
@@ -62,7 +67,10 @@ const REGIONS: [RegExp, string[] | "*"][] = [
   [/\b(worldwide|anywhere|global)\b/i, "*"],
   [/\b(north america|americas|us\s*(and|&|\/|or)\s*canada|canada\s*(and|&|\/|or)\s*us)\b/i, ["US", "CA"]],
   [/\b(apac|asia[- ]?pacific|asia|south[- ]?east asia|southeast asia)\b/i, ["VN", "SG", "TH", "MY", "ID", "PH", "KH", "LA", "MM", "BN", "HK", "TW", "JP", "KR", "IN", "AU", "NZ"]],
-  [/\b(emea|europe)\b/i, ["GB", "IE", "DE", "NL", "FR", "AE"]],
+  [/\b(emea|europe|eu)\b/i, ["GB", "IE", "DE", "NL", "FR", "ES", "PT", "IT", "BE", "CH", "AT", "SE", "NO", "DK", "FI", "PL", "CZ", "RO", "GR", "HU", "EE", "LT", "UA"]],
+  [/\b(emea|middle east|mena)\b/i, ["AE", "IL", "SA", "QA", "TR", "EG", "MA"]],
+  [/\b(emea|africa)\b/i, ["ZA", "NG", "KE", "EG", "MA"]],
+  [/\b(latam|latin america|south america|central america)\b/i, ["MX", "BR", "AR", "CO", "CL", "PE", "CR", "UY"]],
 ];
 
 const clean = (t: string) => t.toLowerCase().replace(/[^a-z0-9.\u00c0-\u024f\s-]/g, " ").replace(/\s+/g, " ").trim();
@@ -156,6 +164,28 @@ const CATEGORY_RULES: [RegExp, "marketing" | "sales" | "customer_success"][] = [
   [/\bcustomer (success|experience)\b|\bclient success\b/i, "customer_success"],
 ];
 
+// Every other kind of job, for boards that take all roles. First match wins, so narrower areas come first.
+const BROAD_RULES: [RegExp, string][] = [
+  [/\b(data (scientist|engineer|analyst|architect)|machine learning|\bml\b|ai (engineer|researcher|scientist)|analytics|business intelligence|\bbi\b (analyst|developer)|statistician|research scientist)\b/i, "data"],
+  [/\b(product manager|product owner|product lead|head of product|vp,? product|director,? product|group product)\b/i, "product"],
+  [/\b(designer|design (lead|manager|director)|\bux\b|\bui\b|user experience|user research|creative director|art director|illustrator|animator|motion)\b/i, "design"],
+  [/\b(engineer|engineering|developer|programmer|devops|\bsre\b|site reliability|software|firmware|frontend|front-end|backend|back-end|full[- ]?stack|\bqa\b|quality assurance|test automation|architect|security analyst|it support|it administrator|systems administrator|network)\b/i, "engineering"],
+  [/\b(counsel|lawyer|attorney|legal|paralegal|compliance|privacy officer)\b/i, "legal"],
+  [/\b(accountant|accounting|finance|financial|controller|tax|treasury|audit|fp&a|bookkeep|payroll|billing specialist|accounts (payable|receivable))\b/i, "finance"],
+  [/\b(recruiter|recruiting|recruitment|talent|sourcer|\bhr\b|human resources|people (operations|partner|ops|team)|hrbp|learning and development|l&d)\b/i, "people"],
+  [/\b(nurse|nursing|physician|doctor|therapist|pharmacist|medical|clinical|clinician|dental|dentist|caregiver|psychologist|counselor|health coach)\b/i, "healthcare"],
+  [/\b(teacher|tutor|instructor|professor|lecturer|curriculum|educator|teaching)\b/i, "education"],
+  [/\b(operations|\bops\b|project manager|program manager|executive assistant|office manager|administrative|coordinator|supply chain|logistics|procurement|warehouse|driver|technician|facilities|chief of staff)\b/i, "operations"],
+];
+
+// The job area of any title: marketing, sales or customer success when it's one of those, else the closest other area.
+export function guessCategory(title: string): string {
+  const ours = guessRole(title).category;
+  if (ours) return ours;
+  for (const [re, category] of BROAD_RULES) if (re.test(title)) return category;
+  return "other";
+}
+
 export function guessRole(title: string): { role: string | null; category: "marketing" | "sales" | "customer_success" | null } {
   if (NOT_OUR_ROLES.test(title)) return { role: null, category: null };
   for (const [re, role, category] of ROLE_RULES) if (re.test(title)) return { role, category };
@@ -216,7 +246,9 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
   const regions = [...new Set([...regionsIn(raw.places), ...p.cities.map((c) => CITY_REGION[c]).filter(Boolean)])]
     .filter((r) => eligible.includes(r.slice(0, 2))).sort();
   const sal = raw.salary;
-  const currency = sal?.currency && /^[A-Z]{3}$/.test(sal.currency.toUpperCase()) ? sal.currency.toUpperCase() : null;
+  // Only currencies on Ocelot's list (the database refuses others); pay in any other currency is left off.
+  const code = sal?.currency?.toUpperCase() ?? "";
+  const currency = (CURRENCIES as readonly string[]).includes(code) ? code : null;
   const hasPay = Boolean(currency && sal?.period && (sal.min !== null || sal.max !== null));
   return {
     job: {
@@ -226,7 +258,7 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
       office_places: p.remote ? [] : p.cities.filter((c) => wanted.has(CITIES.find((x) => x.slug === c)?.country_code ?? "")),
       office_regions: regions,
       eligible_countries: eligible,
-      role, category: category ?? "other",
+      role, category: category ?? guessCategory(raw.title),
       seniority: guessSeniority(raw.title, raw.experience), employment_type: mapEmployment(raw.employment, raw.title),
       salary_min: hasPay ? sal!.min : null, salary_max: hasPay ? sal!.max : null,
       salary_currency: hasPay ? currency : null, salary_period: hasPay ? sal!.period : null,

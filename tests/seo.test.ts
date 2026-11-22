@@ -56,6 +56,6 @@ test("searches with other filters stay on Find jobs", () => {
 test("every area and place has its own address", () => {
   assert.equal(new Set(AREAS.map((a) => a.slug)).size, AREAS.length);
   assert.equal(new Set(PLACES.map((p) => p.slug)).size, PLACES.length);
-  assert.equal(AREAS.length, 3 + 21);
+  assert.equal(AREAS.length, 13 + 21); // every job area but Other, and the 21 marketing, sales and customer success roles
   assert.ok(PLACES.length > 90);
 });

@@ -10,7 +10,8 @@ import { Button, Checkbox, Field, inputClass } from "@/components/ui";
 import { COUNTRIES } from "@/lib/places";
 import * as A from "../actions";
 
-const NORTH_AMERICA = ["US", "CA"];
+// New boards take every country on the list, like the boards Ocelot finds itself.
+const EVERYWHERE = COUNTRIES.map((c) => c.country_code);
 
 export function AddSource({ orgs }: { orgs: { id: string; name: string }[] }) {
   const [open, setOpen] = useState(false);
@@ -43,9 +44,9 @@ export function AddSource({ orgs }: { orgs: { id: string; name: string }[] }) {
             </Field>
           ) : null}
           <Field label="Countries" htmlFor="board-countries">
-            <Select id="board-countries" name="countries" multiple defaultValue={NORTH_AMERICA} options={COUNTRIES.map((c) => ({ value: c.country_code, label: c.name }))} />
+            <Select id="board-countries" name="countries" multiple defaultValue={EVERYWHERE} options={COUNTRIES.map((c) => ({ value: c.country_code, label: c.name }))} />
           </Field>
-          <Checkbox id="board-niche" name="niche_only" defaultChecked label="Only marketing, sales and customer success roles" />
+          <Checkbox id="board-niche" name="niche_only" label="Only marketing, sales and customer success roles" />
           {state.error ? <p className="text-meta text-danger" role="alert">{state.error}</p> : null}
         </form>
       </Modal>

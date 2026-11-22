@@ -6,7 +6,8 @@
 import type { RawJob } from "./boards.ts";
 
 export type Get = (url: string, init?: { post?: unknown; text?: boolean }) => Promise<unknown>;
-export type ReadOpts = { get: Get; wanted: (title: string) => boolean };
+// all: the board takes every role, so readers that search can list everything instead of searching for our roles.
+export type ReadOpts = { get: Get; wanted: (title: string) => boolean; all?: boolean };
 export type Read = { jobs: RawJob[]; company: string | null };
 
 export const MORE_PROVIDERS = ["workday", "bamboohr", "breezy", "rippling", "pinpoint", "teamtailor", "personio", "jobvite", "jazzhr", "icims"] as const;
@@ -93,11 +94,11 @@ export function workdayParts(board: string) {
   return { tenant, host, site, api: `https://${host}/wday/cxs/${tenant}/${site}`, home: `https://${host}/${site}` };
 }
 
-async function workday(board: string, { get, wanted }: ReadOpts): Promise<Read> {
+async function workday(board: string, { get, wanted, all }: ReadOpts): Promise<Read> {
   const w = workdayParts(board);
   if (!w) throw new Error("This Workday board link isn't complete.");
   const seen = new Map<string, O>();
-  for (const term of ["sales", "marketing", "customer success"]) {
+  for (const term of all ? [""] : ["sales", "marketing", "customer success"]) {
     for (let offset = 0; offset < 40; offset += 20) {
       const page = obj(await get(`${w.api}/jobs`, { post: { appliedFacets: {}, limit: 20, offset, searchText: term } }));
       const posts = arr(page.jobPostings);

@@ -155,7 +155,7 @@ select pg_temp.fails(
   format($$insert into jobs (org_id, slug, title, created_by, eligible_countries) values (%L, 'g2', 'G2', auth.uid(), '{XX}')$$, :'acme'),
   'a job cannot use a country that is not on the list');
 select pg_temp.fails(
-  format($$insert into jobs (org_id, slug, title, created_by, salary_currency) values (%L, 'g3', 'G3', auth.uid(), 'EUR')$$, :'acme'),
+  format($$insert into jobs (org_id, slug, title, created_by, salary_currency) values (%L, 'g3', 'G3', auth.uid(), 'CHF')$$, :'acme'),
   'a job cannot use a currency that is not on the list');
 insert into jobs (org_id, slug, title, created_by, role, category, office_places, eligible_countries)
   values (:'acme', 'acme-seo-lead', 'SEO Lead', auth.uid(), 'seo', 'sales', '{ho-chi-minh-city}', '{VN,SG}');
@@ -839,7 +839,7 @@ update profiles set salary_hope_min = 90000, salary_hope_currency = 'CAD', salar
 select pg_temp.expect((select salary_hope_currency = 'CAD' and country_code = 'CA' from profiles where id = auth.uid()), 'pay in CAD and Canadian cities work on profiles');
 select pg_temp.fails($$update profiles set salary_hope_currency = 'XYZ' where id = auth.uid()$$, 'unknown currencies are still refused');
 reset role;
-select pg_temp.expect((select count(*) from job_sources where countries <> '{US,CA}') = 0, 'every job board now looks for US and Canadian jobs');
+select pg_temp.expect((select count(*) from job_sources where niche_only or cardinality(countries) <> (select count(*) from places where kind = 'country')) = 0, 'every job board takes every role from every country on the list (044_open_up.sql)');
 -- ---------- The hourly run's pass ----------
 reset role;
 insert into cron_passes (token) values (repeat('a', 48));
@@ -926,7 +926,7 @@ update job_sources set sync_hours = 24, last_synced_at = now() - interval '7 hou
 select pg_temp.expect(not exists (select 1 from due_sources() where provider = 'workday'), 'crawl boards sync once a day');
 update job_sources set last_synced_at = now() - interval '25 hours' where provider = 'workday';
 select pg_temp.expect(exists (select 1 from due_sources() where provider = 'workday'), 'and sync again after a day');
-select pg_temp.expect((select max_imported_jobs from app_settings) = 25000, 'imported jobs are capped at 25,000 on Ocelot''s own database');
+select pg_temp.expect((select max_imported_jobs from app_settings) = 100000, 'imported jobs are capped at 100,000 on Ocelot''s own database (044_open_up.sql)');
 select pg_temp.fails($$insert into job_sources (org_id, provider, board) select id, 'myspace', 'acme' from orgs where slug = 'region-co'$$, 'unknown board kinds are refused');
 select pg_temp.fails($$insert into board_candidates (slug, name, found_by) values ('odd', 'Odd', 'rumor')$$, 'a list entry says where it came from');
 reset role;

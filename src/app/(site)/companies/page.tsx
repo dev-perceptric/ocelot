@@ -8,7 +8,7 @@ export const revalidate = 600;
 
 export const metadata: Metadata = {
   title: "Companies hiring",
-  description: "Companies with open marketing, sales and customer success jobs on Ocelot.",
+  description: "Companies hiring on Ocelot, with their open jobs.",
   alternates: { canonical: "/companies" },
 };
 
