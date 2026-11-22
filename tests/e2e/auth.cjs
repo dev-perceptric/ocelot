@@ -55,8 +55,8 @@ const EMAIL = "pia@pass.test", PASSWORD = "first-password-1", NEW_PASSWORD = "se
   await p.getByRole("button", { name: "Continue" }).click();
   await p.waitForURL((u) => !u.pathname.startsWith("/welcome"));
   await p.goto(`${APP}/`);
-  await p.locator("header").getByRole("link", { name: "My search" }).waitFor();
-  ok(!(await p.locator("header").getByRole("link", { name: "Log in", exact: true }).isVisible()), "signed in, the header shows My search instead");
+  await p.locator("header").getByRole("link", { name: "Dashboard" }).waitFor();
+  ok(!(await p.locator("header").getByRole("link", { name: "Log in", exact: true }).isVisible()), "signed in, the header shows Dashboard instead");
 
   // Log out, then a wrong password and the right one.
   await p.request.post(`${APP}/auth/signout`);
