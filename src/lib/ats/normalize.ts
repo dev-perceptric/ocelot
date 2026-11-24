@@ -168,7 +168,7 @@ const CATEGORY_RULES: [RegExp, "marketing" | "sales" | "customer_success"][] = [
 const BROAD_RULES: [RegExp, string][] = [
   [/\b(data (scientist|engineer|analyst|architect)|machine learning|\bml\b|ai (engineer|researcher|scientist)|analytics|business intelligence|\bbi\b (analyst|developer)|statistician|research scientist)\b/i, "data"],
   [/\b(product manager|product owner|product lead|head of product|vp,? product|director,? product|group product)\b/i, "product"],
-  [/\b(designer|design (lead|manager|director)|\bux\b|\bui\b|user experience|user research|creative director|art director|illustrator|animator|motion)\b/i, "design"],
+  [/\b(designer|design (lead|manager|director)|(head|vp|director),? (of )?design|\bux\b|\bui\b(?! (engineer|developer))|user experience|user research|creative director|art director|illustrator|animator|motion)\b/i, "design"],
   [/\b(engineer|engineering|developer|programmer|devops|\bsre\b|site reliability|software|firmware|frontend|front-end|backend|back-end|full[- ]?stack|\bqa\b|quality assurance|test automation|architect|security analyst|it support|it administrator|systems administrator|network)\b/i, "engineering"],
   [/\b(counsel|lawyer|attorney|legal|paralegal|compliance|privacy officer)\b/i, "legal"],
   [/\b(accountant|accounting|finance|financial|controller|tax|treasury|audit|fp&a|bookkeep|payroll|billing specialist|accounts (payable|receivable))\b/i, "finance"],
@@ -177,6 +177,30 @@ const BROAD_RULES: [RegExp, string][] = [
   [/\b(teacher|tutor|instructor|professor|lecturer|curriculum|educator|teaching)\b/i, "education"],
   [/\b(operations|\bops\b|project manager|program manager|executive assistant|office manager|administrative|coordinator|supply chain|logistics|procurement|warehouse|driver|technician|facilities|chief of staff)\b/i, "operations"],
 ];
+
+// Detailed roles inside engineering and design, for titles guessCategory files there. First match wins, so leadership
+// and narrower roles come first.
+const AREA_ROLE_RULES: [RegExp, string, "engineering" | "design"][] = [
+  [/\b(head|director|vp|vice president|chief)\b.*\bengineering\b|\bengineering (manager|director|lead)\b|\bcto\b/i, "eng_lead", "engineering"],
+  [/\bsecurity\b|\bappsec\b|\binfosec\b|\bpenetration\b|\bpen ?test/i, "security", "engineering"],
+  [/\bdevops\b|\bsre\b|\bsite reliability\b|\b(platform|infrastructure|cloud) engineer/i, "devops", "engineering"],
+  [/\bqa\b|\bquality assurance\b|\btest automation\b|\bsdet\b|\btest engineer/i, "qa", "engineering"],
+  [/\bmobile\b|\bios\b|\bandroid\b|\breact native\b|\bflutter\b/i, "mobile", "engineering"],
+  [/\bfull[- ]?stack\b/i, "full_stack", "engineering"],
+  [/\bfront[- ]?end\b|\bui (engineer|developer)\b/i, "frontend", "engineering"],
+  [/\bback[- ]?end\b/i, "backend", "engineering"],
+  [/\b(head|director|vp|vice president|chief)\b.*\bdesign\b|\bdesign (manager|director|lead)\b|\bcreative director\b/i, "design_lead", "design"],
+  [/\b(user|ux|design) research/i, "ux_research", "design"],
+  [/\bmotion\b|\banimat|\billustrat|\b3d (artist|designer)\b/i, "motion", "design"],
+  [/\b(brand|graphic|visual|communication) designer\b|\bart director\b/i, "brand_design", "design"],
+  [/\bproduct designer\b|\bux\b|\bui\b|\buser experience\b|\binteraction designer\b/i, "product_design", "design"],
+];
+
+// The engineering or design role of a title already filed under that area, or null.
+export function guessAreaRole(title: string, category: string): string | null {
+  for (const [re, role, area] of AREA_ROLE_RULES) if (area === category && re.test(title)) return role;
+  return null;
+}
 
 // The job area of any title: marketing, sales or customer success when it's one of those, else the closest other area.
 export function guessCategory(title: string): string {
@@ -233,6 +257,7 @@ export type JobFields = {
 export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { skip: "role" | "place" } {
   const { role, category } = guessRole(raw.title);
   if (rules.niche_only && !category) return { skip: "role" };
+  const area = category ?? guessCategory(raw.title);
   const p = readPlaces(raw);
   const wanted = new Set(rules.countries);
   const inWanted = p.countries.filter((c) => wanted.has(c));
@@ -258,7 +283,7 @@ export function toJob(raw: RawJob, rules: SourceRules): { job: JobFields } | { s
       office_places: p.remote ? [] : p.cities.filter((c) => wanted.has(CITIES.find((x) => x.slug === c)?.country_code ?? "")),
       office_regions: regions,
       eligible_countries: eligible,
-      role, category: category ?? guessCategory(raw.title),
+      role: role ?? guessAreaRole(raw.title, area), category: area,
       seniority: guessSeniority(raw.title, raw.experience), employment_type: mapEmployment(raw.employment, raw.title),
       salary_min: hasPay ? sal!.min : null, salary_max: hasPay ? sal!.max : null,
       salary_currency: hasPay ? currency : null, salary_period: hasPay ? sal!.period : null,

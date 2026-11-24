@@ -22,7 +22,7 @@ test("every city's country is on the list", () => {
 });
 
 test("roles match the database", () => {
-  const rows = [...sql.matchAll(/\('([a-z0-9_]+)', '(marketing|sales|customer_success|other)', '([^']+)', \d+\)/g)]
+  const rows = [...sql.matchAll(/\('([a-z0-9_]+)', '(marketing|sales|customer_success|engineering|design|other)', '([^']+)', \d+\)/g)]
     .map(([, slug, category, name]) => ({ slug, category, name }));
   assert.deepEqual(ROLES, rows);
 });

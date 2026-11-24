@@ -1,5 +1,5 @@
 // Job categories, roles and currencies. Mirrors the category checks, the roles table and the currency checks in
-// supabase/migrations (latest: 044_open_up.sql); tests/lists.test.ts fails if they drift apart.
+// supabase/migrations (latest: 048_eng_design_roles.sql); tests/lists.test.ts fails if they drift apart.
 
 export const CATEGORIES = [
   { slug: "marketing", name: "Marketing" },
@@ -42,6 +42,19 @@ export const ROLES: { slug: string; category: Category; name: string }[] = [
   { slug: "support", category: "customer_success", name: "Customer support" },
   { slug: "cs_ops", category: "customer_success", name: "Customer success operations" },
   { slug: "cs_lead", category: "customer_success", name: "Customer success leadership" },
+  { slug: "frontend", category: "engineering", name: "Frontend" },
+  { slug: "backend", category: "engineering", name: "Backend" },
+  { slug: "full_stack", category: "engineering", name: "Full-stack" },
+  { slug: "mobile", category: "engineering", name: "Mobile" },
+  { slug: "devops", category: "engineering", name: "DevOps and SRE" },
+  { slug: "qa", category: "engineering", name: "QA and testing" },
+  { slug: "security", category: "engineering", name: "Security" },
+  { slug: "eng_lead", category: "engineering", name: "Engineering leadership" },
+  { slug: "product_design", category: "design", name: "Product and UX design" },
+  { slug: "ux_research", category: "design", name: "UX research" },
+  { slug: "brand_design", category: "design", name: "Brand and graphic design" },
+  { slug: "motion", category: "design", name: "Motion and illustration" },
+  { slug: "design_lead", category: "design", name: "Design leadership" },
 ];
 
 export const CURRENCIES = ["USD", "CAD", "EUR", "GBP", "AUD", "INR", "VND", "SGD", "THB", "MYR", "IDR", "PHP"] as const;

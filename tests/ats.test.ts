@@ -190,6 +190,28 @@ test("boards that take every role file each job under its area", async () => {
   for (const [title, area] of cases) assert.equal(guessCategory(title), area, title);
 });
 
+test("engineering and design jobs get a detailed role; others in those areas keep none", () => {
+  const ALL = { countries: ["US"], niche_only: false };
+  const base = { externalId: "1", applyUrl: "https://x.test/apply", postingUrl: "https://x.test", countries: ["US"], places: ["Austin, TX"], remote: null, hybrid: null, employment: "Full-time", experience: null, html: "<p>Hi</p>", text: null, salary: null };
+  const cases: [string, string, string | null][] = [
+    ["Senior Frontend Engineer", "engineering", "frontend"], ["UI Engineer", "engineering", "frontend"], ["Backend Developer (Go)", "engineering", "backend"],
+    ["Full Stack Engineer", "engineering", "full_stack"], ["iOS Engineer", "engineering", "mobile"], ["Site Reliability Engineer", "engineering", "devops"],
+    ["QA Automation Engineer", "engineering", "qa"], ["Application Security Engineer", "engineering", "security"],
+    ["Engineering Manager, Payments", "engineering", "eng_lead"], ["Director of Engineering", "engineering", "eng_lead"],
+    ["Senior Software Engineer", "engineering", null], ["Growth Engineer", "engineering", null],
+    ["Senior Product Designer", "design", "product_design"], ["UX Researcher", "design", "ux_research"], ["Brand Designer", "design", "brand_design"],
+    ["Motion Designer", "design", "motion"], ["Head of Design", "design", "design_lead"], ["Creative Director", "design", "design_lead"],
+    // Other areas never take an engineering or design role.
+    ["Data Engineer", "data", null], ["Account Executive", "sales", "account_executive"],
+  ];
+  for (const [title, category, role] of cases) {
+    const t = toJob({ ...base, title }, ALL);
+    assert.ok("job" in t, title);
+    assert.equal(t.job.category, category, title);
+    assert.equal(t.job.role, role, title);
+  }
+});
+
 test("jobs abroad: new countries and regions, and pay only in a listed currency", () => {
   const ALL = { countries: ["US", "CA", "GB", "DE", "ES", "BR", "MX", "ZA"], niche_only: false };
   const base = { externalId: "1", applyUrl: "https://x.test/apply", postingUrl: "https://x.test", countries: [], remote: null, hybrid: null, employment: "Full-time", experience: null, html: "<p>Hi</p>", text: null, salary: null };

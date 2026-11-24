@@ -19,6 +19,12 @@ const ROLE_WORDS: Record<string, [string, string]> = {
   sales_lead: ["sales-director", "Sales leadership"], cs_manager: ["customer-success-manager", "Customer success manager"],
   onboarding: ["implementation", "Onboarding and implementation"], support: ["customer-support", "Customer support"],
   cs_ops: ["customer-success-operations", "Customer success operations"], cs_lead: ["customer-success-director", "Customer success leadership"],
+  frontend: ["frontend-developer", "Frontend developer"], backend: ["backend-engineer", "Backend engineer"],
+  full_stack: ["full-stack-developer", "Full-stack developer"], mobile: ["mobile-developer", "Mobile developer"],
+  devops: ["devops-engineer", "DevOps and SRE"], qa: ["qa-engineer", "QA engineer"], security: ["security-engineer", "Security engineer"],
+  eng_lead: ["engineering-manager", "Engineering leadership"], product_design: ["product-designer", "Product designer"],
+  ux_research: ["ux-researcher", "UX researcher"], brand_design: ["graphic-designer", "Brand and graphic design"],
+  motion: ["motion-designer", "Motion design and illustration"], design_lead: ["design-director", "Design leadership"],
 };
 type Area = { slug: string; label: string; category: string | null; role: string | null };
 export const AREAS: Area[] = [
@@ -140,7 +146,8 @@ export function seoHeading(f: Filters): string {
   const remote = f.where.includes("remote");
   const key = extraOf(f);
   const extra = key ? extraByKey(key) : null;
-  const lower = (t: string) => t.replace(/^(?!SEO)\w/, (c) => c.toLowerCase());
+  // Names that start with capitals ("SEO", "UX researcher", "DevOps") keep them.
+  const lower = (t: string) => t.replace(/^(?!SEO|UX|QA|DevOps)\w/, (c) => c.toLowerCase());
   const before = extra && PREFIX_EXTRAS.includes(extra) ? lower(extra.label) : "";
   const noun = extra?.key === "type:internship" ? "internships" : "jobs";
   const paying = extra?.key.startsWith("pay:") ? `paying $${extra.key.slice(4, -3)}k+` : "";
