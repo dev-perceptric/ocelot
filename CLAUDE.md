@@ -1,6 +1,6 @@
 # Ocelot
 
-A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Every kind of job, from 64 countries: job board sync takes all roles from every country on the place list, up to 100,000 imported jobs (`docs/job-boards.md`). Marketing, sales and customer success keep their detailed roles; other jobs are filed under their job area (engineering, data, design and so on).
+A job marketplace with a built-in job search workspace (joinocelot.com). Companies publish jobs. Candidates find jobs and track every application, including jobs they found elsewhere. Every kind of job, from 64 countries: job board sync takes all roles from every country on the place list, up to 100,000 imported jobs (`docs/job-boards.md`). Marketing, sales, customer success, engineering and design have detailed roles (engineering and design roles come from `guessAreaRole` in `src/lib/ats/normalize.ts`); other jobs are filed under their job area (data, product and so on).
 
 Start with `docs/plan.md` (what to build and in what order), `deploy/README.md` (the VPS, its Supabase and the deploy; `deploy/ovh/README.md` for the move from Hostinger) and `docs/brand.md` (look and copy).
 

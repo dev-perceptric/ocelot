@@ -27,6 +27,15 @@ test("clean addresses read back to their search, and back again", () => {
     ["sales-jobs-paying-100k-in-texas", { category: "sales", region: "US-TX", min_pay: "100000" }, "Sales jobs paying $100k+ in Texas"],
     ["remote-jobs-paying-150k", { where: "remote", min_pay: "150000" }, "Remote jobs paying $150k+"],
     ["senior-jobs", { level: "senior" }, "Senior jobs"],
+    // Engineering and design roles.
+    ["frontend-developer-jobs", { role: "frontend" }, "Frontend developer jobs"],
+    ["remote-senior-backend-engineer-jobs", { role: "backend", where: "remote", level: "senior" }, "Remote senior backend engineer jobs"],
+    ["devops-engineer-jobs-in-texas", { role: "devops", region: "US-TX" }, "DevOps and SRE jobs in Texas"],
+    ["remote-qa-engineer-jobs", { role: "qa", where: "remote" }, "Remote QA engineer jobs"],
+    ["ux-researcher-jobs-in-new-york", { role: "ux_research", city: "new-york" }, "UX researcher jobs in New York"],
+    ["product-designer-jobs-paying-150k", { role: "product_design", min_pay: "150000" }, "Product designer jobs paying $150k+"],
+    ["contract-graphic-designer-jobs", { role: "brand_design", type: "contract" }, "Contract brand and graphic design jobs"],
+    ["design-director-jobs-in-canada", { role: "design_lead", country: "CA" }, "Design leadership jobs in Canada"],
   ];
   for (const [slug, params, heading] of cases) {
     const f = parseSeoPath(slug);
@@ -38,7 +47,7 @@ test("clean addresses read back to their search, and back again", () => {
     // Two extras, remote with hybrid, remote in a city, the extra in the wrong place, a level on a leadership role.
     "senior-marketing-internships", "senior-jobs-paying-100k", "remote-hybrid-sales-jobs", "remote-senior-sales-jobs-in-austin",
     "senior-remote-sales-jobs", "marketing-jobs-senior", "lead-sales-director-jobs", "mid-level-sales-jobs", "temporary-sales-jobs",
-    "sales-jobs-paying-90k"]) assert.equal(parseSeoPath(bad), null, bad);
+    "sales-jobs-paying-90k", "senior-engineering-manager-jobs", "lead-design-director-jobs"]) assert.equal(parseSeoPath(bad), null, bad);
 });
 
 test("searches with other filters stay on Find jobs", () => {
@@ -56,6 +65,6 @@ test("searches with other filters stay on Find jobs", () => {
 test("every area and place has its own address", () => {
   assert.equal(new Set(AREAS.map((a) => a.slug)).size, AREAS.length);
   assert.equal(new Set(PLACES.map((p) => p.slug)).size, PLACES.length);
-  assert.equal(AREAS.length, 13 + 21); // every job area but Other, and the 21 marketing, sales and customer success roles
+  assert.equal(AREAS.length, 13 + 21 + 13); // every job area but Other, the 21 marketing, sales and customer success roles, and 13 engineering and design roles
   assert.ok(PLACES.length > 90);
 });
