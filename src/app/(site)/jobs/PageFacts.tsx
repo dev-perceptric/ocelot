@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { PageSummary } from "@/lib/seoData";
 
 // "$85k" or "CAD 85k".
@@ -24,7 +23,7 @@ export function factsLine(heading: string, s: PageSummary | null, { companies: s
   return `${s.jobs.toLocaleString("en-US")} ${what}${companies}.${pay ? ` Typical pay ${pay} a year.` : ""} Updated every day.`;
 }
 
-// Under a role and place page's heading: the numbers for this search and the companies with the most jobs in it.
+// Under a role and place page's heading: the numbers for this search.
 export function PageFacts({ s }: { s: PageSummary | null }) {
   if (!s || !s.jobs) return null;
   const pay = payRange(s);
@@ -46,17 +45,6 @@ export function PageFacts({ s }: { s: PageSummary | null }) {
           </div>
         ))}
       </dl>
-      {s.top.length > 1 ? (
-        <p className="mt-3 text-body text-muted">
-          Most jobs here:{" "}
-          {s.top.map((t, i) => (
-            <span key={t.slug}>
-              {i ? ", " : ""}
-              <Link href={`/companies/${t.slug}`} className="text-ink underline">{t.name}</Link> ({t.jobs.toLocaleString("en-US")})
-            </span>
-          ))}
-        </p>
-      ) : null}
     </section>
   );
 }
