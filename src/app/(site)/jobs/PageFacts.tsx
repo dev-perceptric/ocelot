@@ -37,11 +37,12 @@ export function PageFacts({ s }: { s: PageSummary | null }) {
   ];
   return (
     <section aria-label="About these jobs" className="mt-5">
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Each box grows to fit its number, so pay like "$109k–$191k" stays on one line beside a photo. */}
+      <dl className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
         {facts.map((f) => (
-          <div key={f.label} className="border border-border bg-surface p-4 rounded-[var(--radius-card)]">
+          <div key={f.label} className="border border-border bg-surface p-4 rounded-[var(--radius-card)] sm:min-w-36 sm:flex-1">
             <dt className="text-meta text-muted">{f.label}</dt>
-            <dd className="mt-1 text-card font-bold">{f.value}</dd>
+            <dd className="mt-1 whitespace-nowrap text-card font-bold">{f.value}</dd>
           </div>
         ))}
       </dl>
