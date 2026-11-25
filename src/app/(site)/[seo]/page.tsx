@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { HeroBand } from "@/components/HeroBand";
+import { heroFor } from "@/lib/heroes";
 import { parseSeoPath, seoHeading, seoPath } from "@/lib/seo";
 import { minJobs, pageJobs, pageSummary } from "@/lib/seoData";
 import { factsLine, PageFacts } from "../jobs/PageFacts";
@@ -22,11 +24,14 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const [jobs, summary] = await Promise.all([pageJobs(f), pageSummary(f)]);
   const path = seoPath(f)!;
   const count = summary?.jobs || jobs || 0;
+  const hero = heroFor(f);
   return {
     title: count ? `${heading} (${count.toLocaleString("en-US")})` : heading,
     description: factsLine(heading, summary),
     alternates: { canonical: page > 1 ? `${path}?page=${page}` : path },
     robots: (jobs ?? 0) >= minJobs(f) ? undefined : { index: false, follow: true },
+    // The page's photo as its link preview. Setting openGraph here replaces the layout's, so it repeats those fields.
+    ...(hero ? { openGraph: { siteName: "Ocelot", type: "website", images: [{ url: `/heroes/${hero.file}`, width: 960, height: 540, alt: hero.alt }] } } : {}),
   };
 }
 
@@ -38,6 +43,6 @@ export default async function SeoPage({ params, searchParams }: Props) {
   const summary = page === 1 ? await pageSummary(f) : null;
   return (
     <JobResults filters={f} page={page} footer={<SeoLinks filters={f} />}
-      heading={<><h1 className="text-section-sm font-bold md:text-section">{heading}</h1><PageFacts s={summary} /></>} />
+      heading={<HeroBand hero={heroFor(f)}><h1 className="text-section-sm font-bold md:text-section">{heading}</h1><PageFacts s={summary} /></HeroBand>} />
   );
 }
